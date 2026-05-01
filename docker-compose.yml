@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: iroyinayo
+      POSTGRES_USER: iroyinayo
+      POSTGRES_PASSWORD: iroyinayo
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: ./iroyinayo
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgres://iroyinayo:iroyinayo@postgres:5432/iroyinayo
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      PORT: 3000
+      CORS_ORIGIN: http://localhost:3001
+      ENABLE_BOT: ${ENABLE_BOT:-true}
+      ADMIN_NUMBERS: ${ADMIN_NUMBERS:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    volumes:
+      - bot_auth:/app/auth_store
+
+  admin:
+    build: ./iroyinayo-admin
+    ports:
+      - "3001:3001"
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3000/api
+
+volumes:
+  pgdata:
+  bot_auth:
