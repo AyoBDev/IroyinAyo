@@ -13,12 +13,22 @@ const { AppError } = require('./utils/errors');
 
 const app = express();
 
-app.use(helmet());
+const corsOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
+  : [];
 
-const corsOptions = process.env.CORS_ORIGIN
-  ? { origin: process.env.CORS_ORIGIN.split(','), credentials: true }
-  : { origin: false };
-app.use(cors(corsOptions));
+if (corsOrigins.length) {
+  console.log('CORS allowed origins:', corsOrigins);
+}
+
+app.use(cors({
+  origin: corsOrigins.length ? corsOrigins : false,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+app.use(helmet());
 
 app.use(generalLimiter);
 
