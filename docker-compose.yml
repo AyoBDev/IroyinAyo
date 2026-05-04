@@ -23,7 +23,7 @@ services:
       CORS_ORIGIN: http://localhost:3001
       ENABLE_BOT: ${ENABLE_BOT:-true}
       ADMIN_NUMBERS: ${ADMIN_NUMBERS:-}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
     volumes:
       - bot_auth:/app/auth_store
 
