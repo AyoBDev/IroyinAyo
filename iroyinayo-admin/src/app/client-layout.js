@@ -1,0 +1,110 @@
+'use client';
+
+import { AuthProvider, useAuth } from '../lib/auth';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import {
+  LayoutDashboard,
+  Users,
+  FileText,
+  Brain,
+  TrendingUp,
+  Gift,
+  LogOut,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+const NAV_ITEMS = [
+  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/students', label: 'Students', icon: Users },
+  { href: '/content', label: 'Content', icon: FileText },
+  { href: '/quizzes', label: 'Quizzes', icon: Brain },
+  { href: '/markets', label: 'Markets', icon: TrendingUp },
+  { href: '/rewards', label: 'Rewards', icon: Gift },
+];
+
+function Sidebar() {
+  const { admin, logout } = useAuth();
+  const pathname = usePathname();
+
+  return (
+    <aside className="w-56 bg-card border-r border-border min-h-screen flex flex-col">
+      <div className="p-4">
+        <h1 className="text-lg font-bold">Iroyinayo</h1>
+        <p className="text-xs text-muted-foreground mt-1">
+          {admin?.name} ({admin?.role})
+        </p>
+      </div>
+      <Separator />
+      <nav className="flex-1 p-2">
+        {NAV_ITEMS.map((item) => {
+          const Icon = item.icon;
+          const isActive = pathname === item.href;
+          return (
+            <Link key={item.href} href={item.href}>
+              <Button
+                variant={isActive ? 'secondary' : 'ghost'}
+                className={cn('w-full justify-start gap-2 mb-1')}
+              >
+                <Icon className="h-4 w-4" />
+                {item.label}
+              </Button>
+            </Link>
+          );
+        })}
+      </nav>
+      <Separator />
+      <div className="p-4">
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-2 text-muted-foreground"
+          onClick={logout}
+        >
+          <LogOut className="h-4 w-4" />
+          Sign Out
+        </Button>
+      </div>
+    </aside>
+  );
+}
+
+function AuthGate({ children }) {
+  const { admin, loading } = useAuth();
+  const pathname = usePathname();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!admin && pathname !== '/login') {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+    return null;
+  }
+
+  if (pathname === '/login') {
+    return <>{children}</>;
+  }
+
+  return (
+    <div className="flex min-h-screen">
+      <Sidebar />
+      <main className="flex-1 p-6 overflow-auto">{children}</main>
+    </div>
+  );
+}
+
+export function ClientLayout({ children }) {
+  return (
+    <AuthProvider>
+      <AuthGate>{children}</AuthGate>
+    </AuthProvider>
+  );
+}
