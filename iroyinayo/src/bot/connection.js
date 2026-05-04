@@ -75,7 +75,8 @@ async function createConnection(messageHandler) {
     }
   });
 
-  sock.ev.on('messages.upsert', async ({ messages }) => {
+  sock.ev.on('messages.upsert', async ({ messages, type }) => {
+    console.log(`messages.upsert: ${messages.length} message(s), type: ${type}`);
     for (const msg of messages) {
       if (!msg.key.fromMe && msg.message) {
         const jid = msg.key.remoteJid;
@@ -83,6 +84,8 @@ async function createConnection(messageHandler) {
           msg.message.conversation ||
           msg.message.extendedTextMessage?.text ||
           '';
+
+        console.log(`Message from ${jid}: "${text}" (fromMe: ${msg.key.fromMe})`);
 
         if (text && jid.endsWith('@s.whatsapp.net')) {
           try {
