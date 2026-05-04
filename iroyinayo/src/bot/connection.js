@@ -3,7 +3,7 @@ const pino = require('pino');
 const { usePostgresAuthState } = require('./authState');
 
 let reconnectAttempts = 0;
-const MAX_RECONNECT_ATTEMPTS = 5;
+const MAX_RECONNECT_ATTEMPTS = 10;
 
 async function createConnection(messageHandler) {
   const isProduction = process.env.NODE_ENV === 'production';
@@ -12,9 +12,12 @@ async function createConnection(messageHandler) {
     ? await usePostgresAuthState()
     : await useMultiFileAuthState('./auth_store');
 
+  let qrDisplayed = false;
+
   const sock = makeWASocket({
     auth: state,
     logger: pino({ level: 'silent' }),
+    qrTimeout: 60000,
   });
 
   sock.ev.on('creds.update', saveCreds);
@@ -23,17 +26,18 @@ async function createConnection(messageHandler) {
     const { connection, lastDisconnect, qr } = update;
 
     if (qr) {
+      qrDisplayed = true;
+      console.log('\n--- Scan this QR code with WhatsApp ---');
+      console.log('Go to WhatsApp > Linked Devices > Link a Device\n');
       if (isProduction) {
-        console.log('WhatsApp QR code received but cannot display in production.');
-        console.log('Pair the bot locally first, then export auth to the database.');
+        console.log('Cannot display QR in production. Pair locally first.');
         console.log('See: node scripts/export-auth-to-db.js');
       } else {
-        // In development, print QR to terminal using qrcode-terminal
         try {
           const qrcode = require('qrcode-terminal');
           qrcode.generate(qr, { small: true });
         } catch {
-          console.log('QR code (scan with WhatsApp):', qr);
+          console.log('QR code:', qr);
         }
       }
     }
@@ -41,6 +45,13 @@ async function createConnection(messageHandler) {
     if (connection === 'close') {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+
+      // QR timeout doesn't count as a real failure — always retry
+      if (qrDisplayed && shouldReconnect) {
+        console.log('QR code expired. Generating a new one...');
+        setTimeout(() => createConnection(messageHandler), 2000);
+        return;
+      }
 
       if (shouldReconnect && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
         reconnectAttempts++;
@@ -50,10 +61,11 @@ async function createConnection(messageHandler) {
       } else if (!shouldReconnect) {
         console.log('WhatsApp logged out. Re-pair the bot to reconnect.');
       } else {
-        console.log(`Max reconnect attempts (${MAX_RECONNECT_ATTEMPTS}) reached. Bot stopped. Redeploy or restart to try again.`);
+        console.log(`Max reconnect attempts (${MAX_RECONNECT_ATTEMPTS}) reached. Bot stopped.`);
       }
     } else if (connection === 'open') {
       reconnectAttempts = 0;
+      qrDisplayed = false;
       console.log('Iroyinayo bot connected to WhatsApp');
     }
   });
