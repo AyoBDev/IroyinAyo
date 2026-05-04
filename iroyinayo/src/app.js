@@ -13,6 +13,8 @@ const { AppError } = require('./utils/errors');
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 const corsOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
   : [];
