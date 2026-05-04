@@ -28,7 +28,7 @@ function clearState(jid) {
 const ADMIN_NUMBERS = (process.env.ADMIN_NUMBERS || '').split(',').filter(Boolean);
 
 async function handleMessage(sock, jid, text, msg) {
-  const phone = jid.replace('@s.whatsapp.net', '');
+  const phone = jid.replace('@s.whatsapp.net', '').replace('@lid', '');
 
   // Admin commands start with /
   if (text.startsWith('/') && ADMIN_NUMBERS.includes(phone)) {

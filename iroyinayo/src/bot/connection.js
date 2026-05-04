@@ -87,7 +87,7 @@ async function createConnection(messageHandler) {
 
         console.log(`Message from ${jid}: "${text}" (fromMe: ${msg.key.fromMe})`);
 
-        if (text && jid.endsWith('@s.whatsapp.net')) {
+        if (text && (jid.endsWith('@s.whatsapp.net') || jid.endsWith('@lid'))) {
           try {
             await messageHandler(sock, jid, text.trim(), msg);
           } catch (err) {
