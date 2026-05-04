@@ -1,4 +1,4 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, Browsers } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const { usePostgresAuthState } = require('./authState');
 
@@ -12,10 +12,15 @@ async function createConnection(messageHandler) {
     ? await usePostgresAuthState()
     : await useMultiFileAuthState('./auth_store');
 
+  const { version } = await fetchLatestBaileysVersion({});
+  console.log('Using WA version:', version.join('.'));
+
   let qrDisplayed = false;
 
   const sock = makeWASocket({
     auth: state,
+    version,
+    browser: Browsers.ubuntu('Chrome'),
     logger: pino({ level: 'silent' }),
     qrTimeout: 60000,
   });

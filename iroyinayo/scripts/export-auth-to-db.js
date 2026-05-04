@@ -63,13 +63,16 @@ async function main() {
     for (const file of files) {
       const filePath = path.join(AUTH_DIR, file);
       const raw = fs.readFileSync(filePath, 'utf8');
-      const value = JSON.parse(raw);
       const key = path.basename(file, '.json');
 
-      await db('baileys_auth')
-        .insert({ key, value, updated_at: new Date() })
-        .onConflict('key')
-        .merge({ value, updated_at: new Date() });
+      // Use raw SQL to insert the JSON string directly — avoids
+      // double-serialization issues with Buffer objects in Baileys auth data
+      await db.raw(
+        `INSERT INTO baileys_auth (key, value, updated_at)
+         VALUES (?, ?::jsonb, NOW())
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+        [key, raw]
+      );
 
       count++;
     }
