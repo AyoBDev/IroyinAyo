@@ -8,10 +8,11 @@ async function handlePoints(sock, jid, student) {
   const lines = [formatPoints(balance)];
 
   if (history.length > 0) {
-    lines.push('', `${bold('Recent Activity:')}`);
+    lines.push('', `${bold('📜 Recent Activity:')}`);
     for (const tx of history) {
       const sign = tx.amount > 0 ? '+' : '';
-      lines.push(`${sign}${tx.amount} pts — ${tx.description || tx.type}`);
+      const icon = tx.amount > 0 ? '🟢' : '🔴';
+      lines.push(`${icon} ${sign}${tx.amount} pts — ${tx.description || tx.type}`);
     }
   }
 

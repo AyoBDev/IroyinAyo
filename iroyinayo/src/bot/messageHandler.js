@@ -1,4 +1,5 @@
 const studentsService = require('../modules/students/students.service');
+const db = require('../config/database');
 const { handleOnboardingStep } = require('./handlers/onboarding');
 const { handleMenu } = require('./handlers/menu');
 const { handleQuiz, handleQuizAnswer } = require('./handlers/quiz');
@@ -8,7 +9,10 @@ const { handleInterests, handleInterestsSelection } = require('./handlers/intere
 const { handlePredict, handlePredictAction } = require('./handlers/predict');
 const { handleRedeem, handleRedeemSelection } = require('./handlers/redeem');
 const { handleHelp } = require('./handlers/help');
+const { handleWelcomeBack } = require('./handlers/greeting');
 const { handleAdminCommand } = require('./admin/adminHandler');
+
+const GREETINGS = ['hi', 'hello', 'hey', 'yo', 'sup', 'good morning', 'good afternoon', 'good evening', 'gm', 'whatsup', 'wassup', 'howdy', 'hola', 'hy'];
 
 // In-memory conversation state: jid -> { flow, step, data }
 const conversationState = new Map();
@@ -45,9 +49,14 @@ async function handleMessage(sock, jid, text, msg) {
     return;
   }
 
+  // Save WhatsApp JID for reliable messaging (LID or phone-based)
+  if (student.whatsapp_jid !== jid) {
+    await db('students').where({ id: student.id }).update({ whatsapp_jid: jid });
+  }
+
   // Check if student is banned
   if (student.is_banned) {
-    await sock.sendMessage(jid, { text: 'Your account has been suspended. Contact admin for help.' });
+    await sock.sendMessage(jid, { text: '🚫 Your account has been suspended. Contact admin for help.' });
     return;
   }
 
@@ -103,8 +112,12 @@ async function handleMessage(sock, jid, text, msg) {
       await handleHelp(sock, jid);
       break;
     default:
+      if (GREETINGS.includes(command)) {
+        await handleWelcomeBack(sock, jid, student);
+        break;
+      }
       await sock.sendMessage(jid, {
-        text: `I didn't understand that. Type *menu* to see available commands or *help* for assistance.`,
+        text: `🤔 I didn't understand that. Type *menu* to see available commands or *help* for assistance.`,
       });
   }
 }

@@ -5,17 +5,17 @@ async function handlePredict(sock, jid, student, setState) {
   const markets = await marketsService.listOpen();
 
   if (markets.length === 0) {
-    await sock.sendMessage(jid, { text: 'No open markets right now. Check back later!' });
+    await sock.sendMessage(jid, { text: '📊 No open markets right now. Check back later!' });
     return;
   }
 
   const text = [
     formatMarketList(markets),
     '',
-    `To bet, reply: ${bold('buy [market-id] [yes/no] [amount]')}`,
-    `Example: ${bold('buy a1b2c3d4 yes 50')}`,
+    `💸 To bet, reply: ${bold('buy [market-id] [yes/no] [amount]')}`,
+    `📝 Example: ${bold('buy a1b2c3d4 yes 50')}`,
     '',
-    `Or type ${bold('propose')} to suggest a new market.`,
+    `💡 Or type ${bold('propose')} to suggest a new market.`,
   ].join('\n');
 
   await sock.sendMessage(jid, { text });
@@ -27,7 +27,7 @@ async function handlePredictAction(sock, jid, text, student, state, setState, cl
 
   if (lower === 'back' || lower === 'menu') {
     clearState(jid);
-    await sock.sendMessage(jid, { text: 'Exited markets. Type *menu* for options.' });
+    await sock.sendMessage(jid, { text: '👋 Exited markets. Type *menu* for options.' });
     return;
   }
 
@@ -42,7 +42,7 @@ async function handlePredictAction(sock, jid, text, student, state, setState, cl
     const market = markets.find((m) => m.id.startsWith(idPrefix));
 
     if (!market) {
-      await sock.sendMessage(jid, { text: 'Market not found. Check the ID and try again.' });
+      await sock.sendMessage(jid, { text: '🔍 Market not found. Check the ID and try again.' });
       return;
     }
 
@@ -61,12 +61,12 @@ async function handlePredictAction(sock, jid, text, student, state, setState, cl
         text: [
           `✅ ${bold('Position placed!')}`,
           '',
-          `${bold('Market:')} ${market.question}`,
-          `${bold('Side:')} ${side.toUpperCase()}`,
-          `${bold('Spent:')} ${amount} pts`,
-          `${bold('Shares:')} ${sharesReceived}`,
-          `${bold('If you win:')} ${netPayout} pts (profit: ${netPayout - amount} pts after 10% fee)`,
-          `${bold('New odds:')} Yes ${yesPercent}¢ | No ${noPercent}¢`,
+          `📌 ${bold('Market:')} ${market.question}`,
+          `🎯 ${bold('Side:')} ${side.toUpperCase()}`,
+          `💸 ${bold('Spent:')} ${amount} pts`,
+          `📈 ${bold('Shares:')} ${sharesReceived}`,
+          `🏆 ${bold('If you win:')} ${netPayout} pts (profit: ${netPayout - amount} pts after 10% fee)`,
+          `⚖️ ${bold('New odds:')} Yes ${yesPercent}¢ | No ${noPercent}¢`,
         ].join('\n'),
       });
     } catch (err) {
@@ -108,7 +108,7 @@ async function handlePredictAction(sock, jid, text, student, state, setState, cl
   }
 
   await sock.sendMessage(jid, {
-    text: `Reply with:\n• ${bold('buy [id] [yes/no] [amount]')} to place a bet\n• ${bold('propose [question]')} to suggest a market\n• ${bold('back')} to exit`,
+    text: `Reply with:\n💸 ${bold('buy [id] [yes/no] [amount]')} to place a bet\n💡 ${bold('propose [question]')} to suggest a market\n🔙 ${bold('back')} to exit`,
   });
 }
 

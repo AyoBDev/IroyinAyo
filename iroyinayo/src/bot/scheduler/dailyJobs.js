@@ -11,6 +11,10 @@ function randomDelay() {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function getJid(student) {
+  return student.whatsapp_jid || `${student.phone_number}@s.whatsapp.net`;
+}
+
 function startScheduler(sock) {
   // AI content generation — 6am WAT daily (2 hours before digest)
   cron.schedule('0 6 * * *', async () => {
@@ -36,10 +40,10 @@ function startScheduler(sock) {
         try {
           const feed = await contentService.getFeedForStudent(student.id);
           if (feed.length > 0) {
-            const jid = `${student.phone_number}@s.whatsapp.net`;
+            const jid = getJid(student);
             const items = feed.slice(0, 3);
             await sock.sendMessage(jid, {
-              text: `☀ ${bold('Good morning, ' + student.name + '!')}\n\n${formatFeed(items)}`,
+              text: `☀️ ${bold('Good morning, ' + student.name + '!')}\n\n${formatFeed(items)}`,
             });
             sent++;
             await randomDelay();
@@ -66,7 +70,7 @@ function startScheduler(sock) {
       let sent = 0;
       for (const student of students) {
         try {
-          const jid = `${student.phone_number}@s.whatsapp.net`;
+          const jid = getJid(student);
           await sock.sendMessage(jid, {
             text: `🧠 ${bold('Midday Quiz!')}\n\nType ${bold('quiz')} to answer and earn points!`,
           });

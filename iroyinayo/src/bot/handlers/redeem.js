@@ -5,7 +5,7 @@ async function handleRedeem(sock, jid, student, setState) {
   const options = await rewardsService.listActiveOptions();
 
   if (options.length === 0) {
-    await sock.sendMessage(jid, { text: 'No rewards available right now. Check back later!' });
+    await sock.sendMessage(jid, { text: '🎁 No rewards available right now. Check back later!' });
     return;
   }
 
@@ -16,7 +16,7 @@ async function handleRedeem(sock, jid, student, setState) {
 async function handleRedeemSelection(sock, jid, text, student, state, setState, clearState) {
   if (text.toLowerCase() === 'back') {
     clearState(jid);
-    await sock.sendMessage(jid, { text: 'Cancelled. Type *menu* for options.' });
+    await sock.sendMessage(jid, { text: '👋 Cancelled. Type *menu* for options.' });
     return;
   }
 
@@ -36,9 +36,9 @@ async function handleRedeemSelection(sock, jid, text, student, state, setState, 
       text: [
         `✅ ${bold('Redemption submitted!')}`,
         '',
-        `${bold('Reward:')} ${result.reward.name} (${result.reward.value})`,
-        `${bold('Cost:')} ${result.reward.points_cost} pts`,
-        `${bold('Status:')} Pending — you'll receive it shortly.`,
+        `🎁 ${bold('Reward:')} ${result.reward.name} (${result.reward.value})`,
+        `💰 ${bold('Cost:')} ${result.reward.points_cost} pts`,
+        `⏳ ${bold('Status:')} Pending — you'll receive it shortly.`,
       ].join('\n'),
     });
   } catch (err) {

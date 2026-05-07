@@ -34,10 +34,10 @@ function formatMarket(market) {
   const yesPercent = Math.round(market.yes_price * 100);
   const noPercent = Math.round(market.no_price * 100);
   return [
-    bold(market.question),
-    `Yes: ${yesPercent}¢ | No: ${noPercent}¢`,
-    `${market.sponsor_bonus > 0 ? `Bonus: +${market.sponsor_bonus} pts | ` : ''}Closes: ${new Date(market.closes_at).toLocaleDateString('en-NG')}`,
-    `ID: ${market.id.slice(0, 8)}`,
+    `📌 ${bold(market.question)}`,
+    `✅ Yes: ${yesPercent}¢ | ❌ No: ${noPercent}¢`,
+    `${market.sponsor_bonus > 0 ? `🎁 Bonus: +${market.sponsor_bonus} pts | ` : ''}⏰ Closes: ${new Date(market.closes_at).toLocaleDateString('en-NG')}`,
+    `🆔 ${market.id.slice(0, 8)}`,
   ].join('\n');
 }
 
@@ -71,7 +71,7 @@ function formatFeedItem(content) {
 }
 
 function formatFeed(items) {
-  if (items.length === 0) return "No new content for you today. Check back later!";
+  if (items.length === 0) return "📭 No new content for you today. Check back later!";
   return `${bold('📬 Your Feed')}\n\n${items.map(formatFeedItem).join('\n\n---\n\n')}`;
 }
 

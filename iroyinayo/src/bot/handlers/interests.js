@@ -27,7 +27,7 @@ async function handleInterests(sock, jid, student, setState) {
 async function handleInterestsSelection(sock, jid, text, student, state, setState, clearState) {
   if (text.toLowerCase() === 'back') {
     clearState(jid);
-    await sock.sendMessage(jid, { text: 'Cancelled. Type *menu* for options.' });
+    await sock.sendMessage(jid, { text: '👋 Cancelled. Type *menu* for options.' });
     return;
   }
 

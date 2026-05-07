@@ -174,6 +174,12 @@ export default function StudentsPage() {
               <span className="text-muted-foreground">Phone</span>
               <span>{selected?.phone_number}</span>
             </div>
+            {selected?.whatsapp_jid && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">WhatsApp JID</span>
+                <span className="text-xs font-mono">{selected.whatsapp_jid}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-muted-foreground">Faculty</span>
               <span>{selected?.faculty || '—'}</span>
