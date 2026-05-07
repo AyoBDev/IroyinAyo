@@ -1,22 +1,6 @@
 const studentsService = require('../../modules/students/students.service');
-const { VALID_CATEGORIES, VALID_LEVELS } = require('../../modules/students/students.validation');
-const { bold, numberedList } = require('../formatters');
-
-const UNILORIN_FACULTIES = [
-  'Agriculture',
-  'Arts',
-  'Communication and Information Sciences',
-  'Education',
-  'Engineering and Technology',
-  'Environmental Sciences',
-  'Law',
-  'Life Sciences',
-  'Management Sciences',
-  'Pharmaceutical Sciences',
-  'Physical Sciences',
-  'Social Sciences',
-  'Veterinary Medicine',
-];
+const db = require('../../config/database');
+const { bold, numberedList, formatQuiz } = require('../formatters');
 
 const CATEGORY_LABELS = {
   scholarships: 'Scholarships & Grants',
@@ -38,7 +22,7 @@ async function handleOnboardingStep(sock, jid, text, phone, getState, setState, 
       text: [
         `${bold('Welcome to Iroyinayo!')} 🎓`,
         '',
-        "I'm your personal info bot for University of Ilorin. I deliver personalized content, quizzes, prediction markets, and rewards — all right here in WhatsApp.",
+        "I'm your personal info bot. Get personalized content, earn points through quizzes, predict outcomes in markets, and redeem rewards — all right here in WhatsApp.",
         '',
         "Let's get you set up. What's your name or nickname?",
       ].join('\n'),
@@ -54,43 +38,18 @@ async function handleOnboardingStep(sock, jid, text, phone, getState, setState, 
       return;
     }
     state.data.name = name;
-    await sock.sendMessage(jid, {
-      text: `Nice to meet you, ${bold(name)}! 👋\n\nWhat faculty are you in?\n\n${numberedList(UNILORIN_FACULTIES)}\n\nReply with the number.`,
-    });
-    setState(jid, 'onboarding', 'faculty', state.data);
-    return;
-  }
 
-  if (state.step === 'faculty') {
-    const num = parseInt(text, 10);
-    if (isNaN(num) || num < 1 || num > UNILORIN_FACULTIES.length) {
-      await sock.sendMessage(jid, { text: `Please reply with a number between 1 and ${UNILORIN_FACULTIES.length}.` });
-      return;
-    }
-    state.data.faculty = UNILORIN_FACULTIES[num - 1];
-    const levels = VALID_LEVELS.map((l) => l === 'postgrad' ? 'Postgraduate' : `${l} Level`);
-    await sock.sendMessage(jid, {
-      text: `${bold(state.data.faculty)} — great!\n\nWhat level are you?\n\n${numberedList(levels)}\n\nReply with the number.`,
-    });
-    setState(jid, 'onboarding', 'level', state.data);
-    return;
-  }
-
-  if (state.step === 'level') {
-    const num = parseInt(text, 10);
-    if (isNaN(num) || num < 1 || num > VALID_LEVELS.length) {
-      await sock.sendMessage(jid, { text: `Please reply with a number between 1 and ${VALID_LEVELS.length}.` });
-      return;
-    }
-    state.data.level = VALID_LEVELS[num - 1];
     const categoryList = Object.values(CATEGORY_LABELS);
     await sock.sendMessage(jid, {
       text: [
-        "Almost done! Pick the topics you're interested in.",
+        `Nice to meet you, ${bold(name)}! 👋`,
+        '',
+        "Pick the topics you're interested in:",
         '',
         numberedList(categoryList),
         '',
-        `Reply with the numbers separated by commas (e.g. ${bold('1,3,5')}).`,
+        `Reply with numbers separated by commas (e.g. ${bold('1,3,5')}).`,
+        `Or reply ${bold('all')} to subscribe to everything.`,
       ].join('\n'),
     });
     setState(jid, 'onboarding', 'interests', state.data);
@@ -99,24 +58,28 @@ async function handleOnboardingStep(sock, jid, text, phone, getState, setState, 
 
   if (state.step === 'interests') {
     const categoryKeys = Object.keys(CATEGORY_LABELS);
-    const nums = text.split(',').map((s) => parseInt(s.trim(), 10));
-    const invalid = nums.some((n) => isNaN(n) || n < 1 || n > categoryKeys.length);
-    if (invalid || nums.length === 0) {
-      await sock.sendMessage(jid, {
-        text: `Please reply with valid numbers separated by commas (e.g. 1,3,5). Numbers must be between 1 and ${categoryKeys.length}.`,
-      });
-      return;
+    let selectedCategories;
+
+    if (text.trim().toLowerCase() === 'all') {
+      selectedCategories = [...categoryKeys];
+    } else {
+      const nums = text.split(',').map((s) => parseInt(s.trim(), 10));
+      const invalid = nums.some((n) => isNaN(n) || n < 1 || n > categoryKeys.length);
+      if (invalid || nums.length === 0) {
+        await sock.sendMessage(jid, {
+          text: `Please reply with valid numbers (1-${categoryKeys.length}) separated by commas, or ${bold('all')} for everything.`,
+        });
+        return;
+      }
+      selectedCategories = [...new Set(nums)].map((n) => categoryKeys[n - 1]);
     }
 
-    const selectedCategories = [...new Set(nums)].map((n) => categoryKeys[n - 1]);
     state.data.interests = selectedCategories;
 
     try {
       await studentsService.register({
         phone_number: state.data.phone,
         name: state.data.name,
-        faculty: state.data.faculty,
-        level: state.data.level,
         interests: state.data.interests,
       });
 
@@ -127,11 +90,9 @@ async function handleOnboardingStep(sock, jid, text, phone, getState, setState, 
           `${bold("You're all set!")} 🎉`,
           '',
           `${bold('Name:')} ${state.data.name}`,
-          `${bold('Faculty:')} ${state.data.faculty}`,
-          `${bold('Level:')} ${state.data.level}`,
           `${bold('Interests:')} ${selectedLabels.join(', ')}`,
           '',
-          "Here's what to expect:",
+          "Here's what you can do:",
           '📬 Daily personalized content based on your interests',
           '🧠 Quizzes to earn points',
           '📊 Prediction markets to test your knowledge',
@@ -141,7 +102,16 @@ async function handleOnboardingStep(sock, jid, text, phone, getState, setState, 
         ].join('\n'),
       });
 
-      clearState(jid);
+      // Serve a first quiz immediately so the user experiences the core loop
+      const quiz = await db('quizzes').orderByRaw('RANDOM()').first();
+      if (quiz) {
+        await sock.sendMessage(jid, {
+          text: `\n🎯 ${bold("Let's start with your first quiz!")} Earn ${bold('10 pts')} right away:\n\n${formatQuiz(quiz)}`,
+        });
+        setState(jid, 'quiz', 'answering', { quizId: quiz.id });
+      } else {
+        clearState(jid);
+      }
     } catch (err) {
       await sock.sendMessage(jid, { text: `Registration failed: ${err.message}. Please try again.` });
       clearState(jid);
@@ -150,4 +120,4 @@ async function handleOnboardingStep(sock, jid, text, phone, getState, setState, 
   }
 }
 
-module.exports = { handleOnboardingStep, UNILORIN_FACULTIES, CATEGORY_LABELS };
+module.exports = { handleOnboardingStep, CATEGORY_LABELS };

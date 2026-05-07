@@ -83,7 +83,6 @@ async function createConnection(messageHandler) {
         const text =
           msg.message.conversation ||
           msg.message.extendedTextMessage?.text ||
-          msg.message.listResponseMessage?.singleSelectReply?.selectedRowId ||
           '';
 
         console.log(`Message from ${jid}: "${text}" (fromMe: ${msg.key.fromMe})`);

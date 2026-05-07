@@ -16,7 +16,8 @@ async function handleInterests(sock, jid, student, setState) {
       'Available categories:',
       numberedList(categoryList),
       '',
-      `Reply with new numbers separated by commas (e.g. ${bold('1,3,5')}).`,
+      `Reply with numbers separated by commas (e.g. ${bold('1,3,5')}).`,
+      `Or reply ${bold('all')} to subscribe to everything.`,
       `Type ${bold('back')} to cancel.`,
     ].join('\n'),
   });
@@ -32,15 +33,21 @@ async function handleInterestsSelection(sock, jid, text, student, state, setStat
   }
 
   const categoryKeys = Object.keys(CATEGORY_LABELS);
-  const nums = text.split(',').map((s) => parseInt(s.trim(), 10));
-  const invalid = nums.some((n) => isNaN(n) || n < 1 || n > categoryKeys.length);
+  let selectedCategories;
 
-  if (invalid || nums.length === 0) {
-    await sock.sendMessage(jid, { text: `Please reply with valid numbers (1-${categoryKeys.length}) separated by commas.` });
-    return;
+  if (text.trim().toLowerCase() === 'all') {
+    selectedCategories = [...categoryKeys];
+  } else {
+    const nums = text.split(',').map((s) => parseInt(s.trim(), 10));
+    const invalid = nums.some((n) => isNaN(n) || n < 1 || n > categoryKeys.length);
+
+    if (invalid || nums.length === 0) {
+      await sock.sendMessage(jid, { text: `Please reply with valid numbers (1-${categoryKeys.length}) separated by commas, or ${bold('all')} for everything.` });
+      return;
+    }
+
+    selectedCategories = [...new Set(nums)].map((n) => categoryKeys[n - 1]);
   }
-
-  const selectedCategories = [...new Set(nums)].map((n) => categoryKeys[n - 1]);
 
   try {
     await studentsService.updateInterests(student.id, selectedCategories);

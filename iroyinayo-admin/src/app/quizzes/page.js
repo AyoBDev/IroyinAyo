@@ -54,7 +54,11 @@ export default function QuizzesPage() {
   async function handleCreate(e) {
     e.preventDefault();
     try {
-      await api.post('/gamification/quizzes', form);
+      const payload = {
+        ...form,
+        correct_option: String.fromCharCode(65 + form.correct_option), // 0->A, 1->B, 2->C, 3->D
+      };
+      await api.post('/gamification/quizzes', payload);
       setShowCreate(false);
       setForm({ question: '', options: ['', '', '', ''], correct_option: 0, category: 'academic', points_reward: 10 });
       loadQuizzes();
@@ -107,7 +111,7 @@ export default function QuizzesPage() {
               <span
                 key={i}
                 className={
-                  i === quiz.correct_option
+                  String.fromCharCode(65 + i) === quiz.correct_option
                     ? 'text-green-600 font-medium'
                     : ''
                 }

@@ -6,7 +6,7 @@ async function handleHelp(sock, jid) {
       `${bold('ℹ️ Help — Iroyinayo Bot')}`,
       '',
       `${bold('What is Iroyinayo?')}`,
-      'Your personal info bot for University of Ilorin. Get personalized content, earn points through quizzes, predict outcomes in markets, and redeem rewards.',
+      'Your personal info bot. Get personalized content, earn points through quizzes, predict outcomes in markets, and redeem rewards.',
       '',
       `${bold('Commands:')}`,
       '📋 *menu* — See all options',
