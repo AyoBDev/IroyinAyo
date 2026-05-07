@@ -10,11 +10,13 @@ async function usePostgresAuthState() {
   }
 
   async function writeData(key, value) {
-    const serialized = JSON.parse(JSON.stringify(value, BufferJSON.replacer));
-    await db('baileys_auth')
-      .insert({ key, value: serialized, updated_at: new Date() })
-      .onConflict('key')
-      .merge({ value: serialized, updated_at: new Date() });
+    const jsonStr = JSON.stringify(value, BufferJSON.replacer);
+    await db.raw(
+      `INSERT INTO baileys_auth (key, value, updated_at)
+       VALUES (?, ?::jsonb, NOW())
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+      [key, jsonStr]
+    );
   }
 
   async function removeData(key) {
