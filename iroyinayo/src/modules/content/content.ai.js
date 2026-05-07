@@ -1,5 +1,6 @@
 const Groq = require('groq-sdk');
 const contentService = require('./content.service');
+const { fetchNewsForCategory } = require('./sources');
 
 const CATEGORIES = [
   'scholarships', 'entertainment', 'tech', 'sports',
@@ -18,23 +19,32 @@ async function generateContent(category) {
     throw new Error(`Invalid category: ${category}. Must be one of: ${CATEGORIES.join(', ')}`);
   }
 
+  // Fetch real news for this category
+  const articles = await fetchNewsForCategory(category);
   const client = getClient();
-
-  const prompt = buildPrompt(category);
+  const prompt = buildPrompt(category, articles);
 
   const completion = await client.chat.completions.create({
     model: 'gemma2-9b-it',
     max_tokens: 1024,
-    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.7,
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content: prompt },
+    ],
   });
 
   const text = completion.choices[0].message.content;
   const parsed = parseResponse(text);
 
+  // Find source URL from the article that best matches the generated title
+  const sourceUrl = findBestSourceUrl(parsed.title, articles);
+
   const content = await contentService.create({
     title: parsed.title,
     body: parsed.body,
-    source: 'ai',
+    source: articles.length > 0 ? 'news' : 'ai',
+    source_url: sourceUrl,
     categories: [category],
     is_approved: false,
     is_broadcast: false,
@@ -50,46 +60,81 @@ async function generateDailyDigest() {
     try {
       const content = await generateContent(category);
       results.push({ category, status: 'success', contentId: content.id });
-      console.log(`AI content generated for category: ${category}`);
+      console.log(`Content generated for ${category}: "${content.title}" (source: ${content.source})`);
     } catch (err) {
       results.push({ category, status: 'error', error: err.message });
-      console.error(`AI content generation failed for ${category}: ${err.message}`);
+      console.error(`Content generation failed for ${category}: ${err.message}`);
     }
   }
 
   return results;
 }
 
-function buildPrompt(category) {
-  const categoryDescriptions = {
-    scholarships: 'scholarship opportunities, grants, and financial aid available to Nigerian university students',
-    entertainment: 'campus entertainment, movies, music, events, and pop culture relevant to Nigerian university students',
-    tech: 'technology news, tips, and trends relevant to Nigerian university students (apps, gadgets, coding, AI)',
-    sports: 'sports news and updates relevant to Nigerian university students (campus sports, Nigerian football, international sports)',
-    campus_news: 'university campus life news, announcements, and updates relevant to University of Ilorin students',
-    career: 'career advice, internship opportunities, job tips, and professional development for Nigerian university students',
-    health: 'health and wellness tips, mental health awareness, and fitness advice for Nigerian university students',
-    academic: 'academic tips, study strategies, exam preparation, and educational resources for Nigerian university students',
-  };
+// --- Prompts ---
 
-  return `You are a content writer for Iroyinayo, a WhatsApp-based information platform for University of Ilorin students in Nigeria.
+const SYSTEM_PROMPT = `You are a content writer for Iroyinayo, a WhatsApp-based information platform for University of Ilorin students in Nigeria.
 
-Write a short, engaging piece of content for the "${category}" category.
+Your job: take real news articles and rewrite them as short, engaging updates for Nigerian university students.
 
-Topic focus: ${categoryDescriptions[category]}
+Rules:
+- Write in simple, friendly English — no jargon
+- Make it relatable to a university student's life
+- Include actionable takeaways when possible (deadlines, links, tips)
+- No hashtags, no emojis
+- If the news isn't relevant to Nigerian students, find the angle that makes it relevant
+- Be honest — don't exaggerate or add false information
+- Cite the original source naturally in the text when relevant
 
-Requirements:
-- Title: 5-12 words, catchy and informative
-- Body: 2-4 short paragraphs, 80-150 words total
-- Tone: friendly, informative, relatable to Nigerian university students
-- Use simple English, avoid jargon
-- Include actionable info or a useful takeaway
-- Do NOT use hashtags or emojis
-- Make it feel current and relevant
+Format your response EXACTLY as:
+TITLE: [5-12 word catchy title]
+BODY: [2-4 paragraphs, 80-150 words total]`;
 
-Respond in exactly this format:
-TITLE: [your title here]
-BODY: [your body text here]`;
+const CATEGORY_CONTEXT = {
+  scholarships: 'Focus on deadlines, eligibility, and how to apply. Nigerian students need specific, actionable scholarship info.',
+  entertainment: 'Campus entertainment, movies, music, events. Keep it fun and culturally relevant to Nigerian students.',
+  tech: 'Tech news that affects students: apps, gadgets, coding, AI tools for studying. Make it practical.',
+  sports: 'Sports news relevant to Nigerian students: NUGA games, Super Eagles, Premier League, campus sports.',
+  campus_news: 'University of Ilorin specific news, campus developments, academic calendar updates.',
+  career: 'Internships, job opportunities, career tips. Focus on what Nigerian graduates actually need.',
+  health: 'Health tips for students: mental health, nutrition on a budget, campus clinic info, staying healthy during exams.',
+  academic: 'Study tips, exam strategies, CGPA optimization, postgraduate opportunities.',
+};
+
+function buildPrompt(category, articles) {
+  const context = CATEGORY_CONTEXT[category];
+
+  if (articles.length === 0) {
+    // Fallback: no news found, generate from knowledge
+    return `Category: ${category}
+Context: ${context}
+
+No recent news articles were found for this category. Write an original, helpful piece based on your knowledge. Make it feel current and relevant to University of Ilorin students in May 2026.
+
+Remember: TITLE: and BODY: format.`;
+  }
+
+  const newsContext = articles
+    .slice(0, 5)
+    .map((a, i) => {
+      const parts = [`${i + 1}. "${a.title}" (${a.source})`];
+      if (a.summary) parts.push(`   ${a.summary.slice(0, 200)}`);
+      if (a.url) parts.push(`   URL: ${a.url}`);
+      return parts.join('\n');
+    })
+    .join('\n\n');
+
+  return `Category: ${category}
+Context: ${context}
+
+Here are the latest real news articles for this category:
+
+${newsContext}
+
+Pick the MOST relevant and interesting article for University of Ilorin students. Rewrite it as a short, engaging update. Add student-relevant context (e.g., "this affects your SIWES placement" or "deadline is next month").
+
+If none are relevant, combine insights from multiple articles into one useful update.
+
+Remember: TITLE: and BODY: format.`;
 }
 
 function parseResponse(text) {
@@ -104,6 +149,26 @@ function parseResponse(text) {
     title: titleMatch[1].trim(),
     body: bodyMatch[1].trim(),
   };
+}
+
+function findBestSourceUrl(title, articles) {
+  if (articles.length === 0) return null;
+  // Simple: return the first article's URL as the most likely source
+  // A more sophisticated approach would use string similarity
+  const titleWords = title.toLowerCase().split(/\s+/);
+  let bestMatch = articles[0];
+  let bestScore = 0;
+
+  for (const article of articles) {
+    const articleWords = article.title.toLowerCase().split(/\s+/);
+    const overlap = titleWords.filter((w) => articleWords.includes(w)).length;
+    if (overlap > bestScore) {
+      bestScore = overlap;
+      bestMatch = article;
+    }
+  }
+
+  return bestMatch.url || null;
 }
 
 module.exports = { generateContent, generateDailyDigest, buildPrompt, parseResponse, CATEGORIES };

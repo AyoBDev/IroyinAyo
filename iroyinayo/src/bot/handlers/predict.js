@@ -51,14 +51,22 @@ async function handlePredictAction(sock, jid, text, student, state, setState, cl
       const yesPercent = Math.round(result.market.yes_price * 100);
       const noPercent = Math.round(result.market.no_price * 100);
 
+      const sharesReceived = result.position.shares.toFixed(1);
+      const grossPayout = Math.floor(result.position.shares);
+      const profit = grossPayout - amount;
+      const fee = profit > 0 ? Math.floor(profit * 0.10) : 0;
+      const netPayout = grossPayout - fee;
+
       await sock.sendMessage(jid, {
         text: [
           `✅ ${bold('Position placed!')}`,
           '',
           `${bold('Market:')} ${market.question}`,
           `${bold('Side:')} ${side.toUpperCase()}`,
-          `${bold('Amount:')} ${amount} pts`,
-          `${bold('New odds:')} Yes ${yesPercent}% | No ${noPercent}%`,
+          `${bold('Spent:')} ${amount} pts`,
+          `${bold('Shares:')} ${sharesReceived}`,
+          `${bold('If you win:')} ${netPayout} pts (profit: ${netPayout - amount} pts after 10% fee)`,
+          `${bold('New odds:')} Yes ${yesPercent}¢ | No ${noPercent}¢`,
         ].join('\n'),
       });
     } catch (err) {

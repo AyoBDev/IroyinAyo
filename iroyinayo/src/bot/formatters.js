@@ -33,12 +33,10 @@ function formatLeaderboard(entries) {
 function formatMarket(market) {
   const yesPercent = Math.round(market.yes_price * 100);
   const noPercent = Math.round(market.no_price * 100);
-  const totalPool = market.yes_pool + market.no_pool;
   return [
     bold(market.question),
-    `Yes: ${yesPercent}% | No: ${noPercent}%`,
-    `Pool: ${totalPool} pts${market.sponsor_bonus > 0 ? ` (+${market.sponsor_bonus} bonus)` : ''}`,
-    `Closes: ${new Date(market.closes_at).toLocaleDateString('en-NG')}`,
+    `Yes: ${yesPercent}¢ | No: ${noPercent}¢`,
+    `${market.sponsor_bonus > 0 ? `Bonus: +${market.sponsor_bonus} pts | ` : ''}Closes: ${new Date(market.closes_at).toLocaleDateString('en-NG')}`,
     `ID: ${market.id.slice(0, 8)}`,
   ].join('\n');
 }
@@ -90,7 +88,7 @@ function formatPositions(positions) {
   const lines = positions.map((p) => {
     const status = p.market_status === 'resolved'
       ? (p.payout > 0 ? `✅ Won ${p.payout} pts` : '❌ Lost')
-      : `⏳ ${p.side.toUpperCase()} — ${p.amount} pts`;
+      : `⏳ ${p.side.toUpperCase()} — ${p.amount} pts (${p.shares?.toFixed(1) || '?'} shares)`;
     return `${bold(p.question)}\n${status}`;
   });
   return `${bold('🔮 My Predictions')}\n\n${lines.join('\n\n')}`;

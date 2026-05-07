@@ -5,6 +5,12 @@ const contentAI = require('../../modules/content/content.ai');
 const gamificationService = require('../../modules/gamification/gamification.service');
 const { formatFeed, formatQuiz, bold } = require('../formatters');
 
+// Random delay between messages to avoid WhatsApp ban (3-8 seconds)
+function randomDelay() {
+  const ms = 3000 + Math.random() * 5000;
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function startScheduler(sock) {
   // AI content generation — 6am WAT daily (2 hours before digest)
   cron.schedule('0 6 * * *', async () => {
@@ -25,6 +31,7 @@ function startScheduler(sock) {
     try {
       const students = await db('students').where({ is_banned: false, is_onboarded: true });
 
+      let sent = 0;
       for (const student of students) {
         try {
           const feed = await contentService.getFeedForStudent(student.id);
@@ -34,12 +41,14 @@ function startScheduler(sock) {
             await sock.sendMessage(jid, {
               text: `☀ ${bold('Good morning, ' + student.name + '!')}\n\n${formatFeed(items)}`,
             });
+            sent++;
+            await randomDelay();
           }
         } catch (err) {
           console.error(`Failed digest for ${student.phone_number}:`, err.message);
         }
       }
-      console.log(`Morning digest sent to ${students.length} students`);
+      console.log(`Morning digest sent to ${sent}/${students.length} students`);
     } catch (err) {
       console.error('Morning digest failed:', err);
     }
@@ -54,17 +63,20 @@ function startScheduler(sock) {
 
       if (!quiz) return;
 
+      let sent = 0;
       for (const student of students) {
         try {
           const jid = `${student.phone_number}@s.whatsapp.net`;
           await sock.sendMessage(jid, {
             text: `🧠 ${bold('Midday Quiz!')}\n\nType ${bold('quiz')} to answer and earn points!`,
           });
+          sent++;
+          await randomDelay();
         } catch (err) {
           // Skip failed sends
         }
       }
-      console.log(`Quiz notification sent to ${students.length} students`);
+      console.log(`Quiz notification sent to ${sent}/${students.length} students`);
     } catch (err) {
       console.error('Midday quiz failed:', err);
     }
