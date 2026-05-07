@@ -25,7 +25,7 @@ async function generateContent(category) {
   const prompt = buildPrompt(category, articles);
 
   const completion = await client.chat.completions.create({
-    model: 'gemma2-9b-it',
+    model: 'llama-3.1-8b-instant',
     max_tokens: 1024,
     temperature: 0.7,
     messages: [
@@ -72,7 +72,7 @@ async function generateDailyDigest() {
 
 // --- Prompts ---
 
-const SYSTEM_PROMPT = `You are a content writer for Iroyinayo, a WhatsApp-based information platform for University of Ilorin students in Nigeria.
+const SYSTEM_PROMPT = `You are a content writer for Iroyinayo, a WhatsApp-based information platform for Nigerian university students.
 
 Your job: take real news articles and rewrite them as short, engaging updates for Nigerian university students.
 
@@ -94,7 +94,7 @@ const CATEGORY_CONTEXT = {
   entertainment: 'Campus entertainment, movies, music, events. Keep it fun and culturally relevant to Nigerian students.',
   tech: 'Tech news that affects students: apps, gadgets, coding, AI tools for studying. Make it practical.',
   sports: 'Sports news relevant to Nigerian students: NUGA games, Super Eagles, Premier League, campus sports.',
-  campus_news: 'University of Ilorin specific news, campus developments, academic calendar updates.',
+  campus_news: 'Nigerian university news, campus developments, academic calendar updates, ASUU, NUC.',
   career: 'Internships, job opportunities, career tips. Focus on what Nigerian graduates actually need.',
   health: 'Health tips for students: mental health, nutrition on a budget, campus clinic info, staying healthy during exams.',
   academic: 'Study tips, exam strategies, CGPA optimization, postgraduate opportunities.',
@@ -108,7 +108,7 @@ function buildPrompt(category, articles) {
     return `Category: ${category}
 Context: ${context}
 
-No recent news articles were found for this category. Write an original, helpful piece based on your knowledge. Make it feel current and relevant to University of Ilorin students in May 2026.
+No recent news articles were found for this category. Write an original, helpful piece based on your knowledge. Make it feel current and relevant to Nigerian university students.
 
 Remember: TITLE: and BODY: format.`;
   }
@@ -130,7 +130,7 @@ Here are the latest real news articles for this category:
 
 ${newsContext}
 
-Pick the MOST relevant and interesting article for University of Ilorin students. Rewrite it as a short, engaging update. Add student-relevant context (e.g., "this affects your SIWES placement" or "deadline is next month").
+Pick the MOST relevant and interesting article for Nigerian university students. Rewrite it as a short, engaging update. Add student-relevant context (e.g., "this affects your SIWES placement" or "deadline is next month").
 
 If none are relevant, combine insights from multiple articles into one useful update.
 

@@ -111,13 +111,13 @@ async function main() {
         const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
         const completion = await client.chat.completions.create({
-          model: 'gemma2-9b-it',
+          model: 'llama-3.1-8b-instant',
           max_tokens: 1024,
           temperature: 0.7,
           messages: [
             {
               role: 'system',
-              content: 'You are a content writer for Iroyinayo, a WhatsApp platform for University of Ilorin students. Respond in TITLE: and BODY: format.',
+              content: 'You are a content writer for Iroyinayo, a WhatsApp info platform. Respond in TITLE: and BODY: format.',
             },
             { role: 'user', content: prompt },
           ],
