@@ -46,9 +46,12 @@ async function generateContent(category) {
     source: articles.length > 0 ? 'news' : 'ai',
     source_url: sourceUrl,
     categories: [category],
-    is_approved: false,
+    is_approved: true,
     is_broadcast: false,
   });
+
+  // Auto-publish so content is available for the morning digest
+  await contentService.publish(content.id);
 
   return content;
 }

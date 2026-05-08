@@ -5,6 +5,7 @@ async function handleMenu(sock, jid, student) {
     text: [
       `📋 ${bold('Menu')} — Hi ${student.name}!`,
       '',
+      `📬 ${bold('info')} — Get your daily news feed`,
       `🧠 ${bold('quiz')} — Answer a quiz and earn points`,
       `💰 ${bold('points')} — Check your points balance`,
       `🏆 ${bold('leaderboard')} — See top students`,

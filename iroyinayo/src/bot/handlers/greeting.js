@@ -8,7 +8,7 @@ async function handleWelcomeBack(sock, jid, student) {
   // Check for pending quizzes (quizzes student hasn't answered today)
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
-  const answeredToday = await db('quiz_attempts')
+  const answeredToday = await db('quiz_answers')
     .where({ student_id: student.id })
     .where('created_at', '>=', todayStart)
     .count('id as count')

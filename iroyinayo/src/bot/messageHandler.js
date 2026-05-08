@@ -9,6 +9,7 @@ const { handleInterests, handleInterestsSelection } = require('./handlers/intere
 const { handlePredict, handlePredictAction } = require('./handlers/predict');
 const { handleRedeem, handleRedeemSelection } = require('./handlers/redeem');
 const { handleHelp } = require('./handlers/help');
+const { handleInfo } = require('./handlers/info');
 const { handleWelcomeBack } = require('./handlers/greeting');
 const { handleAdminCommand } = require('./admin/adminHandler');
 
@@ -107,6 +108,10 @@ async function handleMessage(sock, jid, text, msg) {
       break;
     case 'redeem':
       await handleRedeem(sock, jid, student, setState);
+      break;
+    case 'info':
+    case 'news':
+      await handleInfo(sock, jid, student);
       break;
     case 'help':
       await handleHelp(sock, jid);
