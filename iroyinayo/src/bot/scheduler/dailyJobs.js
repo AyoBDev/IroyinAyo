@@ -15,7 +15,16 @@ function getJid(student) {
   return student.whatsapp_jid || `${student.phone_number}@s.whatsapp.net`;
 }
 
+// Mutable reference so cron jobs always use the current socket
+let activeSock = null;
+
+function updateSocket(sock) {
+  activeSock = sock;
+}
+
 function startScheduler(sock) {
+  activeSock = sock;
+
   // AI content generation — 6am WAT daily (2 hours before digest)
   cron.schedule('0 6 * * *', async () => {
     console.log('Running AI content generation...');
@@ -32,6 +41,7 @@ function startScheduler(sock) {
   // Morning digest — 8am WAT daily
   cron.schedule('0 8 * * *', async () => {
     console.log('Running morning digest...');
+    if (!activeSock) { console.error('Morning digest skipped: no active socket'); return; }
     try {
       const students = await db('students').where({ is_banned: false, is_onboarded: true });
 
@@ -42,7 +52,7 @@ function startScheduler(sock) {
           if (feed.length > 0) {
             const jid = getJid(student);
             const items = feed.slice(0, 3);
-            await sock.sendMessage(jid, {
+            await activeSock.sendMessage(jid, {
               text: `☀️ ${bold('Good morning, ' + student.name + '!')}\n\n${formatFeed(items)}`,
             });
             sent++;
@@ -61,6 +71,7 @@ function startScheduler(sock) {
   // Midday quiz — 12pm WAT daily
   cron.schedule('0 12 * * *', async () => {
     console.log('Running midday quiz notification...');
+    if (!activeSock) { console.error('Quiz notification skipped: no active socket'); return; }
     try {
       const students = await db('students').where({ is_banned: false, is_onboarded: true });
       const quiz = await db('quizzes').orderByRaw('RANDOM()').first();
@@ -71,7 +82,7 @@ function startScheduler(sock) {
       for (const student of students) {
         try {
           const jid = getJid(student);
-          await sock.sendMessage(jid, {
+          await activeSock.sendMessage(jid, {
             text: `🧠 ${bold('Midday Quiz!')}\n\nType ${bold('quiz')} to answer and earn points!`,
           });
           sent++;
@@ -101,4 +112,4 @@ function startScheduler(sock) {
   console.log('Scheduler started: AI content (6am), morning digest (8am), midday quiz (12pm), market auto-close (hourly)');
 }
 
-module.exports = { startScheduler };
+module.exports = { startScheduler, updateSocket };

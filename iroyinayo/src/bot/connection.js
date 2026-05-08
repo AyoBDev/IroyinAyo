@@ -1,6 +1,7 @@
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, Browsers } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const { usePostgresAuthState } = require('./authState');
+const { updateSocket } = require('./scheduler/dailyJobs');
 
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 10;
@@ -71,6 +72,7 @@ async function createConnection(messageHandler) {
     } else if (connection === 'open') {
       reconnectAttempts = 0;
       qrDisplayed = false;
+      updateSocket(sock);
       console.log('Iroyinayo bot connected to WhatsApp');
     }
   });
