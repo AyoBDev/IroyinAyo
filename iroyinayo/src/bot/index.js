@@ -1,12 +1,10 @@
 require('dotenv').config();
 const { createConnection } = require('./connection');
-const { handleMessage } = require('./messageHandler');
-const { startScheduler } = require('./scheduler/dailyJobs');
+const { handleMessage } = require('./hackathonMessageHandler');
 
 async function startBot() {
-  console.log('Starting Iroyinayo bot...');
+  console.log('Starting Hackathon Prediction Market bot...');
   const sock = await createConnection(handleMessage);
-  startScheduler(sock);
   return sock;
 }
 
