@@ -6,6 +6,7 @@ const studentRoutes = require('./modules/students/students.routes');
 const contentRoutes = require('./modules/content/content.routes');
 const gamificationRoutes = require('./modules/gamification/gamification.routes');
 const marketRoutes = require('./modules/markets/markets.routes');
+const multiMarketRoutes = require('./modules/markets/multiMarkets.routes');
 const rewardRoutes = require('./modules/rewards/rewards.routes');
 const adminRoutes = require('./modules/admin/admin.routes');
 const { generalLimiter } = require('./middleware/rateLimiter');
@@ -42,6 +43,7 @@ app.use('/api/students', studentRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/gamification', gamificationRoutes);
 app.use('/api/markets', marketRoutes);
+app.use('/api/multi-markets', multiMarketRoutes);
 app.use('/api/rewards', rewardRoutes);
 app.use('/api/admin', adminRoutes);
 
