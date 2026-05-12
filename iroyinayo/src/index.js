@@ -1,5 +1,7 @@
 require('dotenv').config();
+const http = require('http');
 const app = require('./app');
+const { createSocketServer } = require('./socket');
 
 async function seedAdminFromEnv() {
   const email = process.env.ADMIN_EMAIL;
@@ -28,19 +30,21 @@ async function seedAdminFromEnv() {
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, async () => {
-  console.log(`Iroyinayo API running on port ${PORT}`);
+const server = http.createServer(app);
+const io = createSocketServer(server);
+app.set('io', io);
+
+server.listen(PORT, async () => {
+  console.log(`Hackathon Prediction Market API running on port ${PORT}`);
 
   await seedAdminFromEnv();
 
   if (process.env.ENABLE_BOT !== 'false') {
     try {
       const { createConnection } = require('./bot/connection');
-      const { handleMessage } = require('./bot/messageHandler');
-      const { startScheduler } = require('./bot/scheduler/dailyJobs');
+      const { handleMessage } = require('./bot/hackathonMessageHandler');
 
       const sock = await createConnection(handleMessage);
-      startScheduler(sock);
       console.log('WhatsApp bot started alongside API');
     } catch (err) {
       console.error('Bot startup failed:', err.message);
