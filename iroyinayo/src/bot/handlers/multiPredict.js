@@ -48,10 +48,10 @@ async function handleMultiPredictAction(sock, jid, text, student, state, setStat
   }
 
   if (state.step === 'viewing') {
-    const betMatch = lower.match(/^bet\s+(\d+)\s+(\d+)$/);
+    const betMatch = lower.match(/^(?:predict|bet)\s+(\d+)\s+(\d+)$/);
     if (!betMatch) {
       await sock.sendMessage(jid, {
-        text: `Reply: ${bold('bet [team#] [amount]')} or ${bold('back')} to return.`,
+        text: `Reply: ${bold('predict [team#] [amount]')} or ${bold('back')} to return.`,
       });
       return;
     }
@@ -87,7 +87,7 @@ async function handleMultiPredictAction(sock, jid, text, student, state, setStat
 
       await sock.sendMessage(jid, {
         text: [
-          `✅ ${bold('Bet placed!')}`,
+          `✅ ${bold('Prediction placed!')}`,
           '',
           `📌 ${bold('Market:')} ${market.title}`,
           `🎯 ${bold('Team:')} ${outcome.label}`,

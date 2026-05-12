@@ -54,9 +54,9 @@ async function handleMessage(sock, jid, text, msg) {
 
   if (!student) {
     student = await autoRegister(phone, jid);
-    const webUrl = process.env.WEB_URL || 'http://localhost:5173';
+    const webUrl = process.env.WEB_URL || 'https://iroyinmarket.up.railway.app';
     const token = generateStudentToken(student.id);
-    await sock.sendMessage(jid, { text: `📱 You can also bet from your browser:\n${webUrl}?t=${token}` });
+    await sock.sendMessage(jid, { text: `📱 You can also predict from your browser:\n${webUrl}?t=${token}` });
   }
 
   if (student.whatsapp_jid !== jid) {
@@ -88,9 +88,9 @@ async function handleMessage(sock, jid, text, msg) {
       break;
     case 'web':
     case 'link':
-      const webUrl = process.env.WEB_URL || 'http://localhost:5173';
+      const webUrl = process.env.WEB_URL || 'https://iroyinmarket.up.railway.app';
       const webToken = generateStudentToken(student.id);
-      await sock.sendMessage(jid, { text: `📱 Play on the web:\n${webUrl}?t=${webToken}` });
+      await sock.sendMessage(jid, { text: `📱 Predict on the web:\n${webUrl}?t=${webToken}` });
       break;
     default:
       await handleMultiPredict(sock, jid, student, setState);

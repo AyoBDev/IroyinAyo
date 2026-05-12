@@ -105,9 +105,9 @@ function formatMultiMarketList(markets) {
     '',
     ...lines,
     '',
-    `Reply with a number to see odds and bet.`,
+    `Reply with a number to see odds and predict.`,
     `Type ${bold('leaderboard')} for rankings.`,
-    `Type ${bold('my bets')} to see your positions.`,
+    `Type ${bold('my predictions')} to see your positions.`,
     `Type ${bold('balance')} to check your points.`,
   ].join('\n');
 }
@@ -125,15 +125,15 @@ function formatMultiMarketOdds(market) {
     '',
     ...lines,
     '',
-    `Reply: ${bold('bet [team#] [amount]')}`,
-    `Example: ${bold('bet 1 30')}`,
+    `Reply: ${bold('predict [team#] [amount]')}`,
+    `Example: ${bold('predict 1 30')}`,
     '',
     `Type ${bold('back')} to return to markets.`,
   ].join('\n');
 }
 
 function formatMultiPositions(positions) {
-  if (positions.length === 0) return 'You have no bets yet. Type *predict* to get started!';
+  if (positions.length === 0) return 'You have no predictions yet. Type *predict* to get started!';
   const lines = positions.map((p) => {
     const status = p.market_status === 'resolved'
       ? (p.payout > 0 ? `✅ Won ${p.payout} pts` : '❌ Lost')
