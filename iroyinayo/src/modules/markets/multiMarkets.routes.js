@@ -50,10 +50,10 @@ router.post('/:id/bet', authenticateStudent, async (req, res, next) => {
 
     const io = req.app.get('io');
     if (io) {
-      const market = result.market;
-      const outcome = market.outcomes.find(o => o.id === outcomeId);
-      io.emit('odds:update', { marketId: market.id, outcomes: market.outcomes.map(o => ({ id: o.id, price: o.price })) });
-      io.emit('bet:placed', { marketId: market.id, outcomeLabel: outcome ? outcome.label : '', amount });
+      const marketWithOdds = await multiMarkets.getMarketWithOdds(req.params.id);
+      const outcome = marketWithOdds.outcomes.find(o => o.id === outcomeId);
+      io.emit('odds:update', { marketId: marketWithOdds.id, outcomes: marketWithOdds.outcomes.map(o => ({ id: o.id, price: o.price })) });
+      io.emit('bet:placed', { marketId: marketWithOdds.id, outcomeLabel: outcome ? outcome.label : '', amount });
       const updatedStudent = await db('students').where({ id: req.student.id }).first();
       io.to(`student:${req.student.id}`).emit('balance:update', { studentId: req.student.id, balance: updatedStudent.points_balance });
     }

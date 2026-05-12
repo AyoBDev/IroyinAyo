@@ -13,7 +13,19 @@ async function addPoints(studentId, amount, type, description, referenceId) {
 async function deductPoints(studentId, amount, type, description, referenceId) {
   const student = await db('students').where({ id: studentId }).first();
   if (!student) throw new NotFoundError('Student not found');
-  if (student.points_balance < amount) throw new ValidationError('Insufficient points');
+
+  if (student.points_balance < amount) {
+    const refill = 100;
+    await db.transaction(async (trx) => {
+      await trx('point_transactions').insert({
+        student_id: studentId, amount: refill, type: 'auto_refill', description: 'Free refill - keep predicting!',
+      });
+      await trx('students').where({ id: studentId }).increment('points_balance', refill);
+    });
+  }
+
+  const updated = await db('students').where({ id: studentId }).first();
+  if (updated.points_balance < amount) throw new ValidationError('Insufficient points');
 
   await db.transaction(async (trx) => {
     await trx('point_transactions').insert({
