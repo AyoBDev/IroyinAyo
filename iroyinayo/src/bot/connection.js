@@ -5,9 +5,15 @@ const { updateSocket } = require('./scheduler/dailyJobs');
 
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 10;
+let latestQR = null;
+let pairingCodeRequested = false;
+
+function getLatestQR() { return latestQR; }
 
 async function createConnection(messageHandler) {
   const isProduction = process.env.NODE_ENV === 'production';
+  const usePairingCode = process.env.USE_PAIRING_CODE === 'true';
+  const botPhoneNumber = process.env.BOT_PHONE_NUMBER || '2347072356504';
 
   const { state, saveCreds } = isProduction
     ? await usePostgresAuthState()
@@ -24,7 +30,19 @@ async function createConnection(messageHandler) {
     browser: Browsers.ubuntu('Chrome'),
     logger: pino({ level: 'silent' }),
     qrTimeout: 60000,
+    printQRInTerminal: !isProduction && !usePairingCode,
   });
+
+  if (usePairingCode && !sock.authState.creds.registered) {
+    console.log('Requesting pairing code for', botPhoneNumber);
+    try {
+      const code = await sock.requestPairingCode(botPhoneNumber);
+      console.log(`\n*** PAIRING CODE: ${code} ***`);
+      console.log('Enter this code in WhatsApp > Linked Devices > Link with Phone Number\n');
+    } catch (err) {
+      console.error('Pairing code request failed:', err.message);
+    }
+  }
 
   sock.ev.on('creds.update', saveCreds);
 
@@ -33,11 +51,11 @@ async function createConnection(messageHandler) {
 
     if (qr) {
       qrDisplayed = true;
+      latestQR = qr;
       console.log('\n--- Scan this QR code with WhatsApp ---');
       console.log('Go to WhatsApp > Linked Devices > Link a Device\n');
       if (isProduction) {
-        console.log('Cannot display QR in production. Pair locally first.');
-        console.log('See: node scripts/export-auth-to-db.js');
+        console.log('QR available at /api/bot/qr endpoint');
       } else {
         try {
           const qrcode = require('qrcode-terminal');
@@ -106,4 +124,4 @@ async function createConnection(messageHandler) {
   return sock;
 }
 
-module.exports = { createConnection };
+module.exports = { createConnection, getLatestQR };

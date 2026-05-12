@@ -39,6 +39,13 @@ app.use(express.json());
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
+app.get('/api/bot/qr', (req, res) => {
+  const { getLatestQR } = require('./bot/connection');
+  const qr = getLatestQR();
+  if (!qr) return res.json({ status: 'connected_or_waiting', qr: null });
+  res.json({ status: 'needs_pairing', qr });
+});
+
 app.use('/api/students', studentRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/gamification', gamificationRoutes);
