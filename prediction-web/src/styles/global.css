@@ -1,0 +1,87 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg-primary: #131722;
+  --bg-card: #1e2230;
+  --bg-card-hover: #252a3a;
+  --border: #2a2e3d;
+  --text-primary: #ffffff;
+  --text-secondary: #8a8f9c;
+  --accent-green: #4ade80;
+  --accent-red: #f87171;
+  --accent-blue: #3b82f6;
+  --radius: 12px;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+}
+
+input {
+  font-family: inherit;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; max-height: 0; }
+  to { opacity: 1; max-height: 200px; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes tickUp {
+  from { color: var(--accent-green); transform: scale(1.1); }
+  to { color: var(--text-primary); transform: scale(1); }
+}
+
+@keyframes tickDown {
+  from { color: var(--accent-red); transform: scale(1.1); }
+  to { color: var(--text-primary); transform: scale(1); }
+}
+
+.tick-up {
+  animation: tickUp 0.4s ease-out;
+}
+
+.tick-down {
+  animation: tickDown 0.4s ease-out;
+}
+
+@media (max-width: 768px) {
+  .app-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .desktop-sidebar {
+    display: none !important;
+  }
+  .mobile-feed {
+    display: block !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-feed {
+    display: none !important;
+  }
+}
