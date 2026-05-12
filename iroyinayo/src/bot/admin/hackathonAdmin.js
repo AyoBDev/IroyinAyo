@@ -1,6 +1,7 @@
 const multiMarkets = require('../../modules/markets/multiMarkets.service');
 const gamificationService = require('../../modules/gamification/gamification.service');
 const db = require('../../config/database');
+const { getIO } = require('../../socket');
 const { bold } = require('../formatters');
 
 async function handleHackathonAdmin(sock, jid, text) {
@@ -145,6 +146,12 @@ async function handleResolve(sock, jid, parts) {
 
   try {
     await multiMarkets.resolveMarket(market.id, outcomes[teamNum - 1].id);
+
+    const io = getIO();
+    if (io) {
+      io.emit('market:resolved', { marketId: market.id, winnerLabel: outcomes[teamNum - 1].label, winnerId: outcomes[teamNum - 1].id });
+    }
+
     await sock.sendMessage(jid, {
       text: `✅ ${bold(market.title)} resolved!\nWinner: ${bold(outcomes[teamNum - 1].label)}`,
     });

@@ -1,5 +1,6 @@
 const db = require('../config/database');
 const gamificationService = require('../modules/gamification/gamification.service');
+const { generateStudentToken } = require('../middleware/studentAuth');
 const { handleMultiPredict, handleMultiPredictAction, handleMyBets } = require('./handlers/multiPredict');
 const { handleHackathonAdmin } = require('./admin/hackathonAdmin');
 const { formatLeaderboard, formatPoints, bold } = require('./formatters');
@@ -53,6 +54,9 @@ async function handleMessage(sock, jid, text, msg) {
 
   if (!student) {
     student = await autoRegister(phone, jid);
+    const webUrl = process.env.WEB_URL || 'http://localhost:5173';
+    const token = generateStudentToken(student.id);
+    await sock.sendMessage(jid, { text: `📱 You can also bet from your browser:\n${webUrl}?t=${token}` });
   }
 
   if (student.whatsapp_jid !== jid) {
@@ -81,6 +85,12 @@ async function handleMessage(sock, jid, text, msg) {
     case 'points':
       const updated = await db('students').where({ id: student.id }).first();
       await sock.sendMessage(jid, { text: formatPoints(updated.points_balance) });
+      break;
+    case 'web':
+    case 'link':
+      const webUrl = process.env.WEB_URL || 'http://localhost:5173';
+      const webToken = generateStudentToken(student.id);
+      await sock.sendMessage(jid, { text: `📱 Play on the web:\n${webUrl}?t=${webToken}` });
       break;
     default:
       await handleMultiPredict(sock, jid, student, setState);
