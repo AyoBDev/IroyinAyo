@@ -6,6 +6,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
 COPY src/ ./src/
+COPY public/ ./public/
 COPY migrations/ ./migrations/
 COPY scripts/ ./scripts/
 COPY knexfile.js ./
