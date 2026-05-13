@@ -13,7 +13,7 @@ function getSlipStyle(label) {
   return { accent: 'var(--accent-blue)', bg: 'var(--accent-blue-bg)', border: 'var(--accent-blue-border)' };
 }
 
-export default function BetSlip({ market, outcome, onClose }) {
+export default function PredictSlip({ market, outcome, onClose }) {
   const [amount, setAmount] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);

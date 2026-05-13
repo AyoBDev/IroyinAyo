@@ -42,7 +42,7 @@ export default function App() {
       updateOdds(marketId, outcomes);
     });
 
-    socket.on('bet:placed', ({ marketId, outcomeLabel, amount }) => {
+    socket.on('prediction:placed', ({ marketId, outcomeLabel, amount }) => {
       addFeedItem({ marketId, outcomeLabel, amount });
     });
 
@@ -56,7 +56,7 @@ export default function App() {
 
     return () => {
       socket.off('odds:update');
-      socket.off('bet:placed');
+      socket.off('prediction:placed');
       socket.off('balance:update');
       socket.off('market:resolved');
     };

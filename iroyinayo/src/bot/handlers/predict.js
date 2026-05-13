@@ -12,7 +12,7 @@ async function handlePredict(sock, jid, student, setState) {
   const text = [
     formatMarketList(markets),
     '',
-    `💸 To bet, reply: ${bold('buy [market-id] [yes/no] [amount]')}`,
+    `💸 To predict, reply: ${bold('buy [market-id] [yes/no] [amount]')}`,
     `📝 Example: ${bold('buy a1b2c3d4 yes 50')}`,
     '',
     `💡 Or type ${bold('propose')} to suggest a new market.`,
@@ -108,7 +108,7 @@ async function handlePredictAction(sock, jid, text, student, state, setState, cl
   }
 
   await sock.sendMessage(jid, {
-    text: `Reply with:\n💸 ${bold('buy [id] [yes/no] [amount]')} to place a bet\n💡 ${bold('propose [question]')} to suggest a market\n🔙 ${bold('back')} to exit`,
+    text: `Reply with:\n💸 ${bold('buy [id] [yes/no] [amount]')} to place a prediction\n💡 ${bold('propose [question]')} to suggest a market\n🔙 ${bold('back')} to exit`,
   });
 }
 

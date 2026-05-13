@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { CheckCircle2, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import OutcomeRow from './OutcomeRow.jsx';
-import BetSlip from './BetSlip.jsx';
+import PredictSlip from './PredictSlip.jsx';
 import MiniChart from './MiniChart.jsx';
 
 const PAGE_SIZE = 10;
@@ -83,7 +83,7 @@ function LargeMarketCard({ market }) {
               />
               {selectedOutcome === outcome.id && (
                 <div style={{ padding: '0 8px 8px' }}>
-                  <BetSlip market={market} outcome={outcome} onClose={() => setSelectedOutcome(null)} />
+                  <PredictSlip market={market} outcome={outcome} onClose={() => setSelectedOutcome(null)} />
                 </div>
               )}
             </div>
@@ -171,7 +171,7 @@ function SmallMarketCard({ market }) {
             />
             {selectedOutcome === outcome.id && (
               <div style={{ padding: '0 8px 8px' }}>
-                <BetSlip market={market} outcome={outcome} onClose={() => setSelectedOutcome(null)} />
+                <PredictSlip market={market} outcome={outcome} onClose={() => setSelectedOutcome(null)} />
               </div>
             )}
           </div>

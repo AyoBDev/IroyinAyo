@@ -33,7 +33,7 @@ async function handleHackathonAdmin(sock, jid, text) {
           bold('Admin Commands:'),
           '/setup — Create the 3 default markets (1st, 2nd, 3rd)',
           '/addteam [market#] [Team Name] — Add team to a market',
-          '/removeteam [market#] [team#] — Remove team (no bets)',
+          '/removeteam [market#] [team#] — Remove team (no predictions)',
           '/resolve [market#] [team#] — Resolve market',
           '/markets — List all markets',
           '/addpoints [phone] [amount] — Give points',

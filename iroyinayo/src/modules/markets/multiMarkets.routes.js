@@ -40,7 +40,7 @@ router.get('/:id', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-router.post('/:id/bet', authenticateStudent, async (req, res, next) => {
+router.post('/:id/predict', authenticateStudent, async (req, res, next) => {
   try {
     const { outcomeId, amount } = req.body;
     if (!outcomeId || !amount) throw new ValidationError('outcomeId and amount are required');
@@ -53,7 +53,7 @@ router.post('/:id/bet', authenticateStudent, async (req, res, next) => {
       const marketWithOdds = await multiMarkets.getMarketWithOdds(req.params.id);
       const outcome = marketWithOdds.outcomes.find(o => o.id === outcomeId);
       io.emit('odds:update', { marketId: marketWithOdds.id, outcomes: marketWithOdds.outcomes.map(o => ({ id: o.id, price: o.price })) });
-      io.emit('bet:placed', { marketId: marketWithOdds.id, outcomeLabel: outcome ? outcome.label : '', amount });
+      io.emit('prediction:placed', { marketId: marketWithOdds.id, outcomeLabel: outcome ? outcome.label : '', amount });
       const updatedStudent = await db('students').where({ id: req.student.id }).first();
       io.to(`student:${req.student.id}`).emit('balance:update', { studentId: req.student.id, balance: updatedStudent.points_balance });
     }

@@ -1,7 +1,7 @@
 const db = require('../config/database');
 const gamificationService = require('../modules/gamification/gamification.service');
 const { generateStudentToken } = require('../middleware/studentAuth');
-const { handleMultiPredict, handleMultiPredictAction, handleMyBets } = require('./handlers/multiPredict');
+const { handleMultiPredict, handleMultiPredictAction, handleMyPredictions } = require('./handlers/multiPredict');
 const { handleHackathonAdmin } = require('./admin/hackathonAdmin');
 const { formatLeaderboard, formatPoints, bold } = require('./formatters');
 
@@ -79,7 +79,8 @@ async function handleMessage(sock, jid, text, msg) {
     case 'my bets':
     case 'mybets':
     case 'my predictions':
-      await handleMyBets(sock, jid, student);
+    case 'mypredictions':
+      await handleMyPredictions(sock, jid, student);
       break;
     case 'balance':
     case 'points':

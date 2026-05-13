@@ -140,7 +140,7 @@ function formatMultiPositions(positions) {
       : `⏳ ${p.outcome_label} — ${p.amount} pts (${p.shares.toFixed(1)} shares)`;
     return `${bold(p.market_title)}\n${status}`;
   });
-  return `${bold('🔮 My Bets')}\n\n${lines.join('\n\n')}`;
+  return `${bold('🔮 My Predictions')}\n\n${lines.join('\n\n')}`;
 }
 
 module.exports = {

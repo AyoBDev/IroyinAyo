@@ -46,8 +46,8 @@ const useStore = create((set, get) => ({
     }
   },
 
-  placeBet: async (marketId, outcomeId, amount) => {
-    const result = await apiFetch(`/api/multi-markets/${marketId}/bet`, {
+  placePrediction: async (marketId, outcomeId, amount) => {
+    const result = await apiFetch(`/api/multi-markets/${marketId}/predict`, {
       method: 'POST',
       body: JSON.stringify({ outcomeId, amount }),
     });

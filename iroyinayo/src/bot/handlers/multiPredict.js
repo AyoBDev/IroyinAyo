@@ -48,16 +48,16 @@ async function handleMultiPredictAction(sock, jid, text, student, state, setStat
   }
 
   if (state.step === 'viewing') {
-    const betMatch = lower.match(/^(?:predict|bet)\s+(\d+)\s+(\d+)$/);
-    if (!betMatch) {
+    const predictMatch = lower.match(/^(?:predict|bet)\s+(\d+)\s+(\d+)$/);
+    if (!predictMatch) {
       await sock.sendMessage(jid, {
         text: `Reply: ${bold('predict [team#] [amount]')} or ${bold('back')} to return.`,
       });
       return;
     }
 
-    const teamNum = parseInt(betMatch[1], 10);
-    const amount = parseInt(betMatch[2], 10);
+    const teamNum = parseInt(predictMatch[1], 10);
+    const amount = parseInt(predictMatch[2], 10);
     const market = await multiMarkets.getMarketWithOdds(state.data.marketId);
 
     if (teamNum < 1 || teamNum > market.outcomes.length) {
@@ -73,7 +73,7 @@ async function handleMultiPredictAction(sock, jid, text, student, state, setStat
       const io = getIO();
       if (io) {
         io.emit('odds:update', { marketId: market.id, outcomes: result.market.outcomes.map(o => ({ id: o.id, price: o.price })) });
-        io.emit('bet:placed', { marketId: market.id, outcomeLabel: outcome.label, amount });
+        io.emit('prediction:placed', { marketId: market.id, outcomeLabel: outcome.label, amount });
         const updatedBal = await db('students').where({ id: student.id }).first();
         io.to(`student:${student.id}`).emit('balance:update', { studentId: student.id, balance: updatedBal.points_balance });
       }
@@ -108,9 +108,9 @@ async function handleMultiPredictAction(sock, jid, text, student, state, setStat
   }
 }
 
-async function handleMyBets(sock, jid, student) {
+async function handleMyPredictions(sock, jid, student) {
   const positions = await multiMarkets.getStudentPositions(student.id);
   await sock.sendMessage(jid, { text: formatMultiPositions(positions) });
 }
 
-module.exports = { handleMultiPredict, handleMultiPredictAction, handleMyBets };
+module.exports = { handleMultiPredict, handleMultiPredictAction, handleMyPredictions };
