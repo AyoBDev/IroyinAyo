@@ -56,7 +56,30 @@ async function handleMessage(sock, jid, text, msg) {
     student = await autoRegister(phone, jid);
     const webUrl = process.env.WEB_URL || 'https://iroyinayo-production.up.railway.app';
     const token = generateStudentToken(student.id);
-    await sock.sendMessage(jid, { text: `📱 You can also predict from your browser:\n${webUrl}?t=${token}` });
+    await sock.sendMessage(jid, {
+      text: [
+        `${bold('Welcome to IroyinMarket! 🎯')}`,
+        '',
+        `You've been given ${bold('100 free points')} to start predicting.`,
+        '',
+        `${bold('How it works:')}`,
+        `1. Pick a market (hackathon placements or football)`,
+        `2. Predict an outcome with your points`,
+        `3. If you're right, you win more points!`,
+        '',
+        `${bold('Commands:')}`,
+        `• Send anything to see markets`,
+        `• ${bold('predict [team#] [amount]')} — place a prediction`,
+        `• ${bold('my predictions')} — view your positions`,
+        `• ${bold('leaderboard')} — see top predictors`,
+        `• ${bold('balance')} — check your points`,
+        `• ${bold('web')} — get a link to predict in your browser`,
+        '',
+        `📱 You can also predict from your browser:`,
+        `${webUrl}?t=${token}`,
+      ].join('\n'),
+    });
+    return;
   }
 
   if (student.whatsapp_jid !== jid) {
