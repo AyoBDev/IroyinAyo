@@ -56,13 +56,26 @@ app.use('/api/rewards', rewardRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Serve frontend static files
-const frontendPath = path.join(__dirname, '..', 'public');
+const fs = require('fs');
+const possiblePaths = [
+  path.join(__dirname, '..', 'public'),
+  path.join(process.cwd(), 'public'),
+  path.join(__dirname, '..', '..', 'prediction-web', 'dist'),
+];
+const frontendPath = possiblePaths.find(p => fs.existsSync(path.join(p, 'index.html'))) || possiblePaths[0];
+console.log('Serving frontend from:', frontendPath, '| exists:', fs.existsSync(path.join(frontendPath, 'index.html')));
+
 app.use(express.static(frontendPath));
 
 // SPA fallback — serve index.html for non-API routes
 app.use((req, res, next) => {
   if (req.method !== 'GET' || req.path.startsWith('/api') || req.path === '/health' || req.path.startsWith('/socket.io')) return next();
-  res.sendFile(path.join(frontendPath, 'index.html'));
+  const indexPath = path.join(frontendPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(200).send('<html><body><h1>IroyinMarket</h1><p>Frontend not deployed yet. Use WhatsApp bot to interact.</p></body></html>');
+  }
 });
 
 app.use((err, req, res, next) => {
