@@ -6,14 +6,11 @@ const { updateSocket } = require('./scheduler/dailyJobs');
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 10;
 let latestQR = null;
-let pairingCodeRequested = false;
 
 function getLatestQR() { return latestQR; }
 
 async function createConnection(messageHandler) {
   const isProduction = process.env.NODE_ENV === 'production';
-  const usePairingCode = process.env.USE_PAIRING_CODE === 'true';
-  const botPhoneNumber = process.env.BOT_PHONE_NUMBER || '2347072356504';
 
   const { state, saveCreds } = isProduction
     ? await usePostgresAuthState()
@@ -30,19 +27,7 @@ async function createConnection(messageHandler) {
     browser: Browsers.ubuntu('Chrome'),
     logger: pino({ level: 'silent' }),
     qrTimeout: 60000,
-    printQRInTerminal: !isProduction && !usePairingCode,
   });
-
-  if (usePairingCode && !sock.authState.creds.registered) {
-    console.log('Requesting pairing code for', botPhoneNumber);
-    try {
-      const code = await sock.requestPairingCode(botPhoneNumber);
-      console.log(`\n*** PAIRING CODE: ${code} ***`);
-      console.log('Enter this code in WhatsApp > Linked Devices > Link with Phone Number\n');
-    } catch (err) {
-      console.error('Pairing code request failed:', err.message);
-    }
-  }
 
   sock.ev.on('creds.update', saveCreds);
 
@@ -53,7 +38,6 @@ async function createConnection(messageHandler) {
       qrDisplayed = true;
       latestQR = qr;
       console.log('\n--- Scan this QR code with WhatsApp ---');
-      console.log('Go to WhatsApp > Linked Devices > Link a Device\n');
       if (isProduction) {
         console.log('QR available at /api/bot/qr endpoint');
       } else {
@@ -70,7 +54,6 @@ async function createConnection(messageHandler) {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
 
-      // QR timeout doesn't count as a real failure — always retry
       if (qrDisplayed && shouldReconnect) {
         console.log('QR code expired. Generating a new one...');
         setTimeout(() => createConnection(messageHandler), 2000);
@@ -90,13 +73,13 @@ async function createConnection(messageHandler) {
     } else if (connection === 'open') {
       reconnectAttempts = 0;
       qrDisplayed = false;
+      latestQR = null;
       updateSocket(sock);
       console.log('Iroyinayo bot connected to WhatsApp');
     }
   });
 
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
-    console.log(`messages.upsert: ${messages.length} message(s), type: ${type}`);
     for (const msg of messages) {
       if (!msg.key.fromMe && msg.message) {
         const jid = msg.key.remoteJid;
@@ -105,15 +88,13 @@ async function createConnection(messageHandler) {
           msg.message.extendedTextMessage?.text ||
           '';
 
-        console.log(`Message from ${jid}: "${text}" (fromMe: ${msg.key.fromMe})`);
-
         if (text && (jid.endsWith('@s.whatsapp.net') || jid.endsWith('@lid'))) {
           try {
             await messageHandler(sock, jid, text.trim(), msg);
           } catch (err) {
             console.error(`Error handling message from ${jid}:`, err);
             await sock.sendMessage(jid, {
-              text: '\u26a0 Something went wrong. Please try again.',
+              text: '⚠ Something went wrong. Please try again.',
             });
           }
         }
