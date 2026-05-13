@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, ArrowRight } from 'lucide-react';
+import { X, ArrowRight, Users, Copy, Check } from 'lucide-react';
 import useStore from '../store.js';
 
 function getSlipStyle(label) {
@@ -161,6 +161,51 @@ export default function BetSlip({ market, outcome, onClose }) {
           Balance after: {user.points_balance - amountNum} pts
         </div>
       )}
+
+      {/* Referral prompt when low balance */}
+      {user && user.points_balance < 20 && <ReferralPrompt />}
+    </div>
+  );
+}
+
+function ReferralPrompt() {
+  const [copied, setCopied] = useState(false);
+  const referralLink = 'https://wa.me/2347072356504?text=web';
+
+  function handleCopy() {
+    navigator.clipboard.writeText(referralLink).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <div style={{
+      marginTop: '12px', padding: '12px 14px', borderRadius: 'var(--radius)',
+      background: 'var(--accent-blue-bg)', border: '1px solid var(--accent-blue-border)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+        <Users size={14} color="var(--accent-blue)" />
+        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent-blue)' }}>
+          Low on points? Refer friends!
+        </span>
+      </div>
+      <p style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '8px' }}>
+        Share IroyinMarket with friends. When they join and start predicting, you both earn bonus points.
+      </p>
+      <button
+        onClick={handleCopy}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '6px', width: '100%',
+          padding: '8px 12px', borderRadius: 'var(--radius)',
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          color: copied ? 'var(--accent-green)' : 'var(--text-secondary)',
+          fontSize: '11px', fontWeight: 600,
+        }}
+      >
+        {copied ? <Check size={12} /> : <Copy size={12} />}
+        {copied ? 'Link copied!' : 'Copy invite link'}
+      </button>
     </div>
   );
 }
