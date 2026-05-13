@@ -93,6 +93,31 @@ async function handleMessage(sock, jid, text, msg) {
   }
 
   const command = text.toLowerCase().trim();
+  const greetings = ['hi', 'hello', 'hey', 'start', 'menu', 'help', 'sup', 'yo'];
+
+  if (greetings.includes(command)) {
+    const webUrl = process.env.WEB_URL || 'https://iroyinayo-production.up.railway.app';
+    const token = generateStudentToken(student.id);
+    const bal = student.points_balance;
+    await sock.sendMessage(jid, {
+      text: [
+        `${bold('Welcome to IroyinMarket! 🎯')}`,
+        '',
+        `You have ${bold(bal + ' points')} to predict with.`,
+        '',
+        `${bold('Commands:')}`,
+        `• ${bold('predict')} — see markets and place predictions`,
+        `• ${bold('my predictions')} — view your positions`,
+        `• ${bold('leaderboard')} — see top predictors`,
+        `• ${bold('balance')} — check your points`,
+        `• ${bold('web')} — predict in your browser`,
+        '',
+        `📱 Browser link:`,
+        `${webUrl}?t=${token}`,
+      ].join('\n'),
+    });
+    return;
+  }
 
   switch (command) {
     case 'leaderboard':
@@ -116,8 +141,14 @@ async function handleMessage(sock, jid, text, msg) {
       const webToken = generateStudentToken(student.id);
       await sock.sendMessage(jid, { text: `📱 Predict on the web:\n${webUrl}?t=${webToken}` });
       break;
-    default:
+    case 'predict':
+    case 'markets':
       await handleMultiPredict(sock, jid, student, setState);
+      break;
+    default:
+      await sock.sendMessage(jid, {
+        text: `I didn't get that. Type ${bold('hi')} for help or ${bold('predict')} to see markets.`,
+      });
       break;
   }
 }
