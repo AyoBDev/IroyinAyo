@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 
@@ -25,7 +26,7 @@ if (corsOrigins.length) {
 }
 
 app.use(cors({
-  origin: corsOrigins.length ? corsOrigins : false,
+  origin: corsOrigins.length ? corsOrigins : true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -53,6 +54,16 @@ app.use('/api/markets', marketRoutes);
 app.use('/api/multi-markets', multiMarketRoutes);
 app.use('/api/rewards', rewardRoutes);
 app.use('/api/admin', adminRoutes);
+
+// Serve frontend static files
+const frontendPath = path.join(__dirname, '..', 'public');
+app.use(express.static(frontendPath));
+
+// SPA fallback — serve index.html for non-API routes
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path === '/health') return next();
+  res.sendFile(path.join(frontendPath, 'index.html'));
+});
 
 app.use((err, req, res, next) => {
   if (err instanceof AppError) {
