@@ -2,6 +2,7 @@ const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLat
 const pino = require('pino');
 const { usePostgresAuthState } = require('./authState');
 const { updateSocket } = require('./scheduler/dailyJobs');
+const { setBotSocket } = require('./botSocket');
 
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 10;
@@ -75,6 +76,7 @@ async function createConnection(messageHandler) {
       qrDisplayed = false;
       latestQR = null;
       updateSocket(sock);
+      setBotSocket(sock);
       console.log('Iroyinayo bot connected to WhatsApp');
     }
   });

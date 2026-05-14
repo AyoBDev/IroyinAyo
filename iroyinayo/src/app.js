@@ -10,6 +10,7 @@ const marketRoutes = require('./modules/markets/markets.routes');
 const multiMarketRoutes = require('./modules/markets/multiMarkets.routes');
 const rewardRoutes = require('./modules/rewards/rewards.routes');
 const adminRoutes = require('./modules/admin/admin.routes');
+const authRoutes = require('./modules/auth/auth.routes');
 const { generalLimiter } = require('./middleware/rateLimiter');
 const { AppError } = require('./utils/errors');
 
@@ -57,6 +58,7 @@ app.use('/api/markets', marketRoutes);
 app.use('/api/multi-markets', multiMarketRoutes);
 app.use('/api/rewards', rewardRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/auth', authRoutes);
 
 // Serve frontend static files
 const fs = require('fs');

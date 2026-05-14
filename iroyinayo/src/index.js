@@ -44,7 +44,9 @@ server.listen(PORT, async () => {
       const { createConnection } = require('./bot/connection');
       const { handleMessage } = require('./bot/hackathonMessageHandler');
 
+      const { setBotSocket } = require('./bot/botSocket');
       const sock = await createConnection(handleMessage);
+      setBotSocket(sock);
       console.log('WhatsApp bot started alongside API');
     } catch (err) {
       console.error('Bot startup failed:', err.message);
