@@ -3,6 +3,7 @@ const router = express.Router();
 const multiMarkets = require('./multiMarkets.service');
 const gamificationService = require('../gamification/gamification.service');
 const { authenticateStudent } = require('../../middleware/studentAuth');
+const { authenticate } = require('../../middleware/auth');
 const { ValidationError } = require('../../utils/errors');
 const db = require('../../config/database');
 
@@ -33,6 +34,19 @@ router.get('/me/positions', authenticateStudent, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Admin endpoints (must be before /:id to avoid route conflict)
+router.get('/admin/all', authenticate, async (req, res, next) => {
+  try {
+    const markets = await db('multi_markets').orderBy('created_at', 'desc');
+    const allOutcomes = await db('multi_market_outcomes').select('*');
+    const result = markets.map(m => ({
+      ...m,
+      outcomes: allOutcomes.filter(o => o.market_id === m.id),
+    }));
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
 router.get('/:id', async (req, res, next) => {
   try {
     const market = await multiMarkets.getMarketWithOdds(req.params.id);
@@ -58,21 +72,6 @@ router.post('/:id/predict', authenticateStudent, async (req, res, next) => {
       io.to(`student:${req.student.id}`).emit('balance:update', { studentId: req.student.id, balance: updatedStudent.points_balance });
     }
 
-    res.json(result);
-  } catch (err) { next(err); }
-});
-
-// Admin endpoints
-const { authenticate } = require('../../middleware/auth');
-
-router.get('/admin/all', authenticate, async (req, res, next) => {
-  try {
-    const markets = await db('multi_markets').orderBy('created_at', 'desc');
-    const allOutcomes = await db('multi_market_outcomes').select('*');
-    const result = markets.map(m => ({
-      ...m,
-      outcomes: allOutcomes.filter(o => o.market_id === m.id),
-    }));
     res.json(result);
   } catch (err) { next(err); }
 });
