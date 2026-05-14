@@ -51,7 +51,7 @@ async function sendCode(phoneNumber) {
   return { sent: true };
 }
 
-async function verifyCode(phoneNumber, code) {
+async function verifyCode(phoneNumber, code, name) {
   const phone = normalizePhone(phoneNumber);
 
   const record = await db('verification_codes')
@@ -71,7 +71,12 @@ async function verifyCode(phoneNumber, code) {
   let student = await db('students').where({ phone_number: phone }).first();
   if (!student) {
     [student] = await db('students')
-      .insert({ phone_number: phone, name: phone, points_balance: 100 })
+      .insert({ phone_number: phone, name, points_balance: 100, is_verified: true })
+      .returning('*');
+  } else {
+    [student] = await db('students')
+      .where({ id: student.id })
+      .update({ name, is_verified: true })
       .returning('*');
   }
 

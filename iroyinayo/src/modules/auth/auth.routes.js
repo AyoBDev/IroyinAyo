@@ -14,9 +14,9 @@ router.post('/send-code', async (req, res, next) => {
 
 router.post('/verify', async (req, res, next) => {
   try {
-    const { phoneNumber, code } = req.body;
-    if (!phoneNumber || !code) throw new ValidationError('phoneNumber and code are required');
-    const result = await authService.verifyCode(phoneNumber, code);
+    const { phoneNumber, code, name } = req.body;
+    if (!phoneNumber || !code || !name) throw new ValidationError('phoneNumber, code, and name are required');
+    const result = await authService.verifyCode(phoneNumber, code, name);
     res.json(result);
   } catch (err) { next(err); }
 });
