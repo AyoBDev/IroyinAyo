@@ -3,44 +3,62 @@ import { TrendingUp, ArrowRight, Loader2 } from 'lucide-react';
 import { setToken, apiFetch } from '../api.js';
 
 export default function NoAuth() {
-  const [step, setStep] = useState('phone'); // 'phone' | 'code'
+  const [step, setStep] = useState('phone'); // 'phone' | 'code' | 'name'
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
+  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  async function handleSendCode(e) {
+  async function handlePhoneSubmit(e) {
     e.preventDefault();
     if (!phone.trim()) return;
     setLoading(true);
     setError('');
     try {
-      await apiFetch('/api/auth/send-code', {
+      const result = await apiFetch('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ phoneNumber: phone.trim() }),
       });
-      setStep('code');
+      if (result.token) {
+        setToken(result.token);
+        window.location.reload();
+      } else {
+        // New user — send OTP
+        await apiFetch('/api/auth/send-code', {
+          method: 'POST',
+          body: JSON.stringify({ phoneNumber: phone.trim() }),
+        });
+        setStep('code');
+      }
     } catch (err) {
-      setError(err.message || 'Failed to send code');
+      setError(err.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleVerify(e) {
+  async function handleCodeSubmit(e) {
     e.preventDefault();
-    if (!code.trim()) return;
+    if (code.length !== 6) return;
+    setStep('name');
+  }
+
+  async function handleNameSubmit(e) {
+    e.preventDefault();
+    if (!name.trim()) return;
     setLoading(true);
     setError('');
     try {
       const result = await apiFetch('/api/auth/verify', {
         method: 'POST',
-        body: JSON.stringify({ phoneNumber: phone.trim(), code: code.trim() }),
+        body: JSON.stringify({ phoneNumber: phone.trim(), code: code.trim(), name: name.trim() }),
       });
       setToken(result.token);
       window.location.reload();
     } catch (err) {
       setError(err.message || 'Verification failed');
+      setStep('code');
     } finally {
       setLoading(false);
     }
@@ -62,8 +80,8 @@ export default function NoAuth() {
         padding: '28px 36px', border: '1px solid var(--border)', textAlign: 'center',
         maxWidth: '360px', width: '100%',
       }}>
-        {step === 'phone' ? (
-          <form onSubmit={handleSendCode}>
+        {step === 'phone' && (
+          <form onSubmit={handlePhoneSubmit}>
             <p style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600, marginBottom: '16px' }}>
               Enter your phone number to get started
             </p>
@@ -80,7 +98,7 @@ export default function NoAuth() {
               }}
             />
             <p style={{ color: 'var(--text-tertiary)', fontSize: '11px', marginBottom: '16px' }}>
-              We'll send a verification code to this number on WhatsApp
+              Returning users log in instantly. New users get a WhatsApp code.
             </p>
             {error && (
               <p style={{ color: '#ef4444', fontSize: '12px', marginBottom: '12px' }}>{error}</p>
@@ -96,12 +114,14 @@ export default function NoAuth() {
               }}
             >
               {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : null}
-              Send Code
+              Continue
               {!loading && <ArrowRight size={14} />}
             </button>
           </form>
-        ) : (
-          <form onSubmit={handleVerify}>
+        )}
+
+        {step === 'code' && (
+          <form onSubmit={handleCodeSubmit}>
             <p style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>
               Enter verification code
             </p>
@@ -128,17 +148,16 @@ export default function NoAuth() {
             )}
             <button
               type="submit"
-              disabled={loading || code.length !== 6}
+              disabled={code.length !== 6}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                 padding: '12px 24px', borderRadius: '24px', fontSize: '14px', fontWeight: 700,
                 background: '#25D366', color: '#fff', border: 'none', cursor: 'pointer',
-                width: '100%', opacity: loading || code.length !== 6 ? 0.6 : 1,
+                width: '100%', opacity: code.length !== 6 ? 0.6 : 1,
               }}
             >
-              {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : null}
-              Verify & Enter
-              {!loading && <ArrowRight size={14} />}
+              Next
+              <ArrowRight size={14} />
             </button>
             <button
               type="button"
@@ -150,6 +169,47 @@ export default function NoAuth() {
               }}
             >
               Use a different number
+            </button>
+          </form>
+        )}
+
+        {step === 'name' && (
+          <form onSubmit={handleNameSubmit}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>
+              What should we call you?
+            </p>
+            <p style={{ color: 'var(--text-tertiary)', fontSize: '11px', marginBottom: '16px' }}>
+              This name shows on the leaderboard
+            </p>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Your name"
+              maxLength={30}
+              style={{
+                width: '100%', padding: '12px 16px', borderRadius: '12px',
+                border: '1px solid var(--border)', background: 'var(--bg-primary)',
+                color: 'var(--text-primary)', fontSize: '16px', textAlign: 'center',
+                outline: 'none', marginBottom: '12px',
+              }}
+            />
+            {error && (
+              <p style={{ color: '#ef4444', fontSize: '12px', marginBottom: '12px' }}>{error}</p>
+            )}
+            <button
+              type="submit"
+              disabled={loading || !name.trim()}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                padding: '12px 24px', borderRadius: '24px', fontSize: '14px', fontWeight: 700,
+                background: '#25D366', color: '#fff', border: 'none', cursor: 'pointer',
+                width: '100%', opacity: loading || !name.trim() ? 0.6 : 1,
+              }}
+            >
+              {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : null}
+              Start Predicting
+              {!loading && <ArrowRight size={14} />}
             </button>
           </form>
         )}
