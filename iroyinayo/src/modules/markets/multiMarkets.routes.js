@@ -62,4 +62,35 @@ router.post('/:id/predict', authenticateStudent, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Admin endpoints
+const { authenticate } = require('../../middleware/auth');
+
+router.get('/admin/all', authenticate, async (req, res, next) => {
+  try {
+    const markets = await db('multi_markets').orderBy('created_at', 'desc');
+    const allOutcomes = await db('multi_market_outcomes').select('*');
+    const result = markets.map(m => ({
+      ...m,
+      outcomes: allOutcomes.filter(o => o.market_id === m.id),
+    }));
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
+router.post('/:id/resolve', authenticate, async (req, res, next) => {
+  try {
+    const { outcomeId } = req.body;
+    if (!outcomeId) throw new ValidationError('outcomeId is required');
+    const result = await multiMarkets.resolveMarket(req.params.id, outcomeId);
+
+    const io = req.app.get('io');
+    if (io) {
+      const outcome = await db('multi_market_outcomes').where({ id: outcomeId }).first();
+      io.emit('market:resolved', { marketId: req.params.id, winnerLabel: outcome?.label || '', winnerId: outcomeId });
+    }
+
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
 module.exports = router;

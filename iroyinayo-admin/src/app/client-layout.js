@@ -11,6 +11,7 @@ import {
   FileText,
   Brain,
   TrendingUp,
+  Target,
   Gift,
   LogOut,
 } from 'lucide-react';
@@ -22,6 +23,7 @@ const NAV_ITEMS = [
   { href: '/content', label: 'Content', icon: FileText },
   { href: '/quizzes', label: 'Quizzes', icon: Brain },
   { href: '/markets', label: 'Markets', icon: TrendingUp },
+  { href: '/predictions', label: 'Predictions', icon: Target },
   { href: '/rewards', label: 'Rewards', icon: Gift },
 ];
 
