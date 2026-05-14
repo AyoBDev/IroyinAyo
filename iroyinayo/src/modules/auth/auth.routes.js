@@ -21,4 +21,13 @@ router.post('/verify', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.post('/login', async (req, res, next) => {
+  try {
+    const { phoneNumber } = req.body;
+    if (!phoneNumber) throw new ValidationError('phoneNumber is required');
+    const result = await authService.login(phoneNumber);
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
 module.exports = router;

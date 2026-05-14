@@ -79,4 +79,16 @@ async function verifyCode(phoneNumber, code) {
   return { token, student: { id: student.id, name: student.name, points_balance: student.points_balance } };
 }
 
-module.exports = { sendCode, verifyCode, normalizePhone };
+async function login(phoneNumber) {
+  const phone = normalizePhone(phoneNumber);
+
+  const student = await db('students').where({ phone_number: phone, is_verified: true }).first();
+  if (!student) {
+    return { exists: false };
+  }
+
+  const token = generateStudentToken(student.id);
+  return { token, student: { id: student.id, name: student.name, points_balance: student.points_balance } };
+}
+
+module.exports = { sendCode, verifyCode, login, normalizePhone };
