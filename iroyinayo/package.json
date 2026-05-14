@@ -6,7 +6,7 @@
     "test": "tests"
   },
   "scripts": {
-    "start": "node src/index.js",
+    "start": "npx knex migrate:latest && node src/index.js",
     "start:api-only": "ENABLE_BOT=false node src/index.js",
     "dev": "node --watch src/index.js",
     "build": "echo 'Frontend pre-built in public/'",
