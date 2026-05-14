@@ -1,9 +1,51 @@
-import { TrendingUp, MessageCircle, ExternalLink } from 'lucide-react';
-
-const BOT_NUMBER = '2347072356504';
-const WA_LINK = `https://wa.me/${BOT_NUMBER}?text=web`;
+import { useState } from 'react';
+import { TrendingUp, ArrowRight, Loader2 } from 'lucide-react';
+import { setToken, apiFetch } from '../api.js';
 
 export default function NoAuth() {
+  const [step, setStep] = useState('phone'); // 'phone' | 'code'
+  const [phone, setPhone] = useState('');
+  const [code, setCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSendCode(e) {
+    e.preventDefault();
+    if (!phone.trim()) return;
+    setLoading(true);
+    setError('');
+    try {
+      await apiFetch('/api/auth/send-code', {
+        method: 'POST',
+        body: JSON.stringify({ phoneNumber: phone.trim() }),
+      });
+      setStep('code');
+    } catch (err) {
+      setError(err.message || 'Failed to send code');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleVerify(e) {
+    e.preventDefault();
+    if (!code.trim()) return;
+    setLoading(true);
+    setError('');
+    try {
+      const result = await apiFetch('/api/auth/verify', {
+        method: 'POST',
+        body: JSON.stringify({ phoneNumber: phone.trim(), code: code.trim() }),
+      });
+      setToken(result.token);
+      window.location.reload();
+    } catch (err) {
+      setError(err.message || 'Verification failed');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -20,47 +62,97 @@ export default function NoAuth() {
         padding: '28px 36px', border: '1px solid var(--border)', textAlign: 'center',
         maxWidth: '360px', width: '100%',
       }}>
-        <MessageCircle size={20} color="var(--accent-green)" style={{ marginBottom: '12px' }} />
-        <p style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600, marginBottom: '16px' }}>
-          Scan the QR code or tap below to get started
-        </p>
-
-        {/* QR Code via Google Charts API */}
-        <div style={{
-          background: '#fff', borderRadius: 'var(--radius-lg)',
-          padding: '16px', display: 'inline-block', marginBottom: '16px',
-        }}>
-          <img
-            src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(WA_LINK)}`}
-            alt="Scan to open WhatsApp"
-            width={180}
-            height={180}
-            style={{ display: 'block' }}
-          />
-        </div>
-
-        <p style={{ color: 'var(--text-tertiary)', fontSize: '11px', marginBottom: '16px' }}>
-          Opens WhatsApp with a pre-filled message to our bot
-        </p>
-
-        <a
-          href={WA_LINK}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-            padding: '12px 24px', borderRadius: '24px', fontSize: '14px', fontWeight: 700,
-            background: '#25D366', color: '#fff', textDecoration: 'none',
-            width: '100%',
-          }}
-        >
-          Open WhatsApp
-          <ExternalLink size={14} />
-        </a>
-
-        <p style={{ color: 'var(--text-tertiary)', marginTop: '16px', fontSize: '11px' }}>
-          The bot will send you a personal link to start predicting
-        </p>
+        {step === 'phone' ? (
+          <form onSubmit={handleSendCode}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600, marginBottom: '16px' }}>
+              Enter your phone number to get started
+            </p>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="08012345678"
+              style={{
+                width: '100%', padding: '12px 16px', borderRadius: '12px',
+                border: '1px solid var(--border)', background: 'var(--bg-primary)',
+                color: 'var(--text-primary)', fontSize: '16px', textAlign: 'center',
+                outline: 'none', marginBottom: '12px',
+              }}
+            />
+            <p style={{ color: 'var(--text-tertiary)', fontSize: '11px', marginBottom: '16px' }}>
+              We'll send a verification code to this number on WhatsApp
+            </p>
+            {error && (
+              <p style={{ color: '#ef4444', fontSize: '12px', marginBottom: '12px' }}>{error}</p>
+            )}
+            <button
+              type="submit"
+              disabled={loading || !phone.trim()}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                padding: '12px 24px', borderRadius: '24px', fontSize: '14px', fontWeight: 700,
+                background: '#25D366', color: '#fff', border: 'none', cursor: 'pointer',
+                width: '100%', opacity: loading || !phone.trim() ? 0.6 : 1,
+              }}
+            >
+              {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : null}
+              Send Code
+              {!loading && <ArrowRight size={14} />}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleVerify}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>
+              Enter verification code
+            </p>
+            <p style={{ color: 'var(--text-tertiary)', fontSize: '11px', marginBottom: '16px' }}>
+              Check your WhatsApp for a 6-digit code
+            </p>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ''))}
+              placeholder="000000"
+              style={{
+                width: '100%', padding: '14px 16px', borderRadius: '12px',
+                border: '1px solid var(--border)', background: 'var(--bg-primary)',
+                color: 'var(--text-primary)', fontSize: '24px', textAlign: 'center',
+                letterSpacing: '8px', outline: 'none', marginBottom: '12px',
+                fontWeight: 700,
+              }}
+            />
+            {error && (
+              <p style={{ color: '#ef4444', fontSize: '12px', marginBottom: '12px' }}>{error}</p>
+            )}
+            <button
+              type="submit"
+              disabled={loading || code.length !== 6}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                padding: '12px 24px', borderRadius: '24px', fontSize: '14px', fontWeight: 700,
+                background: '#25D366', color: '#fff', border: 'none', cursor: 'pointer',
+                width: '100%', opacity: loading || code.length !== 6 ? 0.6 : 1,
+              }}
+            >
+              {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : null}
+              Verify & Enter
+              {!loading && <ArrowRight size={14} />}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setStep('phone'); setCode(''); setError(''); }}
+              style={{
+                marginTop: '12px', background: 'none', border: 'none',
+                color: 'var(--text-tertiary)', fontSize: '12px', cursor: 'pointer',
+                textDecoration: 'underline',
+              }}
+            >
+              Use a different number
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );
