@@ -1,6 +1,6 @@
 const db = require('../config/database');
 const gamificationService = require('../modules/gamification/gamification.service');
-const { generateStudentToken } = require('../middleware/studentAuth');
+const { generateStudentToken, generateUrlToken } = require('../middleware/studentAuth');
 const { handleMultiPredict, handleMultiPredictAction, handleMyPredictions } = require('./handlers/multiPredict');
 const { handleHackathonAdmin } = require('./admin/hackathonAdmin');
 const { formatLeaderboard, formatPoints, bold } = require('./formatters');
@@ -55,7 +55,7 @@ async function handleMessage(sock, jid, text, msg) {
   if (!student) {
     student = await autoRegister(phone, jid);
     const webUrl = process.env.WEB_URL || 'https://iroyinayo-production.up.railway.app';
-    const token = generateStudentToken(student.id);
+    const token = generateUrlToken(student.id);
     await sock.sendMessage(jid, {
       text: [
         `${bold('Welcome to IroyinMarket! 🎯')}`,
@@ -97,7 +97,7 @@ async function handleMessage(sock, jid, text, msg) {
 
   if (greetings.includes(command)) {
     const webUrl = process.env.WEB_URL || 'https://iroyinayo-production.up.railway.app';
-    const token = generateStudentToken(student.id);
+    const token = generateUrlToken(student.id);
     const bal = student.points_balance;
     await sock.sendMessage(jid, {
       text: [
@@ -138,7 +138,7 @@ async function handleMessage(sock, jid, text, msg) {
     case 'web':
     case 'link':
       const webUrl = process.env.WEB_URL || 'https://iroyinayo-production.up.railway.app';
-      const webToken = generateStudentToken(student.id);
+      const webToken = generateUrlToken(student.id);
       await sock.sendMessage(jid, { text: `📱 Predict on the web:\n${webUrl}?t=${webToken}` });
       break;
     case 'predict':

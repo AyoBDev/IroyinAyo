@@ -69,10 +69,11 @@ async function handleMultiPredictAction(sock, jid, text, student, state, setStat
 
     try {
       const result = await multiMarkets.buyPosition(market.id, outcome.id, student.id, amount);
+      const updatedMarket = await multiMarkets.getMarketWithOdds(market.id);
 
       const io = getIO();
       if (io) {
-        io.emit('odds:update', { marketId: market.id, outcomes: result.market.outcomes.map(o => ({ id: o.id, price: o.price })) });
+        io.emit('odds:update', { marketId: market.id, outcomes: updatedMarket.outcomes.map(o => ({ id: o.id, price: o.price })) });
         io.emit('prediction:placed', { marketId: market.id, outcomeLabel: outcome.label, amount });
         const updatedBal = await db('students').where({ id: student.id }).first();
         io.to(`student:${student.id}`).emit('balance:update', { studentId: student.id, balance: updatedBal.points_balance });
@@ -82,7 +83,7 @@ async function handleMultiPredictAction(sock, jid, text, student, state, setStat
       const potentialPayout = Math.floor(result.position.shares);
       const profit = potentialPayout - amount;
 
-      const newPrice = result.market.outcomes.find((o) => o.id === outcome.id);
+      const newPrice = updatedMarket.outcomes.find((o) => o.id === outcome.id);
       const cents = newPrice ? Math.round(newPrice.price * 100) : '?';
 
       await sock.sendMessage(jid, {
