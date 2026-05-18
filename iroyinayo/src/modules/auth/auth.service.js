@@ -74,9 +74,11 @@ async function verifyCode(phoneNumber, code, name) {
       .insert({ phone_number: phone, name, points_balance: 100, is_verified: true })
       .returning('*');
   } else {
+    const updateFields = { is_verified: true };
+    if (name && name !== '_returning') updateFields.name = name;
     [student] = await db('students')
       .where({ id: student.id })
-      .update({ name, is_verified: true })
+      .update(updateFields)
       .returning('*');
   }
 
@@ -89,11 +91,33 @@ async function login(phoneNumber) {
 
   const student = await db('students').where({ phone_number: phone, is_verified: true }).first();
   if (!student) {
-    return { exists: false };
+    // Return same shape to prevent account enumeration
+    return { codeSent: true };
   }
 
-  const token = generateStudentToken(student.id);
-  return { token, student: { id: student.id, name: student.name, points_balance: student.points_balance } };
+  const recentCodes = await db('verification_codes')
+    .where({ phone_number: phone })
+    .where('created_at', '>', new Date(Date.now() - 10 * 60 * 1000))
+    .count('id as count')
+    .first();
+
+  if (parseInt(recentCodes.count, 10) >= 3) {
+    throw new ValidationError('Too many attempts. Please wait 10 minutes.');
+  }
+
+  const code = generateCode();
+  const expires_at = new Date(Date.now() + 5 * 60 * 1000);
+  await db('verification_codes').insert({ phone_number: phone, code, expires_at });
+
+  const sock = getBotSocket();
+  if (sock) {
+    const jid = `${phone}@s.whatsapp.net`;
+    await sock.sendMessage(jid, {
+      text: `Your IroyinMarket login code is: *${code}*\n\nThis code expires in 5 minutes.`,
+    });
+  }
+
+  return { codeSent: true, returning: true };
 }
 
 module.exports = { sendCode, verifyCode, login, normalizePhone };
