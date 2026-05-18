@@ -2,16 +2,20 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const db = require('./config/database');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'test-secret';
+const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'test' ? 'test-secret' : (() => { throw new Error('JWT_SECRET env var is required in production'); })());
 
 let io = null;
 const chatHistory = [];
 const MAX_CHAT_HISTORY = 50;
 
 function createSocketServer(httpServer) {
+  const allowedOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
+    : (process.env.NODE_ENV === 'production' ? false : true);
+
   io = new Server(httpServer, {
     cors: {
-      origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(s => s.trim()) : '*',
+      origin: allowedOrigins,
       methods: ['GET', 'POST'],
     },
   });
@@ -19,17 +23,21 @@ function createSocketServer(httpServer) {
   io.on('connection', (socket) => {
     let studentId = null;
     let studentName = null;
+    let lastChatTime = 0;
 
     const token = socket.handshake.auth.token;
     if (token) {
       try {
         const decoded = jwt.verify(token, JWT_SECRET);
-        studentId = decoded.studentId;
-        socket.join(`student:${studentId}`);
-
-        db('students').where({ id: studentId }).first().then((student) => {
-          if (student) studentName = student.name;
-        });
+        if (decoded.purpose) {
+          // URL exchange tokens are not valid for socket auth
+        } else {
+          studentId = decoded.studentId;
+          socket.join(`student:${studentId}`);
+          db('students').where({ id: studentId }).first().then((student) => {
+            if (student) studentName = student.name;
+          });
+        }
       } catch (err) {
         // Anonymous connection
       }
@@ -41,7 +49,10 @@ function createSocketServer(httpServer) {
 
     socket.on('chat:send', ({ text }) => {
       if (!text || !text.trim() || !studentId) return;
-      const sanitized = text.trim().slice(0, 200);
+      const now = Date.now();
+      if (now - lastChatTime < 1000) return;
+      lastChatTime = now;
+      const sanitized = text.trim().slice(0, 200).replace(/[<>]/g, '');
 
       const msg = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,

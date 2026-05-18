@@ -27,14 +27,24 @@ if (corsOrigins.length) {
 }
 
 app.use(cors({
-  origin: corsOrigins.length ? corsOrigins : true,
+  origin: corsOrigins.length ? corsOrigins : (process.env.NODE_ENV === 'production' ? false : true),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 app.use(helmet({
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'", 'wss:', 'ws:'],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+    },
+  },
   crossOriginEmbedderPolicy: false,
 }));
 
@@ -44,7 +54,8 @@ app.use(express.json());
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-app.get('/api/bot/qr', (req, res) => {
+const { authenticate } = require('./middleware/auth');
+app.get('/api/bot/qr', authenticate, (req, res) => {
   const { getLatestQR } = require('./bot/connection');
   const qr = getLatestQR();
   if (!qr) return res.json({ status: 'connected_or_waiting', qr: null });
