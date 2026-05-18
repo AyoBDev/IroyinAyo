@@ -193,17 +193,16 @@ async function buyPosition(marketId, outcomeId, studentId, amount) {
     throw new ValidationError('Market is not open');
   }
 
-  const outcome = await db('multi_market_outcomes').where({ id: outcomeId }).first();
-  if (!outcome) {
-    throw new NotFoundError('Outcome not found');
-  }
-
   const outcomes = await db('multi_market_outcomes')
     .where({ market_id: marketId })
     .orderBy('created_at', 'asc');
 
-  const sharesSold = outcomes.map((o) => o.shares_sold);
   const outcomeIndex = outcomes.findIndex((o) => o.id === outcomeId);
+  if (outcomeIndex === -1) {
+    throw new NotFoundError('Outcome not found in this market');
+  }
+
+  const sharesSold = outcomes.map((o) => o.shares_sold);
 
   const shares = calculateSharesForAmount(sharesSold, market.liquidity_b, outcomeIndex, amount);
 

@@ -56,9 +56,11 @@ router.get('/:id', async (req, res, next) => {
 
 router.post('/:id/predict', authenticateStudent, async (req, res, next) => {
   try {
-    const { outcomeId, amount } = req.body;
+    const { outcomeId } = req.body;
+    const amount = Math.floor(Number(req.body.amount));
     if (!outcomeId || !amount) throw new ValidationError('outcomeId and amount are required');
-    if (amount < 1) throw new ValidationError('Amount must be at least 1');
+    if (!Number.isFinite(amount) || amount < 1) throw new ValidationError('Amount must be at least 1');
+    if (amount > 1000) throw new ValidationError('Maximum prediction is 1000 points');
 
     const result = await multiMarkets.buyPosition(req.params.id, outcomeId, req.student.id, amount);
 
