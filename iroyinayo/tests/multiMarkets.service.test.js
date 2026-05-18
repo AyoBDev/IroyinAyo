@@ -271,14 +271,20 @@ describe('Multi-outcome LMSR Service', () => {
         expect(updatedOutcome.shares_sold).toBeCloseTo(result.position.shares, 5);
       });
 
-      test('rejects insufficient points', async () => {
+      test('rejects when daily refill limit is exhausted', async () => {
         const market = await multiMarketsService.createMarket('Test market');
         const outcome = await multiMarketsService.addOutcome(market.id, 'Option A');
         await multiMarketsService.addOutcome(market.id, 'Option B');
 
+        // Exhaust the 3 daily auto-refills
+        await multiMarketsService.buyPosition(market.id, outcome.id, student.id, 150);
+        await multiMarketsService.buyPosition(market.id, outcome.id, student.id, 150);
+        await multiMarketsService.buyPosition(market.id, outcome.id, student.id, 150);
+
+        // 4th attempt should fail because daily refill limit (3) is reached
         await expect(
-          multiMarketsService.buyPosition(market.id, outcome.id, student.id, 150)
-        ).rejects.toThrow('Insufficient points');
+          multiMarketsService.buyPosition(market.id, outcome.id, student.id, 500)
+        ).rejects.toThrow('Daily refill limit reached');
       });
 
       test('multiple purchases accumulate shares_sold', async () => {
