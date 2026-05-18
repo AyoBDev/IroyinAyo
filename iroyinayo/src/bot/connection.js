@@ -2,9 +2,13 @@ const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLat
 const pino = require('pino');
 const { usePostgresAuthState } = require('./authState');
 const { updateSocket } = require('./scheduler/dailyJobs');
+const { setBotSocket } = require('./botSocket');
 
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 10;
+let latestQR = null;
+
+function getLatestQR() { return latestQR; }
 
 async function createConnection(messageHandler) {
   const isProduction = process.env.NODE_ENV === 'production';
@@ -33,11 +37,10 @@ async function createConnection(messageHandler) {
 
     if (qr) {
       qrDisplayed = true;
+      latestQR = qr;
       console.log('\n--- Scan this QR code with WhatsApp ---');
-      console.log('Go to WhatsApp > Linked Devices > Link a Device\n');
       if (isProduction) {
-        console.log('Cannot display QR in production. Pair locally first.');
-        console.log('See: node scripts/export-auth-to-db.js');
+        console.log('QR available at /api/bot/qr endpoint');
       } else {
         try {
           const qrcode = require('qrcode-terminal');
@@ -52,7 +55,6 @@ async function createConnection(messageHandler) {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
 
-      // QR timeout doesn't count as a real failure — always retry
       if (qrDisplayed && shouldReconnect) {
         console.log('QR code expired. Generating a new one...');
         setTimeout(() => createConnection(messageHandler), 2000);
@@ -72,13 +74,14 @@ async function createConnection(messageHandler) {
     } else if (connection === 'open') {
       reconnectAttempts = 0;
       qrDisplayed = false;
+      latestQR = null;
       updateSocket(sock);
+      setBotSocket(sock);
       console.log('Iroyinayo bot connected to WhatsApp');
     }
   });
 
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
-    console.log(`messages.upsert: ${messages.length} message(s), type: ${type}`);
     for (const msg of messages) {
       if (!msg.key.fromMe && msg.message) {
         const jid = msg.key.remoteJid;
@@ -87,15 +90,13 @@ async function createConnection(messageHandler) {
           msg.message.extendedTextMessage?.text ||
           '';
 
-        console.log(`Message from ${jid}: "${text}" (fromMe: ${msg.key.fromMe})`);
-
         if (text && (jid.endsWith('@s.whatsapp.net') || jid.endsWith('@lid'))) {
           try {
             await messageHandler(sock, jid, text.trim(), msg);
           } catch (err) {
             console.error(`Error handling message from ${jid}:`, err);
             await sock.sendMessage(jid, {
-              text: '\u26a0 Something went wrong. Please try again.',
+              text: '⚠ Something went wrong. Please try again.',
             });
           }
         }
@@ -106,4 +107,4 @@ async function createConnection(messageHandler) {
   return sock;
 }
 
-module.exports = { createConnection };
+module.exports = { createConnection, getLatestQR };

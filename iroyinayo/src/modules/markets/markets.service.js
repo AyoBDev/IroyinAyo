@@ -187,7 +187,7 @@ async function buyPosition(marketId, studentId, side, amount) {
     .sum('amount as total').first();
   const currentTotal = Number(existingTotal?.total || 0);
   if (currentTotal + amount > MAX_BET_PER_MARKET) {
-    throw new ValidationError(`Max bet per market is ${MAX_BET_PER_MARKET} points. You have ${currentTotal} already placed.`);
+    throw new ValidationError(`Max prediction per market is ${MAX_BET_PER_MARKET} points. You have ${currentTotal} already placed.`);
   }
 
   const shares = calculateSharesOut(market.yes_pool, market.no_pool, side, amount);

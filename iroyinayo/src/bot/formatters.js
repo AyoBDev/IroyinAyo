@@ -94,8 +94,58 @@ function formatPositions(positions) {
   return `${bold('🔮 My Predictions')}\n\n${lines.join('\n\n')}`;
 }
 
+function formatMultiMarketList(markets) {
+  if (markets.length === 0) return '📊 No markets set up yet. Check back soon!';
+  const lines = markets.map((m, i) => {
+    const teamCount = m.outcomes.length;
+    return `${i + 1}️⃣ ${bold(m.title)} (${teamCount} teams)`;
+  });
+  return [
+    bold('🏆 Hackathon Prediction Markets'),
+    '',
+    ...lines,
+    '',
+    `Reply with a number to see odds and predict.`,
+    `Type ${bold('leaderboard')} for rankings.`,
+    `Type ${bold('my predictions')} to see your positions.`,
+    `Type ${bold('balance')} to check your points.`,
+  ].join('\n');
+}
+
+function formatMultiMarketOdds(market) {
+  if (market.outcomes.length === 0) {
+    return `📊 ${bold(market.title)}\n\nNo teams added yet.`;
+  }
+  const lines = market.outcomes.map((o, i) => {
+    const cents = Math.round(o.price * 100);
+    return `${i + 1}. ${o.label} — ${cents}¢`;
+  });
+  return [
+    `📊 ${bold(market.title)}`,
+    '',
+    ...lines,
+    '',
+    `Reply: ${bold('predict [team#] [amount]')}`,
+    `Example: ${bold('predict 1 30')}`,
+    '',
+    `Type ${bold('back')} to return to markets.`,
+  ].join('\n');
+}
+
+function formatMultiPositions(positions) {
+  if (positions.length === 0) return 'You have no predictions yet. Type *predict* to get started!';
+  const lines = positions.map((p) => {
+    const status = p.market_status === 'resolved'
+      ? (p.payout > 0 ? `✅ Won ${p.payout} pts` : '❌ Lost')
+      : `⏳ ${p.outcome_label} — ${p.amount} pts (${p.shares.toFixed(1)} shares)`;
+    return `${bold(p.market_title)}\n${status}`;
+  });
+  return `${bold('🔮 My Predictions')}\n\n${lines.join('\n\n')}`;
+}
+
 module.exports = {
   bold, italic, mono, numberedList, bulletList,
   formatPoints, formatLeaderboard, formatMarket, formatMarketList,
   formatQuiz, formatFeedItem, formatFeed, formatRewardOptions, formatPositions,
+  formatMultiMarketList, formatMultiMarketOdds, formatMultiPositions,
 };
