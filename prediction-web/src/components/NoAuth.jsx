@@ -7,6 +7,7 @@ export default function NoAuth() {
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
+  const [isReturning, setIsReturning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -20,11 +21,11 @@ export default function NoAuth() {
         method: 'POST',
         body: JSON.stringify({ phoneNumber: phone.trim() }),
       });
-      if (result.token) {
-        setToken(result.token);
-        window.location.reload();
+      if (result.returning) {
+        setIsReturning(true);
+        setStep('code');
       } else {
-        // New user — send OTP
+        // New user -- send OTP via send-code for registration
         await apiFetch('/api/auth/send-code', {
           method: 'POST',
           body: JSON.stringify({ phoneNumber: phone.trim() }),
@@ -41,6 +42,23 @@ export default function NoAuth() {
   async function handleCodeSubmit(e) {
     e.preventDefault();
     if (code.length !== 6) return;
+    if (isReturning) {
+      setLoading(true);
+      setError('');
+      try {
+        const result = await apiFetch('/api/auth/verify', {
+          method: 'POST',
+          body: JSON.stringify({ phoneNumber: phone.trim(), code: code.trim(), name: '_returning' }),
+        });
+        setToken(result.token);
+        window.location.reload();
+      } catch (err) {
+        setError(err.message || 'Verification failed');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
     setStep('name');
   }
 

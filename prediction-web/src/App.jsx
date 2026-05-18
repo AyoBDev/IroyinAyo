@@ -21,8 +21,20 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const tokenParam = params.get('t');
     if (tokenParam) {
-      setToken(tokenParam);
       window.history.replaceState({}, '', window.location.pathname);
+      fetch('/api/auth/exchange-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ urlToken: tokenParam }),
+      })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data && data.token) {
+            setToken(data.token);
+            window.location.reload();
+          }
+        })
+        .catch(() => {});
     }
   }, []);
 
