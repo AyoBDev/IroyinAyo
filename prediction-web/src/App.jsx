@@ -11,6 +11,7 @@ import NoAuth from './components/NoAuth.jsx';
 import Markets from './pages/Markets.jsx';
 import LeaderboardPage from './pages/LeaderboardPage.jsx';
 import Profile from './pages/Profile.jsx';
+import ResolutionToast from './components/ResolutionToast.jsx';
 
 function TokenExchange() {
   const [searchParams] = useSearchParams();
@@ -88,6 +89,7 @@ function AuthenticatedApp() {
 
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+      <ResolutionToast />
       <TopBar onPositionsClick={() => setShowPositions(!showPositions)} />
       {showPositions && <MyPositions onClose={() => setShowPositions(false)} />}
 
