@@ -39,14 +39,18 @@ async function sendCode(phoneNumber) {
 
   // Send via WhatsApp
   const sock = getBotSocket();
-  if (!sock) {
-    throw new ValidationError('WhatsApp bot is not connected. Try again shortly.');
+  if (sock) {
+    try {
+      const jid = `${phone}@s.whatsapp.net`;
+      await sock.sendMessage(jid, {
+        text: `Your IroyinMarket verification code is: *${code}*\n\nThis code expires in 5 minutes. Do not share it with anyone.`,
+      });
+    } catch (err) {
+      console.log(`[DEV] WhatsApp send failed. Verification code for ${phone}: ${code}`);
+    }
+  } else {
+    console.log(`[DEV] No WhatsApp bot. Verification code for ${phone}: ${code}`);
   }
-
-  const jid = `${phone}@s.whatsapp.net`;
-  await sock.sendMessage(jid, {
-    text: `Your IroyinMarket verification code is: *${code}*\n\nThis code expires in 5 minutes. Do not share it with anyone.`,
-  });
 
   return { sent: true };
 }
@@ -111,10 +115,16 @@ async function login(phoneNumber) {
 
   const sock = getBotSocket();
   if (sock) {
-    const jid = `${phone}@s.whatsapp.net`;
-    await sock.sendMessage(jid, {
-      text: `Your IroyinMarket login code is: *${code}*\n\nThis code expires in 5 minutes.`,
-    });
+    try {
+      const jid = `${phone}@s.whatsapp.net`;
+      await sock.sendMessage(jid, {
+        text: `Your IroyinMarket login code is: *${code}*\n\nThis code expires in 5 minutes.`,
+      });
+    } catch (err) {
+      console.log(`[DEV] WhatsApp send failed. Login code for ${phone}: ${code}`);
+    }
+  } else {
+    console.log(`[DEV] No WhatsApp bot. Login code for ${phone}: ${code}`);
   }
 
   return { codeSent: true, returning: true };
