@@ -143,6 +143,9 @@ a {
   .mobile-only {
     display: block !important;
   }
+  nav.mobile-only {
+    display: flex !important;
+  }
   .markets-grid {
     columns: 1 !important;
   }
