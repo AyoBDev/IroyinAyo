@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, Search, Trophy, Share2 } from 'lucide-react';
 import OutcomeRow from './OutcomeRow.jsx';
 import PredictSlip from './PredictSlip.jsx';
 import MiniChart from './MiniChart.jsx';
@@ -181,30 +181,75 @@ function SmallMarketCard({ market }) {
   );
 }
 
-export default function MarketCard({ market }) {
-  if (market.status === 'resolved') {
-    return (
+function ResolvedMarketCard({ market }) {
+  const handleShare = () => {
+    const text = `${market.winnerLabel} won "${market.title}" on IroyinMarket!`;
+    if (navigator.share) {
+      navigator.share({ text });
+    } else {
+      navigator.clipboard.writeText(text);
+    }
+  };
+
+  return (
+    <div style={{
+      background: 'linear-gradient(145deg, var(--bg-card), var(--accent-green-bg))',
+      borderRadius: 'var(--radius-xl)',
+      padding: '20px', border: '1px solid var(--accent-green-border)',
+      position: 'relative', overflow: 'hidden',
+      animation: 'fadeIn 0.4s ease-out',
+    }}>
       <div style={{
-        background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
-        padding: '20px', border: '1px solid var(--border)',
-        position: 'relative', overflow: 'hidden',
+        position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
+        background: 'linear-gradient(90deg, var(--accent-green), var(--accent-yellow))',
+      }} />
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <h2 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', flex: 1 }}>{market.title}</h2>
+        <span style={{
+          fontSize: '11px', fontWeight: 700, color: 'var(--accent-green)',
+          background: 'var(--accent-green-bg)', padding: '4px 10px', borderRadius: '10px',
+          display: 'flex', alignItems: 'center', gap: '4px', border: '1px solid var(--accent-green-border)',
+          flexShrink: 0,
+        }}>
+          <CheckCircle2 size={11} /> Resolved
+        </span>
+      </div>
+
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: '10px',
+        marginTop: '14px', padding: '12px 14px',
+        background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--accent-green-border)',
       }}>
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'var(--accent-green)' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ fontSize: '14px', fontWeight: 600 }}>{market.title}</h2>
-          <span style={{
-            fontSize: '11px', fontWeight: 700, color: 'var(--accent-green)',
-            background: 'var(--accent-green-bg)', padding: '4px 10px', borderRadius: '10px',
-            display: 'flex', alignItems: 'center', gap: '4px', border: '1px solid var(--accent-green-border)',
-          }}>
-            <CheckCircle2 size={11} /> Resolved
-          </span>
-        </div>
-        <div style={{ marginTop: '10px', fontSize: '13px', color: 'var(--text-secondary)' }}>
-          Winner: <strong style={{ color: 'var(--accent-green)' }}>{market.winnerLabel}</strong>
+        <Trophy size={20} color="var(--accent-yellow)" />
+        <div>
+          <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '2px' }}>Winner</div>
+          <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--accent-green)' }}>
+            {market.winnerLabel}
+          </div>
         </div>
       </div>
-    );
+
+      <button
+        onClick={handleShare}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+          width: '100%', marginTop: '12px', padding: '10px',
+          background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)', color: 'var(--text-secondary)',
+          fontSize: '12px', fontWeight: 600,
+        }}
+      >
+        <Share2 size={13} /> Share Result
+      </button>
+    </div>
+  );
+}
+
+export default function MarketCard({ market }) {
+  if (market.status === 'resolved') {
+    return <ResolvedMarketCard market={market} />;
   }
 
   const hasMany = (market.outcomes || []).length > 5;

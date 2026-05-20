@@ -7,6 +7,7 @@ const useStore = create((set, get) => ({
   positions: [],
   leaderboard: [],
   feed: [],
+  toast: null,
   loading: true,
   error: null,
 
@@ -82,12 +83,17 @@ const useStore = create((set, get) => ({
   },
 
   resolveMarket: (marketId, winnerLabel, winnerId) => {
+    const market = get().markets.find((m) => m.id === marketId);
     set((state) => ({
       markets: state.markets.map((m) =>
         m.id === marketId ? { ...m, status: 'resolved', winnerLabel, winnerId } : m
       ),
+      toast: { type: 'resolution', title: market?.title, winner: winnerLabel },
     }));
+    setTimeout(() => set({ toast: null }), 5000);
   },
+
+  dismissToast: () => set({ toast: null }),
 }));
 
 export default useStore;
