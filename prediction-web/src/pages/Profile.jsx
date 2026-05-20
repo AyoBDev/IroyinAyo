@@ -1,4 +1,4 @@
-import { TrendingUp, Target, Flame, Award, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { TrendingUp, Target, Flame, Award, ArrowUpRight, ArrowDownRight, Share2 } from 'lucide-react';
 import useStore from '../store.js';
 
 function PredictorCard({ user }) {
@@ -58,6 +58,26 @@ function PredictorCard({ user }) {
           </div>
         )}
       </div>
+
+      <button
+        onClick={() => {
+          const text = `${user.name} — ${title} on IroyinMarket\n${accuracy}% accuracy | ${streak} week streak${weeklyRank ? ` | Ranked #${weeklyRank}` : ''}\n\nPredict & compete for cash: ${window.location.origin}`;
+          if (navigator.share) {
+            navigator.share({ text });
+          } else {
+            navigator.clipboard.writeText(text);
+          }
+        }}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+          width: '100%', marginTop: '16px', padding: '12px',
+          background: 'var(--accent-blue-bg)', border: '1px solid var(--accent-blue-border)',
+          borderRadius: '9999px', color: 'var(--accent-blue)',
+          fontSize: '12px', fontWeight: 700,
+        }}
+      >
+        <Share2 size={13} /> Share Profile
+      </button>
     </div>
   );
 }
