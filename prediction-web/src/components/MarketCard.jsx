@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { CheckCircle2, ChevronLeft, ChevronRight, Search, Trophy, Share2 } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, Search, Trophy, Share2, MessageSquare } from 'lucide-react';
 import OutcomeRow from './OutcomeRow.jsx';
 import PredictSlip from './PredictSlip.jsx';
 import MiniChart from './MiniChart.jsx';
+import PublicChat from './PublicChat.jsx';
 
 const PAGE_SIZE = 10;
 
@@ -10,6 +11,7 @@ function LargeMarketCard({ market }) {
   const [selectedOutcome, setSelectedOutcome] = useState(null);
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
+  const [showChat, setShowChat] = useState(false);
 
   const sortedOutcomes = [...(market.outcomes || [])].sort((a, b) => b.price - a.price);
 
@@ -140,6 +142,27 @@ function LargeMarketCard({ market }) {
           </button>
         </div>
       )}
+
+      {/* Market Chat Toggle */}
+      <div style={{ borderTop: '1px solid var(--border)' }}>
+        <button
+          onClick={() => setShowChat(!showChat)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            width: '100%', padding: '10px 16px',
+            background: showChat ? 'var(--accent-blue-bg)' : 'transparent',
+            color: showChat ? 'var(--accent-blue)' : 'var(--text-tertiary)',
+            fontSize: '12px', fontWeight: 600,
+          }}
+        >
+          <MessageSquare size={13} /> {showChat ? 'Hide' : 'Show'} Commentary
+        </button>
+        {showChat && (
+          <div style={{ borderTop: '1px solid var(--border)' }}>
+            <PublicChat marketId={market.id} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

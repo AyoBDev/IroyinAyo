@@ -3,7 +3,7 @@ import { Send, MessageSquare } from 'lucide-react';
 import useStore from '../store.js';
 import { getSocket } from '../socket.js';
 
-export default function PublicChat() {
+export default function PublicChat({ marketId }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -14,21 +14,22 @@ export default function PublicChat() {
     const socket = getSocket();
     if (!socket) return;
 
-    socket.on('chat:message', (msg) => {
+    const handleMessage = (msg) => {
+      if (marketId && msg.marketId !== marketId) return;
+      if (!marketId && msg.marketId) return;
       setMessages((prev) => [...prev, msg].slice(-100));
-    });
+    };
 
-    socket.on('chat:history', (history) => {
-      setMessages(history);
-    });
-
-    socket.emit('chat:join');
+    socket.on('chat:message', handleMessage);
+    socket.on('chat:history', (history) => setMessages(history));
+    socket.emit('chat:join', { marketId });
 
     return () => {
-      socket.off('chat:message');
+      socket.off('chat:message', handleMessage);
       socket.off('chat:history');
+      if (marketId) socket.emit('chat:leave', { marketId });
     };
-  }, []);
+  }, [marketId]);
 
   useEffect(() => {
     messagesEnd.current?.scrollIntoView({ behavior: 'smooth' });
@@ -42,7 +43,7 @@ export default function PublicChat() {
     if (!socket) return;
 
     setSending(true);
-    socket.emit('chat:send', { text: input.trim() });
+    socket.emit('chat:send', { text: input.trim(), marketId });
     setInput('');
     setSending(false);
   }
