@@ -54,6 +54,24 @@ router.get('/:id', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.get('/:id/share', async (req, res, next) => {
+  try {
+    const market = await multiMarkets.getMarketWithOdds(req.params.id);
+    const winner = market.status === 'resolved'
+      ? market.outcomes.find(o => o.id === market.winner_outcome_id)
+      : null;
+    const topOutcome = [...market.outcomes].sort((a, b) => b.price - a.price)[0];
+    res.json({
+      id: market.id,
+      title: market.title,
+      status: market.status,
+      winner: winner ? { label: winner.label, price: winner.price } : null,
+      topOutcome: topOutcome ? { label: topOutcome.label, price: topOutcome.price } : null,
+      outcomeCount: market.outcomes.length,
+    });
+  } catch (err) { next(err); }
+});
+
 router.post('/:id/predict', authenticateStudent, async (req, res, next) => {
   try {
     const { outcomeId } = req.body;

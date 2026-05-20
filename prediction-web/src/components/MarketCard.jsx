@@ -138,6 +138,16 @@ function SmallMarketCard({ market }) {
   const topOutcome = sortedOutcomes[0];
   const topPercent = topOutcome ? Math.round(topOutcome.price * 100) : 0;
 
+  const handleShare = () => {
+    const shareUrl = `${window.location.origin}/share/${market.id}`;
+    const text = `${topOutcome?.label} leads at ${topPercent}% — "${market.title}" on IroyinMarket`;
+    if (navigator.share) {
+      navigator.share({ text, url: shareUrl });
+    } else {
+      navigator.clipboard.writeText(`${text}\n${shareUrl}`);
+    }
+  };
+
   return (
     <div style={{
       background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
@@ -146,9 +156,14 @@ function SmallMarketCard({ market }) {
     }}>
       {/* Header */}
       <div style={{ padding: '16px 18px 12px' }}>
-        <h2 style={{ fontSize: '13px', fontWeight: 600, lineHeight: 1.4, marginBottom: '10px' }}>
-          {market.title}
-        </h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <h2 style={{ fontSize: '13px', fontWeight: 600, lineHeight: 1.4, marginBottom: '10px', flex: 1 }}>
+            {market.title}
+          </h2>
+          <button onClick={handleShare} style={{ padding: '6px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}>
+            <Share2 size={12} />
+          </button>
+        </div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
           <span style={{ fontSize: '28px', fontWeight: 800, color: 'var(--accent-green)', lineHeight: 1 }}>
             {topPercent}
@@ -183,11 +198,12 @@ function SmallMarketCard({ market }) {
 
 function ResolvedMarketCard({ market }) {
   const handleShare = () => {
+    const shareUrl = `${window.location.origin}/share/${market.id}`;
     const text = `${market.winnerLabel} won "${market.title}" on IroyinMarket!`;
     if (navigator.share) {
-      navigator.share({ text });
+      navigator.share({ text, url: shareUrl });
     } else {
-      navigator.clipboard.writeText(text);
+      navigator.clipboard.writeText(`${text}\n${shareUrl}`);
     }
   };
 

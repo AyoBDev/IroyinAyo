@@ -83,6 +83,56 @@ console.log('Serving frontend from:', frontendPath, '| exists:', fs.existsSync(p
 
 app.use(express.static(frontendPath));
 
+// OG tags for share pages (crawlers don't run JS)
+app.get('/share/:marketId', async (req, res, next) => {
+  const ua = (req.headers['user-agent'] || '').toLowerCase();
+  const isBot = /bot|crawl|spider|facebook|twitter|whatsapp|telegram|slack|discord|linkedin/i.test(ua);
+
+  if (!isBot) {
+    const indexPath = path.join(frontendPath, 'index.html');
+    if (fs.existsSync(indexPath)) return res.sendFile(indexPath);
+  }
+
+  try {
+    const multiMarkets = require('./modules/markets/multiMarkets.service');
+    const market = await multiMarkets.getMarketWithOdds(req.params.marketId);
+    const winner = market.status === 'resolved'
+      ? market.outcomes.find(o => o.id === market.winner_outcome_id)
+      : null;
+    const topOutcome = [...market.outcomes].sort((a, b) => b.price - a.price)[0];
+
+    const title = winner
+      ? `${winner.label} won! — ${market.title}`
+      : `${topOutcome?.label} leads at ${Math.round((topOutcome?.price || 0) * 100)}% — ${market.title}`;
+    const description = winner
+      ? `${winner.label} just won "${market.title}" on IroyinMarket! Make your predictions and compete for cash prizes.`
+      : `${market.outcomes.length} options, live odds. Predict now on IroyinMarket!`;
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+
+    res.send(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta property="og:title" content="${title.replace(/"/g, '&quot;')}"/>
+<meta property="og:description" content="${description.replace(/"/g, '&quot;')}"/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="${baseUrl}/share/${market.id}"/>
+<meta property="og:site_name" content="IroyinMarket"/>
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="${title.replace(/"/g, '&quot;')}"/>
+<meta name="twitter:description" content="${description.replace(/"/g, '&quot;')}"/>
+<title>${title.replace(/</g, '&lt;')}</title>
+<meta http-equiv="refresh" content="0;url=${baseUrl}/share/${market.id}"/>
+</head>
+<body></body>
+</html>`);
+  } catch {
+    const indexPath = path.join(frontendPath, 'index.html');
+    if (fs.existsSync(indexPath)) return res.sendFile(indexPath);
+    res.status(404).send('Market not found');
+  }
+});
+
 // SPA fallback — serve index.html for non-API routes
 app.use((req, res, next) => {
   if (req.method !== 'GET' || req.path.startsWith('/api') || req.path === '/health' || req.path.startsWith('/socket.io')) return next();
