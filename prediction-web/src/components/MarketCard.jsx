@@ -23,6 +23,16 @@ function LargeMarketCard({ market }) {
   const topOutcome = sortedOutcomes[0];
   const topPercent = topOutcome ? Math.round(topOutcome.price * 100) : 0;
 
+  const handleShare = () => {
+    const shareUrl = `${window.location.origin}/share/${market.id}`;
+    const text = `${topOutcome?.label} leads at ${topPercent}% — "${market.title}" on IroyinMarket`;
+    if (navigator.share) {
+      navigator.share({ text, url: shareUrl });
+    } else {
+      navigator.clipboard.writeText(`${text}\n${shareUrl}`);
+    }
+  };
+
   return (
     <div style={{
       background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
@@ -32,6 +42,9 @@ function LargeMarketCard({ market }) {
       <div style={{ padding: '18px 20px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
           <h2 style={{ fontSize: '14px', fontWeight: 600, flex: 1, lineHeight: 1.4 }}>{market.title}</h2>
+          <button onClick={handleShare} style={{ padding: '6px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+            <Share2 size={13} />
+          </button>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: '60px' }}>
             <span style={{ fontSize: '24px', fontWeight: 800, color: 'var(--accent-green)', lineHeight: 1 }}>
               {topPercent}<span style={{ fontSize: '13px', fontWeight: 600 }}>%</span>
