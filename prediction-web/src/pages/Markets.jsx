@@ -4,6 +4,7 @@ import MarketCard from '../components/MarketCard.jsx';
 import HowItWorks from '../components/HowItWorks.jsx';
 import PublicChat from '../components/PublicChat.jsx';
 import ActivityFeed from '../components/ActivityFeed.jsx';
+import Leaderboard from '../components/Leaderboard.jsx';
 
 export default function Markets() {
   const [activeTab, setActiveTab] = useState('all');
@@ -97,6 +98,7 @@ export default function Markets() {
           <HowItWorks />
           <PublicChat />
           <ActivityFeed />
+          <Leaderboard />
         </aside>
       </div>
 
@@ -104,6 +106,7 @@ export default function Markets() {
         <HowItWorks />
         <div style={{ marginTop: '10px' }}><PublicChat /></div>
         <div style={{ marginTop: '10px' }}><ActivityFeed /></div>
+        <div style={{ marginTop: '10px' }}><Leaderboard /></div>
       </div>
     </>
   );
