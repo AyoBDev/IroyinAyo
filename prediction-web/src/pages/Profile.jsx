@@ -1,4 +1,6 @@
-import { TrendingUp, Target, Flame, Award, ArrowUpRight, ArrowDownRight, Share2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { TrendingUp, Target, Flame, Award, ArrowUpRight, ArrowDownRight, Share2, Users, Copy, Check, Gift } from 'lucide-react';
+import { apiFetch } from '../api.js';
 import useStore from '../store.js';
 
 function PredictorCard({ user }) {
@@ -82,6 +84,159 @@ function PredictorCard({ user }) {
   );
 }
 
+function ReferralCard() {
+  const [stats, setStats] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const [codeInput, setCodeInput] = useState('');
+  const [applying, setApplying] = useState(false);
+  const [message, setMessage] = useState(null);
+
+  useEffect(() => {
+    apiFetch('/api/referrals/me')
+      .then(setStats)
+      .catch(() => {});
+  }, []);
+
+  const handleCopy = () => {
+    const link = `${window.location.origin}?ref=${stats.code}`;
+    navigator.clipboard.writeText(link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleShare = () => {
+    const link = `${window.location.origin}?ref=${stats.code}`;
+    const text = `Join me on IroyinMarket! Predict hackathon winners & compete for cash. Use my code: ${stats.code}`;
+    if (navigator.share) {
+      navigator.share({ text, url: link });
+    } else {
+      handleCopy();
+    }
+  };
+
+  const handleApply = async () => {
+    if (!codeInput.trim()) return;
+    setApplying(true);
+    setMessage(null);
+    try {
+      const result = await apiFetch('/api/referrals/apply', {
+        method: 'POST',
+        body: JSON.stringify({ code: codeInput.trim() }),
+      });
+      setMessage({ type: 'success', text: `+${result.referredBonus} pts bonus applied!` });
+      setCodeInput('');
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message });
+    }
+    setApplying(false);
+  };
+
+  if (!stats) return null;
+
+  return (
+    <div style={{
+      background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
+      border: '1px solid var(--border)', overflow: 'hidden', marginTop: '16px',
+    }}>
+      <div style={{
+        padding: '14px 16px', borderBottom: '1px solid var(--border)',
+        display: 'flex', alignItems: 'center', gap: '8px',
+      }}>
+        <Gift size={14} color="var(--accent-violet)" />
+        <h3 style={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          Refer Friends
+        </h3>
+      </div>
+
+      <div style={{ padding: '16px' }}>
+        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+          You both get <span style={{ color: 'var(--accent-green)', fontWeight: 700 }}>50 pts</span> when a friend joins with your code.
+        </p>
+
+        {/* My code */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '8px',
+          padding: '10px 14px', background: 'var(--bg-primary)',
+          borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)',
+          marginBottom: '10px',
+        }}>
+          <span style={{ flex: 1, fontSize: '15px', fontWeight: 700, letterSpacing: '1px', fontFamily: 'monospace' }}>
+            {stats.code}
+          </span>
+          <button onClick={handleCopy} style={{
+            padding: '6px 10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600,
+          }}>
+            {copied ? <><Check size={12} color="var(--accent-green)" /> Copied</> : <><Copy size={12} /> Copy</>}
+          </button>
+        </div>
+
+        <button onClick={handleShare} style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+          width: '100%', padding: '12px', marginBottom: '14px',
+          background: 'var(--accent-violet-bg)', border: '1px solid var(--accent-violet-border)',
+          borderRadius: '9999px', color: 'var(--accent-violet)', fontSize: '12px', fontWeight: 700,
+        }}>
+          <Share2 size={13} /> Share Referral Link
+        </button>
+
+        {/* Stats */}
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '14px' }}>
+          <div style={{ flex: 1, padding: '10px', background: 'var(--bg-primary)', borderRadius: 'var(--radius)', textAlign: 'center' }}>
+            <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>{stats.referralCount}</div>
+            <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginTop: '2px' }}>Referred</div>
+          </div>
+          <div style={{ flex: 1, padding: '10px', background: 'var(--bg-primary)', borderRadius: 'var(--radius)', textAlign: 'center' }}>
+            <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--accent-green)' }}>+{stats.totalEarned}</div>
+            <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginTop: '2px' }}>Pts Earned</div>
+          </div>
+        </div>
+
+        {/* Apply code */}
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '14px' }}>
+          <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '8px', fontWeight: 500 }}>Have a referral code?</div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input
+              type="text"
+              value={codeInput}
+              onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+              placeholder="Enter code"
+              maxLength={8}
+              style={{
+                flex: 1, padding: '10px 12px', fontSize: '13px', fontWeight: 600,
+                background: 'var(--bg-input)', border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)', color: 'var(--text-primary)',
+                letterSpacing: '1px', fontFamily: 'monospace',
+              }}
+            />
+            <button
+              onClick={handleApply}
+              disabled={applying || !codeInput.trim()}
+              style={{
+                padding: '10px 16px', fontSize: '12px', fontWeight: 700,
+                background: codeInput.trim() ? 'var(--accent-green)' : 'var(--bg-secondary)',
+                color: codeInput.trim() ? '#fff' : 'var(--text-tertiary)',
+                borderRadius: 'var(--radius)', border: 'none',
+                opacity: applying ? 0.6 : 1,
+              }}
+            >
+              Apply
+            </button>
+          </div>
+          {message && (
+            <div style={{
+              marginTop: '8px', fontSize: '12px', fontWeight: 600,
+              color: message.type === 'success' ? 'var(--accent-green)' : 'var(--accent-red)',
+            }}>
+              {message.text}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Profile() {
   const user = useStore((s) => s.user);
   const positions = useStore((s) => s.positions);
@@ -122,6 +277,8 @@ export default function Profile() {
           </div>
         </div>
       </div>
+
+      <ReferralCard />
 
       {/* Prediction History */}
       <div style={{
