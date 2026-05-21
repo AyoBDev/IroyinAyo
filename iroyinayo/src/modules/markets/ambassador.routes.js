@@ -67,6 +67,10 @@ router.post('/create-market', authenticateStudent, requireAmbassador, async (req
     await gamificationService.addPoints(req.student.id, MARKET_CREATION_BONUS, 'ambassador', `Market created: ${title}`);
 
     const fullMarket = await multiMarkets.getMarketWithOdds(market.id);
+
+    const { notifyNewMarket } = require('../notifications/whatsapp');
+    notifyNewMarket(market.id).catch(() => {});
+
     res.json(fullMarket);
   } catch (err) { next(err); }
 });

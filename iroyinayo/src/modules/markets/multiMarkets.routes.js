@@ -150,10 +150,13 @@ router.post('/:id/resolve', authenticate, async (req, res, next) => {
     const result = await multiMarkets.resolveMarket(req.params.id, outcomeId);
 
     const io = req.app.get('io');
+    const outcome = await db('multi_market_outcomes').where({ id: outcomeId }).first();
     if (io) {
-      const outcome = await db('multi_market_outcomes').where({ id: outcomeId }).first();
       io.emit('market:resolved', { marketId: req.params.id, winnerLabel: outcome?.label || '', winnerId: outcomeId });
     }
+
+    const { notifyMarketResolution } = require('../notifications/whatsapp');
+    notifyMarketResolution(req.params.id, outcome?.label || '').catch(() => {});
 
     res.json(result);
   } catch (err) { next(err); }

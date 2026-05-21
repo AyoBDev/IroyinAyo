@@ -65,6 +65,11 @@ async function finalizeWeek(weekDate) {
     })
     .returning('*');
 
+  if (winner) {
+    const { notifyWeeklyWinner } = require('../notifications/whatsapp');
+    notifyWeeklyWinner(winner.id, weekStart).catch(() => {});
+  }
+
   return record;
 }
 
