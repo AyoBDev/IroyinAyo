@@ -46,7 +46,19 @@ router.get('/sharp-money', async (req, res, next) => {
 
 router.get('/me/info', authenticateStudent, async (req, res, next) => {
   try {
-    res.json({ id: req.student.id, name: req.student.name, points_balance: req.student.points_balance });
+    const { getStudentStats } = require('../gamification/titles');
+    const stats = await getStudentStats(req.student.id);
+    res.json({
+      id: req.student.id,
+      name: req.student.name,
+      points_balance: req.student.points_balance,
+      title: stats.title,
+      titleColor: stats.titleColor,
+      accuracy: stats.accuracy,
+      streak: stats.streak,
+      totalPredictions: stats.totalPredictions,
+      wins: stats.wins,
+    });
   } catch (err) { next(err); }
 });
 
