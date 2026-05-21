@@ -16,8 +16,17 @@ router.get('/', async (req, res, next) => {
 
 router.get('/leaderboard', async (req, res, next) => {
   try {
-    const entries = await gamificationService.getLeaderboard('weekly', 10);
-    res.json(entries);
+    const weeklyLeaderboard = require('../gamification/weeklyLeaderboard');
+    const standings = await weeklyLeaderboard.getCurrentWeekStandings(20);
+    res.json(standings);
+  } catch (err) { next(err); }
+});
+
+router.get('/leaderboard/history', async (req, res, next) => {
+  try {
+    const weeklyLeaderboard = require('../gamification/weeklyLeaderboard');
+    const weeks = await weeklyLeaderboard.getPastWeeks(4);
+    res.json(weeks);
   } catch (err) { next(err); }
 });
 
@@ -47,7 +56,9 @@ router.get('/sharp-money', async (req, res, next) => {
 router.get('/me/info', authenticateStudent, async (req, res, next) => {
   try {
     const { getStudentStats } = require('../gamification/titles');
+    const weeklyLeaderboard = require('../gamification/weeklyLeaderboard');
     const stats = await getStudentStats(req.student.id);
+    const weeklyRank = await weeklyLeaderboard.getWeeklyRank(req.student.id);
     res.json({
       id: req.student.id,
       name: req.student.name,
@@ -58,6 +69,7 @@ router.get('/me/info', authenticateStudent, async (req, res, next) => {
       streak: stats.streak,
       totalPredictions: stats.totalPredictions,
       wins: stats.wins,
+      weekly_rank: weeklyRank,
     });
   } catch (err) { next(err); }
 });
