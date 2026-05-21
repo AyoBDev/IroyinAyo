@@ -39,6 +39,24 @@ server.listen(PORT, async () => {
 
   await seedAdminFromEnv();
 
+  try {
+    const { loadAllSchedules } = require('./modules/markets/scheduler.service');
+    await loadAllSchedules();
+
+    const cron = require('node-cron');
+    const { finalizeWeek } = require('./modules/gamification/weeklyLeaderboard');
+    cron.schedule('0 0 * * 1', () => {
+      const lastSunday = new Date();
+      lastSunday.setDate(lastSunday.getDate() - 1);
+      finalizeWeek(lastSunday).catch(err => {
+        console.error('[CRON] Weekly finalize failed:', err.message);
+      });
+    });
+    console.log('[CRON] Weekly leaderboard finalize scheduled for Monday 00:00');
+  } catch (err) {
+    console.error('Scheduler startup failed:', err.message);
+  }
+
   if (process.env.ENABLE_BOT !== 'false') {
     try {
       const { createConnection } = require('./bot/connection');
