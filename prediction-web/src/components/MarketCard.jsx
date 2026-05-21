@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { CheckCircle2, ChevronLeft, ChevronRight, Search, Trophy, Share2 } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, Search, Trophy, Share2, MessageSquare } from 'lucide-react';
 import OutcomeRow from './OutcomeRow.jsx';
 import PredictSlip from './PredictSlip.jsx';
 import MiniChart from './MiniChart.jsx';
+import PublicChat from './PublicChat.jsx';
 
 const PAGE_SIZE = 10;
 
@@ -10,6 +11,7 @@ function LargeMarketCard({ market }) {
   const [selectedOutcome, setSelectedOutcome] = useState(null);
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
+  const [showChat, setShowChat] = useState(false);
 
   const sortedOutcomes = [...(market.outcomes || [])].sort((a, b) => b.price - a.price);
 
@@ -23,6 +25,16 @@ function LargeMarketCard({ market }) {
   const topOutcome = sortedOutcomes[0];
   const topPercent = topOutcome ? Math.round(topOutcome.price * 100) : 0;
 
+  const handleShare = () => {
+    const shareUrl = `${window.location.origin}/share/${market.id}`;
+    const text = `${topOutcome?.label} leads at ${topPercent}% — "${market.title}" on IroyinMarket`;
+    if (navigator.share) {
+      navigator.share({ text, url: shareUrl });
+    } else {
+      navigator.clipboard.writeText(`${text}\n${shareUrl}`);
+    }
+  };
+
   return (
     <div style={{
       background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
@@ -32,6 +44,9 @@ function LargeMarketCard({ market }) {
       <div style={{ padding: '18px 20px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
           <h2 style={{ fontSize: '14px', fontWeight: 600, flex: 1, lineHeight: 1.4 }}>{market.title}</h2>
+          <button onClick={handleShare} style={{ padding: '6px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+            <Share2 size={13} />
+          </button>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: '60px' }}>
             <span style={{ fontSize: '24px', fontWeight: 800, color: 'var(--accent-green)', lineHeight: 1 }}>
               {topPercent}<span style={{ fontSize: '13px', fontWeight: 600 }}>%</span>
@@ -127,6 +142,27 @@ function LargeMarketCard({ market }) {
           </button>
         </div>
       )}
+
+      {/* Market Chat Toggle */}
+      <div style={{ borderTop: '1px solid var(--border)' }}>
+        <button
+          onClick={() => setShowChat(!showChat)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            width: '100%', padding: '10px 16px',
+            background: showChat ? 'var(--accent-blue-bg)' : 'transparent',
+            color: showChat ? 'var(--accent-blue)' : 'var(--text-tertiary)',
+            fontSize: '12px', fontWeight: 600,
+          }}
+        >
+          <MessageSquare size={13} /> {showChat ? 'Hide' : 'Show'} Commentary
+        </button>
+        {showChat && (
+          <div style={{ borderTop: '1px solid var(--border)' }}>
+            <PublicChat marketId={market.id} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -138,6 +174,16 @@ function SmallMarketCard({ market }) {
   const topOutcome = sortedOutcomes[0];
   const topPercent = topOutcome ? Math.round(topOutcome.price * 100) : 0;
 
+  const handleShare = () => {
+    const shareUrl = `${window.location.origin}/share/${market.id}`;
+    const text = `${topOutcome?.label} leads at ${topPercent}% — "${market.title}" on IroyinMarket`;
+    if (navigator.share) {
+      navigator.share({ text, url: shareUrl });
+    } else {
+      navigator.clipboard.writeText(`${text}\n${shareUrl}`);
+    }
+  };
+
   return (
     <div style={{
       background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
@@ -146,9 +192,14 @@ function SmallMarketCard({ market }) {
     }}>
       {/* Header */}
       <div style={{ padding: '16px 18px 12px' }}>
-        <h2 style={{ fontSize: '13px', fontWeight: 600, lineHeight: 1.4, marginBottom: '10px' }}>
-          {market.title}
-        </h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <h2 style={{ fontSize: '13px', fontWeight: 600, lineHeight: 1.4, marginBottom: '10px', flex: 1 }}>
+            {market.title}
+          </h2>
+          <button onClick={handleShare} style={{ padding: '6px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}>
+            <Share2 size={12} />
+          </button>
+        </div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
           <span style={{ fontSize: '28px', fontWeight: 800, color: 'var(--accent-green)', lineHeight: 1 }}>
             {topPercent}
@@ -183,11 +234,12 @@ function SmallMarketCard({ market }) {
 
 function ResolvedMarketCard({ market }) {
   const handleShare = () => {
+    const shareUrl = `${window.location.origin}/share/${market.id}`;
     const text = `${market.winnerLabel} won "${market.title}" on IroyinMarket!`;
     if (navigator.share) {
-      navigator.share({ text });
+      navigator.share({ text, url: shareUrl });
     } else {
-      navigator.clipboard.writeText(text);
+      navigator.clipboard.writeText(`${text}\n${shareUrl}`);
     }
   };
 

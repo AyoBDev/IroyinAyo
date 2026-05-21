@@ -12,6 +12,7 @@ import Markets from './pages/Markets.jsx';
 import LeaderboardPage from './pages/LeaderboardPage.jsx';
 import Profile from './pages/Profile.jsx';
 import ResolutionToast from './components/ResolutionToast.jsx';
+import ShareCard from './pages/ShareCard.jsx';
 
 function TokenExchange() {
   const [searchParams] = useSearchParams();
@@ -111,7 +112,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <TokenExchange />
-      {token ? <AuthenticatedApp /> : <NoAuth />}
+      <Routes>
+        <Route path="/share/:marketId" element={<ShareCard />} />
+        <Route path="*" element={token ? <AuthenticatedApp /> : <NoAuth />} />
+      </Routes>
     </BrowserRouter>
   );
 }

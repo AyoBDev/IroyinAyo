@@ -16,14 +16,61 @@ router.get('/', async (req, res, next) => {
 
 router.get('/leaderboard', async (req, res, next) => {
   try {
-    const entries = await gamificationService.getLeaderboard('weekly', 10);
-    res.json(entries);
+    const weeklyLeaderboard = require('../gamification/weeklyLeaderboard');
+    const standings = await weeklyLeaderboard.getCurrentWeekStandings(20);
+    res.json(standings);
+  } catch (err) { next(err); }
+});
+
+router.get('/leaderboard/history', async (req, res, next) => {
+  try {
+    const weeklyLeaderboard = require('../gamification/weeklyLeaderboard');
+    const weeks = await weeklyLeaderboard.getPastWeeks(4);
+    res.json(weeks);
+  } catch (err) { next(err); }
+});
+
+router.get('/sharp-money', async (req, res, next) => {
+  try {
+    const positions = await db('multi_market_positions')
+      .join('students', 'multi_market_positions.student_id', 'students.id')
+      .join('multi_markets', 'multi_market_positions.market_id', 'multi_markets.id')
+      .join('multi_market_outcomes', 'multi_market_positions.outcome_id', 'multi_market_outcomes.id')
+      .where('students.points_balance', '>=', 500)
+      .where('multi_markets.status', 'open')
+      .orderBy('multi_market_positions.created_at', 'desc')
+      .limit(15)
+      .select(
+        'multi_market_positions.id',
+        'multi_market_positions.amount',
+        'multi_market_positions.created_at',
+        'students.name as student_name',
+        'students.points_balance',
+        'multi_markets.title as market_title',
+        'multi_market_outcomes.label as outcome_label'
+      );
+    res.json(positions);
   } catch (err) { next(err); }
 });
 
 router.get('/me/info', authenticateStudent, async (req, res, next) => {
   try {
-    res.json({ id: req.student.id, name: req.student.name, points_balance: req.student.points_balance });
+    const { getStudentStats } = require('../gamification/titles');
+    const weeklyLeaderboard = require('../gamification/weeklyLeaderboard');
+    const stats = await getStudentStats(req.student.id);
+    const weeklyRank = await weeklyLeaderboard.getWeeklyRank(req.student.id);
+    res.json({
+      id: req.student.id,
+      name: req.student.name,
+      points_balance: req.student.points_balance,
+      title: stats.title,
+      titleColor: stats.titleColor,
+      accuracy: stats.accuracy,
+      streak: stats.streak,
+      totalPredictions: stats.totalPredictions,
+      wins: stats.wins,
+      weekly_rank: weeklyRank,
+    });
   } catch (err) { next(err); }
 });
 
@@ -51,6 +98,24 @@ router.get('/:id', async (req, res, next) => {
   try {
     const market = await multiMarkets.getMarketWithOdds(req.params.id);
     res.json(market);
+  } catch (err) { next(err); }
+});
+
+router.get('/:id/share', async (req, res, next) => {
+  try {
+    const market = await multiMarkets.getMarketWithOdds(req.params.id);
+    const winner = market.status === 'resolved'
+      ? market.outcomes.find(o => o.id === market.winner_outcome_id)
+      : null;
+    const topOutcome = [...market.outcomes].sort((a, b) => b.price - a.price)[0];
+    res.json({
+      id: market.id,
+      title: market.title,
+      status: market.status,
+      winner: winner ? { label: winner.label, price: winner.price } : null,
+      topOutcome: topOutcome ? { label: topOutcome.label, price: topOutcome.price } : null,
+      outcomeCount: market.outcomes.length,
+    });
   } catch (err) { next(err); }
 });
 
@@ -85,10 +150,13 @@ router.post('/:id/resolve', authenticate, async (req, res, next) => {
     const result = await multiMarkets.resolveMarket(req.params.id, outcomeId);
 
     const io = req.app.get('io');
+    const outcome = await db('multi_market_outcomes').where({ id: outcomeId }).first();
     if (io) {
-      const outcome = await db('multi_market_outcomes').where({ id: outcomeId }).first();
       io.emit('market:resolved', { marketId: req.params.id, winnerLabel: outcome?.label || '', winnerId: outcomeId });
     }
+
+    const { notifyMarketResolution } = require('../notifications/whatsapp');
+    notifyMarketResolution(req.params.id, outcome?.label || '').catch(() => {});
 
     res.json(result);
   } catch (err) { next(err); }

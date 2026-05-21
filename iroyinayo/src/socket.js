@@ -6,6 +6,7 @@ const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'test' ? 
 
 let io = null;
 const chatHistory = [];
+const marketChatHistory = {};
 const MAX_CHAT_HISTORY = 50;
 
 function createSocketServer(httpServer) {
@@ -43,11 +44,21 @@ function createSocketServer(httpServer) {
       }
     }
 
-    socket.on('chat:join', () => {
-      socket.emit('chat:history', chatHistory.slice(-MAX_CHAT_HISTORY));
+    socket.on('chat:join', ({ marketId } = {}) => {
+      if (marketId) {
+        socket.join(`market:${marketId}`);
+        const history = marketChatHistory[marketId] || [];
+        socket.emit('chat:history', history.slice(-MAX_CHAT_HISTORY));
+      } else {
+        socket.emit('chat:history', chatHistory.slice(-MAX_CHAT_HISTORY));
+      }
     });
 
-    socket.on('chat:send', ({ text }) => {
+    socket.on('chat:leave', ({ marketId }) => {
+      if (marketId) socket.leave(`market:${marketId}`);
+    });
+
+    socket.on('chat:send', ({ text, marketId }) => {
       if (!text || !text.trim() || !studentId) return;
       const now = Date.now();
       if (now - lastChatTime < 1000) return;
@@ -59,15 +70,24 @@ function createSocketServer(httpServer) {
         userId: studentId,
         userName: studentName || 'Anon',
         text: sanitized,
+        marketId: marketId || null,
         timestamp: Date.now(),
       };
 
-      chatHistory.push(msg);
-      if (chatHistory.length > MAX_CHAT_HISTORY) {
-        chatHistory.shift();
+      if (marketId) {
+        if (!marketChatHistory[marketId]) marketChatHistory[marketId] = [];
+        marketChatHistory[marketId].push(msg);
+        if (marketChatHistory[marketId].length > MAX_CHAT_HISTORY) {
+          marketChatHistory[marketId].shift();
+        }
+        io.to(`market:${marketId}`).emit('chat:message', msg);
+      } else {
+        chatHistory.push(msg);
+        if (chatHistory.length > MAX_CHAT_HISTORY) {
+          chatHistory.shift();
+        }
+        io.emit('chat:message', msg);
       }
-
-      io.emit('chat:message', msg);
     });
   });
 
