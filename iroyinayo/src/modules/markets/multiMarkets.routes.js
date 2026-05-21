@@ -21,6 +21,29 @@ router.get('/leaderboard', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.get('/sharp-money', async (req, res, next) => {
+  try {
+    const positions = await db('multi_market_positions')
+      .join('students', 'multi_market_positions.student_id', 'students.id')
+      .join('multi_markets', 'multi_market_positions.market_id', 'multi_markets.id')
+      .join('multi_market_outcomes', 'multi_market_positions.outcome_id', 'multi_market_outcomes.id')
+      .where('students.points_balance', '>=', 500)
+      .where('multi_markets.status', 'open')
+      .orderBy('multi_market_positions.created_at', 'desc')
+      .limit(15)
+      .select(
+        'multi_market_positions.id',
+        'multi_market_positions.amount',
+        'multi_market_positions.created_at',
+        'students.name as student_name',
+        'students.points_balance',
+        'multi_markets.title as market_title',
+        'multi_market_outcomes.label as outcome_label'
+      );
+    res.json(positions);
+  } catch (err) { next(err); }
+});
+
 router.get('/me/info', authenticateStudent, async (req, res, next) => {
   try {
     res.json({ id: req.student.id, name: req.student.name, points_balance: req.student.points_balance });

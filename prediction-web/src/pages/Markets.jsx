@@ -5,6 +5,7 @@ import HowItWorks from '../components/HowItWorks.jsx';
 import PublicChat from '../components/PublicChat.jsx';
 import ActivityFeed from '../components/ActivityFeed.jsx';
 import Leaderboard from '../components/Leaderboard.jsx';
+import SharpMoney from '../components/SharpMoney.jsx';
 
 export default function Markets() {
   const [activeTab, setActiveTab] = useState('all');
@@ -95,6 +96,7 @@ export default function Markets() {
           position: 'sticky', top: '70px', alignSelf: 'start',
           display: 'flex', flexDirection: 'column', gap: '10px',
         }}>
+          <SharpMoney />
           <HowItWorks />
           <PublicChat />
           <ActivityFeed />
@@ -103,7 +105,8 @@ export default function Markets() {
       </div>
 
       <div className="mobile-only" style={{ padding: '0 16px 80px' }}>
-        <HowItWorks />
+        <SharpMoney />
+        <div style={{ marginTop: '10px' }}><HowItWorks /></div>
         <div style={{ marginTop: '10px' }}><PublicChat /></div>
         <div style={{ marginTop: '10px' }}><ActivityFeed /></div>
         <div style={{ marginTop: '10px' }}><Leaderboard /></div>
