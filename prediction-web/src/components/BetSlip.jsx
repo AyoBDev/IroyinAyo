@@ -26,8 +26,14 @@ export default function BetSlip({ market, outcome, onClose }) {
   const payout = amountNum > 0 ? Math.floor(amountNum / outcome.price) : 0;
   const profit = payout - amountNum;
 
+  const maxBet = Math.min(user?.points_balance || 0, 1000);
+
   async function handleSubmit() {
     if (amountNum < 1) return;
+    if (amountNum > maxBet) {
+      setError(`You only have ${user?.points_balance || 0} pts available`);
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -157,8 +163,13 @@ export default function BetSlip({ market, outcome, onClose }) {
 
       {/* Balance hint */}
       {user && amountNum > 0 && (
-        <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
-          Balance after: {user.points_balance - amountNum} pts
+        <div style={{
+          textAlign: 'center', marginTop: '8px', fontSize: '11px',
+          color: amountNum > user.points_balance ? 'var(--accent-red)' : 'var(--text-tertiary)',
+        }}>
+          {amountNum > user.points_balance
+            ? `Not enough points (you have ${user.points_balance})`
+            : `Balance after: ${user.points_balance - amountNum} pts`}
         </div>
       )}
 
