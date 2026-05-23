@@ -79,7 +79,7 @@ function calculateSharesForAmount(sharesSold, b, outcomeIndex, amount) {
  * @param {number} liquidityB - LMSR liquidity parameter (default 100)
  * @returns {object} - created market row
  */
-async function createMarket(title, liquidityB = 100) {
+async function createMarket(title, liquidityB = 25) {
   const [market] = await db('multi_markets')
     .insert({
       title,
