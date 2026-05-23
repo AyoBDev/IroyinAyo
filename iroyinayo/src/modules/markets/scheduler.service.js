@@ -14,7 +14,7 @@ async function executeSchedule(schedule) {
     weekday: 'short', month: 'short', day: 'numeric',
   }));
 
-  const market = await multiMarkets.createMarket(title, schedule.liquidity_b || 100);
+  const market = await multiMarkets.createMarket(title, schedule.liquidity_b || 25);
 
   if (schedule.category) {
     await db('multi_markets').where({ id: market.id }).update({ category: schedule.category });
@@ -85,7 +85,7 @@ async function createSchedule({ title, outcomes, cronExpression, category, liqui
       outcomes: JSON.stringify(outcomes),
       cron_expression: cronExpression,
       category: category || null,
-      liquidity_b: liquidityB || 100,
+      liquidity_b: liquidityB || 25,
       created_by: createdBy || null,
       active: true,
     })

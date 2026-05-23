@@ -7,6 +7,7 @@ export default function NoAuth() {
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [isReturning, setIsReturning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -64,19 +65,18 @@ export default function NoAuth() {
 
   async function handleNameSubmit(e) {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || !referralCode.trim()) return;
     setLoading(true);
     setError('');
     try {
       const result = await apiFetch('/api/auth/verify', {
         method: 'POST',
-        body: JSON.stringify({ phoneNumber: phone.trim(), code: code.trim(), name: name.trim() }),
+        body: JSON.stringify({ phoneNumber: phone.trim(), code: code.trim(), name: name.trim(), referralCode: referralCode.trim().toUpperCase() }),
       });
       setToken(result.token);
       window.location.reload();
     } catch (err) {
       setError(err.message || 'Verification failed');
-      setStep('code');
     } finally {
       setLoading(false);
     }
@@ -90,7 +90,7 @@ export default function NoAuth() {
       <TrendingUp size={40} color="var(--accent-green)" strokeWidth={2.5} style={{ marginBottom: '20px' }} />
       <h1 style={{ fontSize: '26px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.5px' }}>IroyinMarket</h1>
       <p style={{ color: 'var(--text-secondary)', fontSize: '14px', maxWidth: '340px', marginBottom: '36px', lineHeight: 1.6 }}>
-        Predict hackathon winners and football outcomes. Play with points, compete with friends.
+        Predict campus events, sports, and pop culture. Earn points, climb the leaderboard, win prizes.
       </p>
 
       <div style={{
@@ -194,10 +194,10 @@ export default function NoAuth() {
         {step === 'name' && (
           <form onSubmit={handleNameSubmit}>
             <p style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>
-              What should we call you?
+              Almost there!
             </p>
             <p style={{ color: 'var(--text-tertiary)', fontSize: '11px', marginBottom: '16px' }}>
-              This name shows on the leaderboard
+              IroyinMarket is invite-only. Enter your name and the code from whoever invited you.
             </p>
             <input
               type="text"
@@ -212,17 +212,31 @@ export default function NoAuth() {
                 outline: 'none', marginBottom: '12px',
               }}
             />
+            <input
+              type="text"
+              value={referralCode}
+              onChange={(e) => setReferralCode(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+              placeholder="Invite code (e.g. AYOB3K9F)"
+              maxLength={12}
+              style={{
+                width: '100%', padding: '12px 16px', borderRadius: '12px',
+                border: '1px solid var(--border)', background: 'var(--bg-primary)',
+                color: 'var(--text-primary)', fontSize: '16px', textAlign: 'center',
+                outline: 'none', marginBottom: '12px', textTransform: 'uppercase',
+                letterSpacing: '2px',
+              }}
+            />
             {error && (
               <p style={{ color: '#ef4444', fontSize: '12px', marginBottom: '12px' }}>{error}</p>
             )}
             <button
               type="submit"
-              disabled={loading || !name.trim()}
+              disabled={loading || !name.trim() || !referralCode.trim()}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                 padding: '12px 24px', borderRadius: '24px', fontSize: '14px', fontWeight: 700,
                 background: '#25D366', color: '#fff', border: 'none', cursor: 'pointer',
-                width: '100%', opacity: loading || !name.trim() ? 0.6 : 1,
+                width: '100%', opacity: loading || !name.trim() || !referralCode.trim() ? 0.6 : 1,
               }}
             >
               {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : null}

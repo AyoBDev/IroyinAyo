@@ -55,7 +55,7 @@ async function sendCode(phoneNumber) {
   return { sent: true };
 }
 
-async function verifyCode(phoneNumber, code, name) {
+async function verifyCode(phoneNumber, code, name, referralCode) {
   const phone = normalizePhone(phoneNumber);
 
   const record = await db('verification_codes')
@@ -74,9 +74,21 @@ async function verifyCode(phoneNumber, code, name) {
   // Find or create student
   let student = await db('students').where({ phone_number: phone }).first();
   if (!student) {
+    if (!referralCode) {
+      throw new ValidationError('Invite code required. Ask a friend who is already on IroyinMarket for their code.');
+    }
+
+    const referrer = await db('students').where({ referral_code: referralCode }).first();
+    if (!referrer) {
+      throw new ValidationError('Invalid invite code. Check with the person who shared it.');
+    }
+
     [student] = await db('students')
-      .insert({ phone_number: phone, name, points_balance: 100, is_verified: true })
+      .insert({ phone_number: phone, name, points_balance: 100, is_verified: true, referred_by: referrer.id, campus: 'unilorin' })
       .returning('*');
+
+    const { applyReferral } = require('../referrals/referrals.service');
+    applyReferral(student.id, referralCode).catch(() => {});
   } else {
     const updateFields = { is_verified: true };
     if (name && name !== '_returning') updateFields.name = name;
