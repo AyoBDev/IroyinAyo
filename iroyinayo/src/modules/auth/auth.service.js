@@ -18,10 +18,39 @@ function normalizePhone(phone) {
   return cleaned;
 }
 
+async function sendWhatsAppOTP(phone, message) {
+  const jid = `${phone}@s.whatsapp.net`;
+  const maxRetries = 3;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const sock = getBotSocket();
+    if (!sock) {
+      console.error(`[OTP] No bot socket available (attempt ${attempt}/${maxRetries})`);
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, 1000 * attempt));
+        continue;
+      }
+      return false;
+    }
+
+    try {
+      await sock.sendMessage(jid, { text: message });
+      console.log(`[OTP] Delivered to ${phone} (attempt ${attempt})`);
+      return true;
+    } catch (err) {
+      console.error(`[OTP] Send failed for ${phone} (attempt ${attempt}/${maxRetries}): ${err.message}`);
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, 1000 * attempt));
+      }
+    }
+  }
+
+  return false;
+}
+
 async function sendCode(phoneNumber) {
   const phone = normalizePhone(phoneNumber);
 
-  // Rate limit: max 3 codes per phone in last 10 minutes
   const recentCodes = await db('verification_codes')
     .where({ phone_number: phone })
     .where('created_at', '>', new Date(Date.now() - 10 * 60 * 1000))
@@ -37,19 +66,13 @@ async function sendCode(phoneNumber) {
 
   await db('verification_codes').insert({ phone_number: phone, code, expires_at });
 
-  // Send via WhatsApp
-  const sock = getBotSocket();
-  if (sock) {
-    try {
-      const jid = `${phone}@s.whatsapp.net`;
-      await sock.sendMessage(jid, {
-        text: `Your IroyinMarket verification code is: *${code}*\n\nThis code expires in 5 minutes. Do not share it with anyone.`,
-      });
-    } catch (err) {
-      console.log(`[DEV] WhatsApp send failed. Verification code for ${phone}: ${code}`);
-    }
-  } else {
-    console.log(`[DEV] No WhatsApp bot. Verification code for ${phone}: ${code}`);
+  const delivered = await sendWhatsAppOTP(
+    phone,
+    `Your IroyinMarket verification code is: *${code}*\n\nThis code expires in 5 minutes. Do not share it with anyone.`
+  );
+
+  if (!delivered) {
+    throw new ValidationError('Could not deliver code via WhatsApp. Make sure your number is on WhatsApp and try again.');
   }
 
   return { sent: true };
@@ -107,7 +130,6 @@ async function login(phoneNumber) {
 
   const student = await db('students').where({ phone_number: phone, is_verified: true }).first();
   if (!student) {
-    // Return same shape to prevent account enumeration
     return { codeSent: true };
   }
 
@@ -125,18 +147,13 @@ async function login(phoneNumber) {
   const expires_at = new Date(Date.now() + 5 * 60 * 1000);
   await db('verification_codes').insert({ phone_number: phone, code, expires_at });
 
-  const sock = getBotSocket();
-  if (sock) {
-    try {
-      const jid = `${phone}@s.whatsapp.net`;
-      await sock.sendMessage(jid, {
-        text: `Your IroyinMarket login code is: *${code}*\n\nThis code expires in 5 minutes.`,
-      });
-    } catch (err) {
-      console.log(`[DEV] WhatsApp send failed. Login code for ${phone}: ${code}`);
-    }
-  } else {
-    console.log(`[DEV] No WhatsApp bot. Login code for ${phone}: ${code}`);
+  const delivered = await sendWhatsAppOTP(
+    phone,
+    `Your IroyinMarket login code is: *${code}*\n\nThis code expires in 5 minutes.`
+  );
+
+  if (!delivered) {
+    throw new ValidationError('Could not deliver code via WhatsApp. Make sure your number is on WhatsApp and try again.');
   }
 
   return { codeSent: true, returning: true };
