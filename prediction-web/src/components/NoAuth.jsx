@@ -26,11 +26,14 @@ export default function NoAuth() {
         setIsReturning(true);
         setStep('code');
       } else {
-        // New user -- send OTP via send-code for registration
-        await apiFetch('/api/auth/send-code', {
-          method: 'POST',
-          body: JSON.stringify({ phoneNumber: phone.trim() }),
-        });
+        try {
+          await apiFetch('/api/auth/send-code', {
+            method: 'POST',
+            body: JSON.stringify({ phoneNumber: phone.trim() }),
+          });
+        } catch {
+          // OTP send failed — user can still skip
+        }
         setStep('code');
       }
     } catch (err) {
@@ -69,9 +72,13 @@ export default function NoAuth() {
     setLoading(true);
     setError('');
     try {
-      const result = await apiFetch('/api/auth/verify', {
+      const endpoint = code ? '/api/auth/verify' : '/api/auth/quick-join';
+      const body = code
+        ? { phoneNumber: phone.trim(), code: code.trim(), name: name.trim(), referralCode: referralCode.trim().toUpperCase() }
+        : { phoneNumber: phone.trim(), name: name.trim(), referralCode: referralCode.trim().toUpperCase() };
+      const result = await apiFetch(endpoint, {
         method: 'POST',
-        body: JSON.stringify({ phoneNumber: phone.trim(), code: code.trim(), name: name.trim(), referralCode: referralCode.trim().toUpperCase() }),
+        body: JSON.stringify(body),
       });
       setToken(result.token);
       window.location.reload();
@@ -177,17 +184,50 @@ export default function NoAuth() {
               Next
               <ArrowRight size={14} />
             </button>
-            <button
-              type="button"
-              onClick={() => { setStep('phone'); setCode(''); setError(''); }}
-              style={{
-                marginTop: '12px', background: 'none', border: 'none',
-                color: 'var(--text-tertiary)', fontSize: '12px', cursor: 'pointer',
-                textDecoration: 'underline',
-              }}
-            >
-              Use a different number
-            </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px' }}>
+              <button
+                type="button"
+                onClick={() => { setStep('phone'); setCode(''); setError(''); }}
+                style={{
+                  background: 'none', border: 'none',
+                  color: 'var(--text-tertiary)', fontSize: '12px', cursor: 'pointer',
+                  textDecoration: 'underline',
+                }}
+              >
+                Different number
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (isReturning) {
+                    setLoading(true);
+                    setError('');
+                    try {
+                      const result = await apiFetch('/api/auth/quick-join', {
+                        method: 'POST',
+                        body: JSON.stringify({ phoneNumber: phone.trim(), name: '_returning' }),
+                      });
+                      setToken(result.token);
+                      window.location.reload();
+                    } catch (err) {
+                      setError(err.message || 'Could not log in');
+                    } finally {
+                      setLoading(false);
+                    }
+                  } else {
+                    setCode('');
+                    setStep('name');
+                  }
+                }}
+                style={{
+                  background: 'none', border: 'none',
+                  color: 'var(--accent-blue)', fontSize: '12px', cursor: 'pointer',
+                  fontWeight: 600,
+                }}
+              >
+                Didn't get code? Skip
+              </button>
+            </div>
           </form>
         )}
 
