@@ -33,6 +33,15 @@ router.post('/login', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.post('/quick-join', async (req, res, next) => {
+  try {
+    const { phoneNumber, name, referralCode } = req.body;
+    if (!phoneNumber || !name) throw new ValidationError('phoneNumber and name are required');
+    const result = await authService.quickJoin(phoneNumber, name, referralCode);
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
 router.post('/exchange-token', async (req, res, next) => {
   try {
     const { urlToken } = req.body;

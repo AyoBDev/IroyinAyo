@@ -159,4 +159,33 @@ async function login(phoneNumber) {
   return { codeSent: true, returning: true };
 }
 
-module.exports = { sendCode, verifyCode, login, normalizePhone };
+async function quickJoin(phoneNumber, name, referralCode) {
+  const phone = normalizePhone(phoneNumber);
+
+  let student = await db('students').where({ phone_number: phone }).first();
+  if (student) {
+    const token = generateStudentToken(student.id);
+    return { token, student: { id: student.id, name: student.name, points_balance: student.points_balance } };
+  }
+
+  if (!referralCode) {
+    throw new ValidationError('Invite code required. Ask a friend who is already on IroyinMarket for their code.');
+  }
+
+  const referrer = await db('students').where({ referral_code: referralCode }).first();
+  if (!referrer) {
+    throw new ValidationError('Invalid invite code. Check with the person who shared it.');
+  }
+
+  [student] = await db('students')
+    .insert({ phone_number: phone, name, points_balance: 100, is_verified: false, referred_by: referrer.id, campus: 'unilorin' })
+    .returning('*');
+
+  const { applyReferral } = require('../referrals/referrals.service');
+  applyReferral(student.id, referralCode).catch(() => {});
+
+  const token = generateStudentToken(student.id);
+  return { token, student: { id: student.id, name: student.name, points_balance: student.points_balance } };
+}
+
+module.exports = { sendCode, verifyCode, login, quickJoin, normalizePhone };
