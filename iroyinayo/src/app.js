@@ -42,7 +42,8 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://api.fontshare.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdn.fontshare.com"],
       imgSrc: ["'self'", 'data:', 'https:'],
       connectSrc: ["'self'", 'wss:', 'ws:'],
       frameSrc: ["'none'"],
@@ -51,6 +52,39 @@ app.use(helmet({
   },
   crossOriginEmbedderPolicy: false,
 }));
+
+// Serve static files before rate limiter to avoid throttling asset requests
+const fs = require('fs');
+const possiblePaths = [
+  path.join(__dirname, '..', 'public'),
+  path.join(process.cwd(), 'public'),
+  path.join(__dirname, '..', '..', 'prediction-web', 'dist'),
+];
+const frontendPath = possiblePaths.find(p => fs.existsSync(path.join(p, 'index.html'))) || possiblePaths[0];
+console.log('Serving frontend from:', frontendPath, '| exists:', fs.existsSync(path.join(frontendPath, 'index.html')));
+
+// Admin static export routing — must come before express.static to prevent directory redirects
+app.use((req, res, next) => {
+  if (req.method !== 'GET' || !req.path.startsWith('/admin')) return next();
+  if (req.path.includes('.')) return next();
+  const subPath = req.path.replace(/^\/admin\/?/, '').replace(/\/$/, '');
+  const candidates = subPath
+    ? [path.join(frontendPath, 'admin', subPath + '.html'), path.join(frontendPath, 'admin', subPath, 'index.html')]
+    : [path.join(frontendPath, 'admin', 'index.html')];
+  const match = candidates.find(p => fs.existsSync(p));
+  if (match) {
+    res.sendFile(match);
+  } else {
+    const adminIndex = path.join(frontendPath, 'admin', 'index.html');
+    if (fs.existsSync(adminIndex)) {
+      res.sendFile(adminIndex);
+    } else {
+      next();
+    }
+  }
+});
+
+app.use(express.static(frontendPath));
 
 app.use(generalLimiter);
 
@@ -79,17 +113,6 @@ app.use('/api/ambassador', ambassadorRoutes);
 app.use('/api/ambassador-admin', ambassadorAdminRoutes);
 app.use('/api/schedules', schedulerRoutes);
 
-// Serve frontend static files
-const fs = require('fs');
-const possiblePaths = [
-  path.join(__dirname, '..', 'public'),
-  path.join(process.cwd(), 'public'),
-  path.join(__dirname, '..', '..', 'prediction-web', 'dist'),
-];
-const frontendPath = possiblePaths.find(p => fs.existsSync(path.join(p, 'index.html'))) || possiblePaths[0];
-console.log('Serving frontend from:', frontendPath, '| exists:', fs.existsSync(path.join(frontendPath, 'index.html')));
-
-app.use(express.static(frontendPath));
 
 // OG tags for share pages (crawlers don't run JS)
 app.get('/share/:marketId', async (req, res, next) => {

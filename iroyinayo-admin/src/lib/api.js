@@ -23,7 +23,7 @@ async function request(path, options = {}) {
     Cookies.remove('admin_token');
     Cookies.remove('admin_user');
     if (typeof window !== 'undefined') {
-      window.location.href = '/login';
+      window.location.href = '/admin/login';
     }
     throw new Error('Session expired');
   }

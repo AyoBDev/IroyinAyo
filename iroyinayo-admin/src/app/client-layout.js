@@ -91,7 +91,7 @@ function AuthGate({ children }) {
 
   if (!admin && pathname !== '/login') {
     if (typeof window !== 'undefined') {
-      window.location.href = '/login';
+      window.location.href = '/admin/login';
     }
     return null;
   }
