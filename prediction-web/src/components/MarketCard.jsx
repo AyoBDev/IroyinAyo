@@ -7,6 +7,22 @@ import PublicChat from './PublicChat.jsx';
 
 const PAGE_SIZE = 10;
 
+function SponsorBadge({ market }) {
+  if (!market.is_sponsored) return null;
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: '4px',
+      padding: '3px 8px', borderRadius: '4px', marginBottom: '8px',
+      background: 'var(--accent-yellow-bg, rgba(255,193,7,0.1))',
+      border: '1px solid var(--accent-yellow-border, rgba(255,193,7,0.3))',
+      fontSize: '10px', fontWeight: 600, color: 'var(--accent-yellow, #f59e0b)',
+      textTransform: 'uppercase', letterSpacing: '0.5px',
+    }}>
+      Sponsored{market.sponsor_name ? ` by ${market.sponsor_name}` : ''}
+    </div>
+  );
+}
+
 function LargeMarketCard({ market }) {
   const [selectedOutcome, setSelectedOutcome] = useState(null);
   const [page, setPage] = useState(0);
@@ -38,10 +54,11 @@ function LargeMarketCard({ market }) {
   return (
     <div style={{
       background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
-      border: '1px solid var(--border)',
+      border: market.is_featured ? '2px solid var(--accent-yellow, #f59e0b)' : '1px solid var(--border)',
       overflow: 'hidden',
     }}>
       <div style={{ padding: '18px 20px 14px' }}>
+        <SponsorBadge market={market} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
           <h2 style={{ fontSize: '14px', fontWeight: 600, flex: 1, lineHeight: 1.4 }}>{market.title}</h2>
           <button onClick={handleShare} style={{ padding: '6px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
@@ -187,11 +204,12 @@ function SmallMarketCard({ market }) {
   return (
     <div style={{
       background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
-      border: '1px solid var(--border)', overflow: 'hidden',
+      border: market.is_featured ? '2px solid var(--accent-yellow, #f59e0b)' : '1px solid var(--border)', overflow: 'hidden',
       display: 'flex', flexDirection: 'column',
     }}>
       {/* Header */}
       <div style={{ padding: '16px 18px 12px' }}>
+        <SponsorBadge market={market} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <h2 style={{ fontSize: '13px', fontWeight: 600, lineHeight: 1.4, marginBottom: '10px', flex: 1 }}>
             {market.title}

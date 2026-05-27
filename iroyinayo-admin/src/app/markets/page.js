@@ -21,12 +21,19 @@ export default function MarketsPage() {
   const [error, setError] = useState('');
   const [resolving, setResolving] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [liquidityInfo, setLiquidityInfo] = useState(null);
 
   const [newTitle, setNewTitle] = useState('');
   const [newOutcomes, setNewOutcomes] = useState(['', '']);
   const [newCategory, setNewCategory] = useState('');
+  const [isSponsored, setIsSponsored] = useState(false);
+  const [sponsorName, setSponsorName] = useState('');
+  const [sponsorFeatured, setSponsorFeatured] = useState(false);
 
-  useEffect(() => { loadMarkets(); }, []);
+  useEffect(() => {
+    loadMarkets();
+    api.get('/multi-markets/admin/liquidity-info').then(setLiquidityInfo).catch(() => {});
+  }, []);
 
   async function loadMarkets() {
     try {
@@ -43,15 +50,25 @@ export default function MarketsPage() {
     if (!newTitle.trim() || outcomes.length < 2) return;
     setCreating(true);
     try {
-      await api.post('/multi-markets', {
+      const body = {
         title: newTitle.trim(),
         outcomes,
         category: newCategory.trim() || undefined,
-      });
+      };
+      if (isSponsored && sponsorName.trim()) {
+        body.sponsor = {
+          name: sponsorName.trim(),
+          featured: sponsorFeatured,
+        };
+      }
+      await api.post('/multi-markets/admin/create', body);
       setShowCreate(false);
       setNewTitle('');
       setNewOutcomes(['', '']);
       setNewCategory('');
+      setIsSponsored(false);
+      setSponsorName('');
+      setSponsorFeatured(false);
       loadMarkets();
     } catch (err) {
       setError(err.message);
@@ -76,7 +93,14 @@ export default function MarketsPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Prediction Markets ({markets.length})</h1>
+        <div>
+          <h1 className="text-2xl font-bold">Prediction Markets ({markets.length})</h1>
+          {liquidityInfo && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Auto liquidity: b={liquidityInfo.autoLiquidityB} ({liquidityInfo.activeUsers} active users this week)
+            </p>
+          )}
+        </div>
         <Button onClick={() => setShowCreate(true)}>
           <Plus className="h-4 w-4 mr-1" />
           New Market
@@ -101,6 +125,12 @@ export default function MarketsPage() {
                 </span>
               </div>
               <div className="flex items-center gap-2">
+                {market.is_sponsored && (
+                  <Badge className="bg-yellow-600">Sponsored</Badge>
+                )}
+                {market.is_featured && (
+                  <Badge className="bg-blue-600">Featured</Badge>
+                )}
                 {market.status === 'resolved' ? (
                   <Badge className="bg-purple-600">Resolved</Badge>
                 ) : (
@@ -199,6 +229,38 @@ export default function MarketsPage() {
                   Add Option
                 </Button>
               </div>
+            </div>
+            <div className="border-t pt-4">
+              <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isSponsored}
+                  onChange={(e) => setIsSponsored(e.target.checked)}
+                  className="rounded"
+                />
+                Sponsored Market
+              </label>
+              {isSponsored && (
+                <div className="mt-3 space-y-3 pl-4 border-l-2 border-yellow-300">
+                  <div>
+                    <label className="block text-sm mb-1">Sponsor Name</label>
+                    <Input
+                      value={sponsorName}
+                      onChange={(e) => setSponsorName(e.target.value)}
+                      placeholder="e.g. ChopNow, DataPlug..."
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={sponsorFeatured}
+                      onChange={(e) => setSponsorFeatured(e.target.checked)}
+                      className="rounded"
+                    />
+                    Featured (pinned to top)
+                  </label>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>

@@ -14,6 +14,7 @@ import {
   Gift,
   LogOut,
   Clock,
+  Megaphone,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +25,7 @@ const NAV_ITEMS = [
   { href: '/quizzes', label: 'Quizzes', icon: Brain },
   { href: '/markets', label: 'Markets', icon: TrendingUp },
   { href: '/schedules', label: 'Schedules', icon: Clock },
+  { href: '/ambassadors', label: 'Ambassadors', icon: Megaphone },
   { href: '/rewards', label: 'Rewards', icon: Gift },
 ];
 

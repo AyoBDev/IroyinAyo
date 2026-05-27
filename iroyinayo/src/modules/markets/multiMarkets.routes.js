@@ -94,6 +94,49 @@ router.get('/admin/all', authenticate, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.post('/admin/create', authenticate, async (req, res, next) => {
+  try {
+    const { title, outcomes, category, liquidityB, sponsor } = req.body;
+    if (!title || !outcomes || !Array.isArray(outcomes) || outcomes.length < 2) {
+      throw new ValidationError('Title and at least 2 outcomes required');
+    }
+
+    const sponsorData = sponsor ? {
+      sponsorName: sponsor.name,
+      sponsorLogoUrl: sponsor.logoUrl,
+      featured: sponsor.featured || false,
+    } : null;
+
+    const market = await multiMarkets.createMarket(title, liquidityB || null, sponsorData);
+
+    if (category) {
+      await db('multi_markets').where({ id: market.id }).update({ category });
+    }
+
+    for (const label of outcomes) {
+      if (label.trim()) {
+        await multiMarkets.addOutcome(market.id, label.trim());
+      }
+    }
+
+    const fullMarket = await multiMarkets.getMarketWithOdds(market.id);
+    res.json(fullMarket);
+  } catch (err) { next(err); }
+});
+
+router.get('/admin/liquidity-info', authenticate, async (req, res, next) => {
+  try {
+    const autoB = await multiMarkets.getAutoLiquidityB();
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const result = await db('students')
+      .join('point_transactions', 'students.id', 'point_transactions.student_id')
+      .where('point_transactions.created_at', '>', weekAgo)
+      .countDistinct('students.id as active_users')
+      .first();
+    res.json({ autoLiquidityB: autoB, activeUsers: parseInt(result?.active_users || 0, 10) });
+  } catch (err) { next(err); }
+});
+
 router.get('/:id', async (req, res, next) => {
   try {
     const market = await multiMarkets.getMarketWithOdds(req.params.id);

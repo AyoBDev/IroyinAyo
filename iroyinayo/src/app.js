@@ -13,6 +13,7 @@ const adminRoutes = require('./modules/admin/admin.routes');
 const authRoutes = require('./modules/auth/auth.routes');
 const referralRoutes = require('./modules/referrals/referrals.routes');
 const ambassadorRoutes = require('./modules/markets/ambassador.routes');
+const ambassadorAdminRoutes = require('./modules/markets/ambassadorAdmin.routes');
 const schedulerRoutes = require('./modules/markets/scheduler.routes');
 const { generalLimiter } = require('./middleware/rateLimiter');
 const { AppError } = require('./utils/errors');
@@ -75,6 +76,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/referrals', referralRoutes);
 app.use('/api/ambassador', ambassadorRoutes);
+app.use('/api/ambassador-admin', ambassadorAdminRoutes);
 app.use('/api/schedules', schedulerRoutes);
 
 // Serve frontend static files

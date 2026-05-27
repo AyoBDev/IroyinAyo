@@ -74,18 +74,51 @@ function calculateSharesForAmount(sharesSold, b, outcomeIndex, amount) {
 }
 
 /**
+ * Calculate optimal liquidity_b based on active user count.
+ * More users = higher liquidity needed to prevent wild price swings.
+ */
+async function getAutoLiquidityB() {
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const result = await db('students')
+    .join('point_transactions', 'students.id', 'point_transactions.student_id')
+    .where('point_transactions.created_at', '>', weekAgo)
+    .countDistinct('students.id as active_users')
+    .first();
+
+  const activeUsers = parseInt(result?.active_users || 0, 10);
+
+  if (activeUsers <= 50) return 25;
+  if (activeUsers <= 150) return 50;
+  if (activeUsers <= 300) return 75;
+  if (activeUsers <= 500) return 100;
+  return 150;
+}
+
+/**
  * Create a new multi-outcome market
  * @param {string} title - market question/title
- * @param {number} liquidityB - LMSR liquidity parameter (default 100)
+ * @param {number} liquidityB - LMSR liquidity parameter (default: auto-scaled)
+ * @param {object} [sponsorData] - optional sponsor info
  * @returns {object} - created market row
  */
-async function createMarket(title, liquidityB = 25) {
+async function createMarket(title, liquidityB, sponsorData) {
+  const b = liquidityB || await getAutoLiquidityB();
+
+  const insert = {
+    title,
+    liquidity_b: b,
+    status: 'open',
+  };
+
+  if (sponsorData) {
+    insert.is_sponsored = true;
+    insert.is_featured = sponsorData.featured || false;
+    insert.sponsor_name = sponsorData.sponsorName || null;
+    insert.sponsor_logo_url = sponsorData.sponsorLogoUrl || null;
+  }
+
   const [market] = await db('multi_markets')
-    .insert({
-      title,
-      liquidity_b: liquidityB,
-      status: 'open',
-    })
+    .insert(insert)
     .returning('*');
   return market;
 }
@@ -167,7 +200,11 @@ async function getMarketWithOdds(marketId) {
  * @returns {object[]} - array of markets with outcomes
  */
 async function listOpenMarkets() {
-  const markets = await db('multi_markets').where({ status: 'open' }).orderBy('created_at', 'desc');
+  const markets = await db('multi_markets')
+    .where({ status: 'open' })
+    .orderBy('is_featured', 'desc')
+    .orderBy('is_sponsored', 'desc')
+    .orderBy('created_at', 'desc');
 
   const marketsWithOdds = await Promise.all(
     markets.map((market) => getMarketWithOdds(market.id))
@@ -316,4 +353,5 @@ module.exports = {
   buyPosition,
   resolveMarket,
   getStudentPositions,
+  getAutoLiquidityB,
 };

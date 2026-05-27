@@ -53,7 +53,7 @@ router.post('/create-market', authenticateStudent, requireAmbassador, async (req
       throw new ValidationError(`Maximum ${MAX_MARKETS_PER_WEEK} markets per week`);
     }
 
-    const market = await multiMarkets.createMarket(title, 100);
+    const market = await multiMarkets.createMarket(title, null);
 
     if (category) {
       await db('multi_markets').where({ id: market.id }).update({ category });
