@@ -18,6 +18,8 @@ export default function DashboardPage() {
   const [leaderboard, setLeaderboard] = useState([]);
   const [error, setError] = useState('');
 
+  const [rewardBudget, setRewardBudget] = useState(null);
+
   useEffect(() => {
     async function load() {
       try {
@@ -30,6 +32,11 @@ export default function DashboardPage() {
       } catch (err) {
         setError(err.message);
       }
+      try {
+        const pending = await api.get('/rewards/pending');
+        const totalPendingValue = pending.reduce((sum, r) => sum + (parseInt(r.reward_value, 10) || 0), 0);
+        setRewardBudget({ pendingCount: pending.length, pendingValue: totalPendingValue });
+      } catch {}
     }
     load();
   }, []);
@@ -52,6 +59,22 @@ export default function DashboardPage() {
         <StatCard label="Pending Redemptions" value={stats?.pending_redemptions} />
         <StatCard label="Open Markets" value={stats?.open_markets} />
       </div>
+
+      {rewardBudget && rewardBudget.pendingCount > 0 && (
+        <Card className="mb-8 border-orange-200 bg-orange-50/50">
+          <CardContent className="py-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm font-medium">Pending Rewards</p>
+                <p className="text-xs text-muted-foreground">
+                  {rewardBudget.pendingCount} pending &middot; Weekly cap: ₦10,000
+                </p>
+              </div>
+              <span className="text-lg font-bold">₦{rewardBudget.pendingValue.toLocaleString()}</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
