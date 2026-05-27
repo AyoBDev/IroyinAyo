@@ -27,6 +27,10 @@ router.get('/analytics', authenticate, async (req, res, next) => {
   try { res.json(await service.getAnalytics()); } catch (err) { next(err); }
 });
 
+router.get('/dashboard-kpis', authenticate, async (req, res, next) => {
+  try { res.json(await service.getDashboardKPIs()); } catch (err) { next(err); }
+});
+
 router.post('/students/:id/ban', authenticate, requireRole('super_admin', 'moderator'), async (req, res, next) => {
   try { res.json(await service.banStudent(req.params.id)); } catch (err) { next(err); }
 });
