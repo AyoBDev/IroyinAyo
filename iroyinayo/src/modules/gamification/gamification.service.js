@@ -1,12 +1,18 @@
 const db = require('../../config/database');
 const { NotFoundError, ValidationError } = require('../../utils/errors');
 
+const MAX_POINTS_BALANCE = 2000;
+
 async function addPoints(studentId, amount, type, description, referenceId) {
   await db.transaction(async (trx) => {
+    const student = await trx('students').where({ id: studentId }).forUpdate().first();
+    const effectiveAmount = Math.min(amount, MAX_POINTS_BALANCE - (student?.points_balance || 0));
+    if (effectiveAmount <= 0) return;
+
     await trx('point_transactions').insert({
-      student_id: studentId, amount, type, description, reference_id: referenceId,
+      student_id: studentId, amount: effectiveAmount, type, description, reference_id: referenceId,
     });
-    await trx('students').where({ id: studentId }).increment('points_balance', amount);
+    await trx('students').where({ id: studentId }).increment('points_balance', effectiveAmount);
   });
 }
 

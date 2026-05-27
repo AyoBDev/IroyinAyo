@@ -37,4 +37,8 @@ router.get('/student/:studentId', async (req, res, next) => {
   try { res.json(await service.getStudentRedemptions(req.params.studentId)); } catch (err) { next(err); }
 });
 
+router.get('/status/:studentId', async (req, res, next) => {
+  try { res.json(await service.getRewardStatus(req.params.studentId)); } catch (err) { next(err); }
+});
+
 module.exports = router;
