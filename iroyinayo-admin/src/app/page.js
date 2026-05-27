@@ -27,10 +27,10 @@ import {
 } from 'recharts';
 
 function TrendIndicator({ value, suffix = '' }) {
-  if (value === 0) return <span className="text-xs text-muted-foreground">no change</span>;
+  if (value === 0) return <span className="text-[13px] text-muted-foreground">no change</span>;
   const isPositive = value > 0;
   return (
-    <span className={`text-xs font-medium ${isPositive ? 'text-green-600' : 'text-red-500'}`}>
+    <span className={`text-[13px] font-medium ${isPositive ? 'text-[#10B981]' : 'text-[#EF4444]'}`}>
       {isPositive ? '+' : ''}{value}{suffix} vs last week
     </span>
   );
@@ -68,7 +68,7 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <div className="text-destructive">Error: {error}</div>
+      <div className="text-[#EF4444] text-[14px]">Error: {error}</div>
     );
   }
 
@@ -85,8 +85,8 @@ export default function DashboardPage() {
   })) || [];
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+    <div className="max-w-[1400px]">
+      <h1 className="text-[22px] font-bold mb-8" style={{ fontFamily: 'Satoshi, sans-serif' }}>Dashboard</h1>
 
       {/* Core Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -116,16 +116,16 @@ export default function DashboardPage() {
       </div>
 
       {rewardBudget && rewardBudget.pendingCount > 0 && (
-        <Card className="mb-6 border-orange-200 bg-orange-50/50">
-          <CardContent className="py-4">
+        <Card className="mb-8 border-[#F59E0B]/30 bg-[#F59E0B]/5">
+          <CardContent className="py-5 px-6">
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-sm font-medium">Pending Rewards</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-[14px] font-semibold">Pending Rewards</p>
+                <p className="text-[13px] text-muted-foreground mt-1">
                   {rewardBudget.pendingCount} pending &middot; Weekly cap: ₦10,000
                 </p>
               </div>
-              <span className="text-lg font-bold">₦{rewardBudget.pendingValue.toLocaleString()}</span>
+              <span className="text-[22px] font-bold" style={{ fontFamily: 'Satoshi, sans-serif' }}>₦{rewardBudget.pendingValue.toLocaleString()}</span>
             </div>
           </CardContent>
         </Card>
@@ -134,45 +134,55 @@ export default function DashboardPage() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Daily Engagement (14 days)</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-[16px] font-semibold">Daily Engagement</CardTitle>
+            <p className="text-[13px] text-muted-foreground">Predictions and unique users over 14 days</p>
           </CardHeader>
           <CardContent>
             {chartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer width="100%" height={260}>
                 <AreaChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Legend wrapperStyle={{ fontSize: '12px' }} />
-                  <Area type="monotone" dataKey="predictions" name="Predictions" stroke="#8b5cf6" fill="#8b5cf680" />
-                  <Area type="monotone" dataKey="users" name="Unique Users" stroke="#10b981" fill="#10b98180" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1E2940" />
+                  <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#7B8BA3' }} tickLine={false} axisLine={{ stroke: '#1E2940' }} />
+                  <YAxis tick={{ fontSize: 12, fill: '#7B8BA3' }} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={{ background: '#141B2D', border: '1px solid #1E2940', borderRadius: '8px', fontSize: '13px' }}
+                    labelStyle={{ color: '#F0F4F8', fontWeight: 600, marginBottom: '4px' }}
+                    itemStyle={{ color: '#7B8BA3' }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '13px', paddingTop: '12px' }} />
+                  <Area type="monotone" dataKey="predictions" name="Predictions" stroke="#A78BFA" fill="rgba(167, 139, 250, 0.15)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="users" name="Unique Users" stroke="#10B981" fill="rgba(16, 185, 129, 0.15)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-muted-foreground text-sm py-10 text-center">No activity data yet</p>
+              <p className="text-muted-foreground text-[14px] py-16 text-center">No activity data yet</p>
             )}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Daily Signups (14 days)</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-[16px] font-semibold">Daily Signups</CardTitle>
+            <p className="text-[13px] text-muted-foreground">New user registrations over 14 days</p>
           </CardHeader>
           <CardContent>
             {signupData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={signupData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Bar dataKey="signups" name="New Users" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1E2940" />
+                  <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#7B8BA3' }} tickLine={false} axisLine={{ stroke: '#1E2940' }} />
+                  <YAxis tick={{ fontSize: 12, fill: '#7B8BA3' }} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={{ background: '#141B2D', border: '1px solid #1E2940', borderRadius: '8px', fontSize: '13px' }}
+                    labelStyle={{ color: '#F0F4F8', fontWeight: 600, marginBottom: '4px' }}
+                    itemStyle={{ color: '#7B8BA3' }}
+                  />
+                  <Bar dataKey="signups" name="New Users" fill="#6366F1" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-muted-foreground text-sm py-10 text-center">No signup data yet</p>
+              <p className="text-muted-foreground text-[14px] py-16 text-center">No signup data yet</p>
             )}
           </CardContent>
         </Card>
@@ -182,38 +192,39 @@ export default function DashboardPage() {
       {kpis?.sponsored?.length > 0 && (
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Sponsored Market Performance</CardTitle>
+            <CardTitle className="text-[16px] font-semibold">Sponsored Market Performance</CardTitle>
+            <p className="text-[13px] text-muted-foreground">Engagement metrics for branded markets</p>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Market</TableHead>
-                  <TableHead>Sponsor</TableHead>
-                  <TableHead className="text-right">Predictions</TableHead>
-                  <TableHead className="text-right">Unique Users</TableHead>
-                  <TableHead className="text-right">Points Volume</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead className="text-[13px]">Market</TableHead>
+                  <TableHead className="text-[13px]">Sponsor</TableHead>
+                  <TableHead className="text-[13px] text-right">Predictions</TableHead>
+                  <TableHead className="text-[13px] text-right">Unique Users</TableHead>
+                  <TableHead className="text-[13px] text-right">Points Volume</TableHead>
+                  <TableHead className="text-[13px]">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {kpis.sponsored.map((market) => (
                   <TableRow key={market.id}>
-                    <TableCell className="font-medium text-sm max-w-[200px] truncate">
+                    <TableCell className="font-medium text-[14px] max-w-[220px] truncate">
                       {market.title}
                     </TableCell>
-                    <TableCell>
-                      <span className="text-sm">{market.sponsor_name || '—'}</span>
-                      {market.is_featured && <Badge className="ml-2 bg-blue-600 text-[10px]">Featured</Badge>}
+                    <TableCell className="text-[14px]">
+                      {market.sponsor_name || '—'}
+                      {market.is_featured && <Badge className="ml-2 bg-[#6366F1] text-[11px]">Featured</Badge>}
                     </TableCell>
-                    <TableCell className="text-right font-medium">{market.total_predictions}</TableCell>
-                    <TableCell className="text-right font-medium">{market.unique_predictors}</TableCell>
-                    <TableCell className="text-right font-medium">{market.points_volume.toLocaleString()}</TableCell>
+                    <TableCell className="text-right text-[14px] font-semibold tabular-nums">{market.total_predictions}</TableCell>
+                    <TableCell className="text-right text-[14px] font-semibold tabular-nums">{market.unique_predictors}</TableCell>
+                    <TableCell className="text-right text-[14px] font-semibold tabular-nums">{market.points_volume.toLocaleString()}</TableCell>
                     <TableCell>
                       {market.status === 'resolved' ? (
-                        <Badge className="bg-purple-600">Resolved</Badge>
+                        <Badge className="bg-[#A78BFA] text-[11px]">Resolved</Badge>
                       ) : (
-                        <Badge className="bg-green-600">Open</Badge>
+                        <Badge className="bg-[#10B981] text-[11px]">Open</Badge>
                       )}
                     </TableCell>
                   </TableRow>
@@ -227,27 +238,35 @@ export default function DashboardPage() {
       {/* Weekly Leaderboard */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Weekly Leaderboard</CardTitle>
+          <CardTitle className="text-[16px] font-semibold">Weekly Leaderboard</CardTitle>
         </CardHeader>
         <CardContent>
           {leaderboard.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No data yet.</p>
+            <p className="text-muted-foreground text-[14px]">No data yet.</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Rank</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead className="text-right">Points</TableHead>
+                  <TableHead className="text-[13px]">Rank</TableHead>
+                  <TableHead className="text-[13px]">Name</TableHead>
+                  <TableHead className="text-[13px] text-right">Points</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {leaderboard.map((entry, i) => (
                   <TableRow key={entry.id}>
-                    <TableCell>{i + 1}</TableCell>
-                    <TableCell>{entry.name}</TableCell>
-                    <TableCell className="text-right font-medium">
-                      {Number(entry.total_points)}
+                    <TableCell className="text-[14px] font-medium">
+                      {i < 3 ? (
+                        <span className={i === 0 ? 'text-[#F59E0B]' : i === 1 ? 'text-[#7B8BA3]' : 'text-[#A78BFA]'}>
+                          #{i + 1}
+                        </span>
+                      ) : (
+                        `#${i + 1}`
+                      )}
+                    </TableCell>
+                    <TableCell className="text-[14px] font-medium">{entry.name}</TableCell>
+                    <TableCell className="text-right text-[14px] font-semibold tabular-nums">
+                      {Number(entry.total_points).toLocaleString()}
                     </TableCell>
                   </TableRow>
                 ))}
