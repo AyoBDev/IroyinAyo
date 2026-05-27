@@ -13,6 +13,7 @@ import {
   TrendingUp,
   Gift,
   LogOut,
+  Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -22,6 +23,7 @@ const NAV_ITEMS = [
   { href: '/content', label: 'Content', icon: FileText },
   { href: '/quizzes', label: 'Quizzes', icon: Brain },
   { href: '/markets', label: 'Markets', icon: TrendingUp },
+  { href: '/schedules', label: 'Schedules', icon: Clock },
   { href: '/rewards', label: 'Rewards', icon: Gift },
 ];
 
