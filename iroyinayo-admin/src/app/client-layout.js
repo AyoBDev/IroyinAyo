@@ -36,7 +36,10 @@ function Sidebar() {
   return (
     <aside className="w-56 bg-card border-r border-border min-h-screen flex flex-col">
       <div className="p-4">
-        <h1 className="text-lg font-bold">Iroyinayo</h1>
+        <div className="flex items-center gap-2">
+          <TrendingUp size={22} className="text-[#10B981]" strokeWidth={2.5} />
+          <span className="font-[800] text-[17px] tracking-[-0.5px]" style={{ fontFamily: 'Satoshi, sans-serif' }}>IroyinMarket</span>
+        </div>
         <p className="text-xs text-muted-foreground mt-1">
           {admin?.name} ({admin?.role})
         </p>

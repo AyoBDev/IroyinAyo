@@ -2,8 +2,11 @@ import './globals.css';
 import { ClientLayout } from './client-layout';
 
 export const metadata = {
-  title: 'Iroyinayo Admin',
-  description: 'Admin dashboard for Iroyinayo WhatsApp bot',
+  title: 'IroyinMarket Admin',
+  description: 'Admin dashboard for IroyinMarket',
+  icons: {
+    icon: '/icon.svg',
+  },
 };
 
 export default function RootLayout({ children }) {
