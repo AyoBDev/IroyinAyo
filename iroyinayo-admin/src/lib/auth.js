@@ -25,6 +25,12 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
+  useEffect(() => {
+    if (!loading && !admin && typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+      router.replace('/login');
+    }
+  }, [loading, admin]);
+
   async function login(email, password) {
     const data = await api.post('/admin/login', { email, password });
     Cookies.set('admin_token', data.token, { expires: 1 });

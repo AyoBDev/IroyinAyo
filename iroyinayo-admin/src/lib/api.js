@@ -20,10 +20,12 @@ async function request(path, options = {}) {
   });
 
   if (res.status === 401 && !path.includes('/admin/login')) {
-    Cookies.remove('admin_token');
-    Cookies.remove('admin_user');
-    if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-      window.location.href = '/login';
+    if (token) {
+      Cookies.remove('admin_token');
+      Cookies.remove('admin_user');
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
     }
     throw new Error('Session expired');
   }

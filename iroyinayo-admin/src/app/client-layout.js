@@ -81,23 +81,16 @@ function AuthGate({ children }) {
   const { admin, loading } = useAuth();
   const pathname = usePathname();
 
-  if (loading) {
+  if (pathname === '/login') {
+    return <>{children}</>;
+  }
+
+  if (loading || !admin) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-muted-foreground">Loading...</p>
       </div>
     );
-  }
-
-  if (!admin && pathname !== '/login') {
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login';
-    }
-    return null;
-  }
-
-  if (pathname === '/login') {
-    return <>{children}</>;
   }
 
   return (
