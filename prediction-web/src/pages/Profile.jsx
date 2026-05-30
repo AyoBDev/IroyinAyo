@@ -242,6 +242,27 @@ export default function Profile() {
 
   return (
     <div style={{ padding: '16px', maxWidth: '700px', margin: '0 auto', paddingBottom: '100px' }}>
+      {/* Profile Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+        <div style={{
+          width: '48px', height: '48px', borderRadius: '50%',
+          background: 'var(--primary-bg)', border: '2px solid var(--primary-border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}>
+          <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--primary)' }}>
+            {user.name?.charAt(0)?.toUpperCase() || '?'}
+          </span>
+        </div>
+        <div>
+          <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+            {user.name}
+          </h1>
+          <p style={{ fontSize: '13px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+            {user.phone || user.email || ''}
+          </p>
+        </div>
+      </div>
+
       {/* Hero: Portfolio Summary */}
       <section style={{ marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
