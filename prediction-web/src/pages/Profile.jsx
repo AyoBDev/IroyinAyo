@@ -1,89 +1,8 @@
 import { useState, useEffect } from 'react';
-import { TrendingUp, Target, Flame, Award, ArrowUpRight, ArrowDownRight, Share2, Users, Copy, Check, Gift, Sun, Moon } from 'lucide-react';
+import { TrendingUp, Target, Flame, Award, ArrowUpRight, ArrowDownRight, Share2, Copy, Check, Gift, Sun, Moon, Wallet, Star, History, Trophy } from 'lucide-react';
 import { apiFetch, getToken } from '../api.js';
 import useStore from '../store.js';
 import { getTheme, toggleTheme } from '../theme.js';
-
-function PredictorCard({ user }) {
-  const accuracy = user.accuracy ?? 0;
-  const streak = user.streak ?? 0;
-  const weeklyRank = user.weekly_rank ?? null;
-  const title = user.title ?? 'Newcomer';
-
-  return (
-    <div style={{
-      background: 'linear-gradient(145deg, var(--bg-card), var(--bg-secondary))',
-      borderRadius: 'var(--radius-xl)', padding: '24px',
-      border: '1px solid var(--border)', textAlign: 'center',
-    }}>
-      <div style={{
-        width: '56px', height: '56px', borderRadius: '50%',
-        background: 'var(--accent-green-bg)', border: '2px solid var(--accent-green-border)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        margin: '0 auto 12px',
-      }}>
-        <span style={{ fontSize: '22px', fontWeight: 800, color: 'var(--accent-green)' }}>
-          {user.name?.charAt(0)?.toUpperCase() || '?'}
-        </span>
-      </div>
-
-      <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '4px' }}>{user.name}</h2>
-      <div style={{
-        display: 'inline-flex', alignItems: 'center', gap: '6px',
-        padding: '4px 12px', borderRadius: '12px',
-        background: 'var(--accent-blue-bg)', border: '1px solid var(--accent-blue-border)',
-        marginBottom: '16px',
-      }}>
-        <Award size={12} color="var(--accent-blue)" />
-        <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--accent-blue)' }}>{title}</span>
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '8px' }}>
-        <div>
-          <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--accent-green)' }}>
-            {accuracy}%
-          </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '2px' }}>Accuracy</div>
-        </div>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-            <Flame size={16} color="var(--accent-yellow)" />
-            <span style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)' }}>{streak}</span>
-          </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '2px' }}>Week Streak</div>
-        </div>
-        {weeklyRank && (
-          <div>
-            <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--accent-yellow)' }}>
-              #{weeklyRank}
-            </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '2px' }}>This Week</div>
-          </div>
-        )}
-      </div>
-
-      <button
-        onClick={() => {
-          const text = `${user.name} — ${title} on IroyinMarket\n${accuracy}% accuracy | ${streak} week streak${weeklyRank ? ` | Ranked #${weeklyRank}` : ''}\n\nPredict & compete for cash: ${window.location.origin}`;
-          if (navigator.share) {
-            navigator.share({ text });
-          } else {
-            navigator.clipboard.writeText(text);
-          }
-        }}
-        style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-          width: '100%', marginTop: '16px', padding: '12px',
-          background: 'var(--accent-blue-bg)', border: '1px solid var(--accent-blue-border)',
-          borderRadius: '9999px', color: 'var(--accent-blue)',
-          fontSize: '12px', fontWeight: 700,
-        }}
-      >
-        <Share2 size={13} /> Share Profile
-      </button>
-    </div>
-  );
-}
 
 function ReferralCard() {
   const [stats, setStats] = useState(null);
@@ -137,10 +56,10 @@ function ReferralCard() {
   return (
     <div style={{
       background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
-      border: '1px solid var(--border)', overflow: 'hidden', marginTop: '16px',
+      border: '1px solid var(--border)', overflow: 'hidden', marginTop: '24px',
     }}>
       <div style={{
-        padding: '14px 16px', borderBottom: '1px solid var(--border)',
+        padding: '14px 20px', borderBottom: '1px solid var(--border)',
         display: 'flex', alignItems: 'center', gap: '8px',
       }}>
         <Gift size={14} color="var(--accent-violet)" />
@@ -149,12 +68,11 @@ function ReferralCard() {
         </h3>
       </div>
 
-      <div style={{ padding: '16px' }}>
+      <div style={{ padding: '20px' }}>
         <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
           You both get <span style={{ color: 'var(--accent-green)', fontWeight: 700 }}>50 pts</span> when a friend joins with your code.
         </p>
 
-        {/* My code */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: '8px',
           padding: '10px 14px', background: 'var(--bg-primary)',
@@ -181,7 +99,6 @@ function ReferralCard() {
           <Share2 size={13} /> Share Referral Link
         </button>
 
-        {/* Stats */}
         <div style={{ display: 'flex', gap: '12px', marginBottom: '14px' }}>
           <div style={{ flex: 1, padding: '10px', background: 'var(--bg-primary)', borderRadius: 'var(--radius)', textAlign: 'center' }}>
             <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>{stats.referralCount}</div>
@@ -193,7 +110,6 @@ function ReferralCard() {
           </div>
         </div>
 
-        {/* Apply code */}
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: '14px' }}>
           <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '8px', fontWeight: 500 }}>Have a referral code?</div>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -249,12 +165,12 @@ function ThemeToggle() {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)',
-      padding: '14px 16px', border: '1px solid var(--border)', marginTop: '16px',
+      background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
+      padding: '16px 20px', border: '1px solid var(--border)', marginTop: '24px',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        {theme === 'dark' ? <Moon size={16} color="var(--text-secondary)" /> : <Sun size={16} color="var(--text-secondary)" />}
-        <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+        {theme === 'dark' ? <Moon size={18} color="var(--text-secondary)" /> : <Sun size={18} color="var(--accent-yellow)" />}
+        <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
           {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
         </span>
       </div>
@@ -284,17 +200,15 @@ export default function Profile() {
 
   if (!getToken()) {
     return (
-      <div style={{
-        padding: '60px 24px', textAlign: 'center',
-      }}>
+      <div style={{ padding: '60px 24px', textAlign: 'center' }}>
         <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '16px' }}>
-          Sign in to view your profile
+          Sign in to view your portfolio
         </p>
         <button
           onClick={openAuthModal}
           style={{
-            background: '#25D366', color: '#fff',
-            padding: '10px 24px', borderRadius: '20px', fontSize: '14px',
+            background: 'var(--primary)', color: '#fff',
+            padding: '10px 24px', borderRadius: '9999px', fontSize: '14px',
             fontWeight: 600, border: 'none',
           }}
         >
@@ -318,101 +232,234 @@ export default function Profile() {
     );
   }
 
+  const accuracy = user.accuracy ?? 0;
+  const streak = user.streak ?? 0;
+  const title = user.title ?? 'Newcomer';
+  const activePositions = positions.filter(p => p.market_status !== 'resolved');
+  const resolvedPositions = positions.filter(p => p.market_status === 'resolved');
+  const totalWins = resolvedPositions.filter(p => p.payout > 0).length;
+  const winRate = resolvedPositions.length > 0 ? Math.round((totalWins / resolvedPositions.length) * 100) : 0;
+
   return (
-    <div style={{ padding: '16px', maxWidth: '600px', margin: '0 auto', paddingBottom: '80px' }}>
-      <PredictorCard user={user} />
-
-      {/* Stats */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: '1fr 1fr',
-        gap: '10px', marginTop: '16px',
-      }}>
-        <div style={{
-          background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)',
-          padding: '16px', border: '1px solid var(--border)',
-        }}>
-          <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Balance</div>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--accent-green)' }}>
-            {user.points_balance} pts
+    <div style={{ padding: '16px', maxWidth: '700px', margin: '0 auto', paddingBottom: '100px' }}>
+      {/* Hero: Portfolio Summary */}
+      <section style={{ marginBottom: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+          <div>
+            <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+              Points Balance
+            </p>
+            <h2 style={{ fontSize: '32px', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+              {user.points_balance} pts
+            </h2>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '4px',
+              background: 'var(--accent-green-bg)', border: '1px solid var(--accent-green-border)',
+              padding: '4px 12px', borderRadius: '9999px',
+            }}>
+              <TrendingUp size={14} color="var(--accent-green)" />
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--accent-green)' }}>
+                {accuracy}% accuracy
+              </span>
+            </div>
+            <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+              {streak} week streak
+            </p>
           </div>
         </div>
-        <div style={{
-          background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)',
-          padding: '16px', border: '1px solid var(--border)',
-        }}>
-          <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Predictions</div>
-          <div style={{ fontSize: '18px', fontWeight: 700 }}>
-            {positions.length}
+
+        {/* Bento Stats Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+          <div style={{
+            background: 'var(--bg-card)', padding: '20px',
+            borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)',
+            display: 'flex', flexDirection: 'column', gap: '8px',
+          }}>
+            <Star size={20} color="var(--primary)" />
+            <div>
+              <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '2px' }}>Rank</p>
+              <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>{title}</p>
+            </div>
+          </div>
+          <div style={{
+            background: 'var(--bg-card)', padding: '20px',
+            borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)',
+            display: 'flex', flexDirection: 'column', gap: '8px',
+          }}>
+            <Wallet size={20} color="var(--accent-green)" />
+            <div>
+              <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '2px' }}>Available</p>
+              <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>{user.points_balance} pts</p>
+            </div>
+          </div>
+          <div style={{
+            background: 'var(--bg-card)', padding: '20px',
+            borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)',
+            display: 'flex', flexDirection: 'column', gap: '8px',
+          }}>
+            <History size={20} color="var(--accent-blue)" />
+            <div>
+              <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '2px' }}>Total Predictions</p>
+              <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>{positions.length}</p>
+            </div>
+          </div>
+          <div style={{
+            background: 'var(--bg-card)', padding: '20px',
+            borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)',
+            display: 'flex', flexDirection: 'column', gap: '8px',
+          }}>
+            <Trophy size={20} color="var(--accent-yellow)" />
+            <div>
+              <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '2px' }}>Win Rate</p>
+              <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>{winRate}%</p>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <ThemeToggle />
-
-      <ReferralCard />
-
-      {/* Prediction History */}
-      <div style={{
-        background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
-        border: '1px solid var(--border)', overflow: 'hidden', marginTop: '16px',
-      }}>
-        <div style={{
-          padding: '14px 16px', borderBottom: '1px solid var(--border)',
-          display: 'flex', alignItems: 'center', gap: '8px',
-        }}>
-          <TrendingUp size={14} color="var(--accent-green)" />
-          <h3 style={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Prediction History
+      {/* Active Positions */}
+      {activePositions.length > 0 && (
+        <section style={{ marginBottom: '24px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px' }}>
+            Active Positions
           </h3>
-        </div>
-
-        {positions.length === 0 ? (
-          <div style={{ padding: '32px 20px', textAlign: 'center' }}>
-            <Target size={24} color="var(--text-tertiary)" style={{ marginBottom: '10px' }} />
-            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '6px' }}>
-              No predictions yet
-            </p>
-            <p style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>
-              Pick your first market to start building your record.
-            </p>
-          </div>
-        ) : (
-          <div style={{ padding: '6px' }}>
-            {positions.slice(0, 20).map((pos) => {
-              const isWin = pos.payout > 0;
-              const isResolved = pos.market_status === 'resolved';
-              return (
-                <div key={pos.id} style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '12px 14px', borderRadius: 'var(--radius)',
-                  margin: '2px 0', minHeight: '44px',
-                }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {activePositions.slice(0, 5).map((pos) => (
+              <div key={pos.id} style={{
+                background: 'var(--bg-card)', padding: '20px',
+                borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                  <div style={{ flex: 1, paddingRight: '12px' }}>
+                    <span style={{
+                      fontSize: '11px', fontWeight: 600, color: 'var(--primary)',
+                      background: 'var(--primary-bg)', padding: '2px 8px', borderRadius: '4px',
+                      textTransform: 'uppercase', letterSpacing: '-0.02em',
+                    }}>
+                      {pos.market_category || 'Market'}
+                    </span>
+                    <h4 style={{ fontSize: '14px', fontWeight: 600, marginTop: '8px', color: 'var(--text-primary)', lineHeight: '1.3' }}>
                       {pos.market_title}
-                    </div>
-                    <div style={{ fontSize: '13px', fontWeight: 600 }}>{pos.outcome_label}</div>
+                    </h4>
                   </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
-                    {isResolved ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        {isWin ? <ArrowUpRight size={14} color="var(--accent-green)" /> : <ArrowDownRight size={14} color="var(--accent-red)" />}
-                        <span style={{ fontSize: '13px', fontWeight: 700, color: isWin ? 'var(--accent-green)' : 'var(--accent-red)' }}>
-                          {isWin ? `+${pos.payout}` : 'Lost'}
-                        </span>
-                      </div>
-                    ) : (
-                      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                        {Number(pos.shares).toFixed(1)} shares
-                      </div>
-                    )}
+                  <div style={{
+                    background: 'var(--accent-green-bg)', border: '1px solid var(--accent-green-border)',
+                    padding: '4px 8px', borderRadius: 'var(--radius-lg)', textAlign: 'center', minWidth: '50px',
+                  }}>
+                    <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--accent-green)', lineHeight: 1 }}>{pos.outcome_label}</p>
+                    <p style={{ fontSize: '16px', fontWeight: 700, color: 'var(--accent-green)' }}>
+                      {Number(pos.shares).toFixed(1)}
+                    </p>
                   </div>
                 </div>
-              );
-            })}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
+                    {Number(pos.shares).toFixed(1)} shares
+                  </span>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Active
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+        </section>
+      )}
+
+      {/* Trade History */}
+      <section>
+        <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px' }}>
+          Trade History
+        </h3>
+        <div style={{
+          background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
+          border: '1px solid var(--border)', overflow: 'hidden',
+        }}>
+          {resolvedPositions.length === 0 && activePositions.length === 0 ? (
+            <div style={{ padding: '32px 20px', textAlign: 'center' }}>
+              <Target size={24} color="var(--text-tertiary)" style={{ margin: '0 auto 10px' }} />
+              <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '6px' }}>
+                No predictions yet
+              </p>
+              <p style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>
+                Pick your first market to start building your record.
+              </p>
+            </div>
+          ) : resolvedPositions.length === 0 ? (
+            <div style={{ padding: '32px 20px', textAlign: 'center' }}>
+              <History size={24} color="var(--text-tertiary)" style={{ margin: '0 auto 10px' }} />
+              <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
+                No resolved trades yet. Your history will appear here.
+              </p>
+            </div>
+          ) : (
+            <div>
+              {resolvedPositions.slice(0, 20).map((pos, i) => {
+                const isWin = pos.payout > 0;
+                return (
+                  <div key={pos.id} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '16px 20px',
+                    borderBottom: i < resolvedPositions.length - 1 ? '1px solid var(--border)' : 'none',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        width: '40px', height: '40px', borderRadius: '50%',
+                        background: isWin ? 'var(--accent-green-bg)' : 'var(--accent-red-bg)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      }}>
+                        {isWin
+                          ? <ArrowUpRight size={18} color="var(--accent-green)" />
+                          : <ArrowDownRight size={18} color="var(--accent-red)" />
+                        }
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {pos.market_title}
+                        </p>
+                        <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                          Position: {pos.outcome_label}
+                        </p>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
+                      <p style={{ fontSize: '14px', fontWeight: 700, color: isWin ? 'var(--accent-green)' : 'var(--accent-red)' }}>
+                        {isWin ? `+${pos.payout}` : 'Lost'}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <ThemeToggle />
+      <ReferralCard />
+
+      {/* Share Profile */}
+      <button
+        onClick={() => {
+          const text = `${user.name} on IroyinMarket\n${accuracy}% accuracy | ${streak} week streak\n\nPredict & compete: ${window.location.origin}`;
+          if (navigator.share) {
+            navigator.share({ text });
+          } else {
+            navigator.clipboard.writeText(text);
+          }
+        }}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+          width: '100%', marginTop: '24px', padding: '14px',
+          background: 'var(--primary-bg)', border: '1px solid var(--primary-border)',
+          borderRadius: '9999px', color: 'var(--primary)',
+          fontSize: '13px', fontWeight: 700,
+        }}
+      >
+        <Share2 size={14} /> Share Profile
+      </button>
     </div>
   );
 }
