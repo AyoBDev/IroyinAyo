@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { TrendingUp, Target, Flame, Award, ArrowUpRight, ArrowDownRight, Share2, Users, Copy, Check, Gift } from 'lucide-react';
+import { TrendingUp, Target, Flame, Award, ArrowUpRight, ArrowDownRight, Share2, Users, Copy, Check, Gift, Sun, Moon } from 'lucide-react';
 import { apiFetch, getToken } from '../api.js';
 import useStore from '../store.js';
+import { getTheme, toggleTheme } from '../theme.js';
 
 function PredictorCard({ user }) {
   const accuracy = user.accuracy ?? 0;
@@ -237,6 +238,47 @@ function ReferralCard() {
   );
 }
 
+function ThemeToggle() {
+  const [theme, setThemeState] = useState(getTheme);
+
+  function handleToggle() {
+    const next = toggleTheme();
+    setThemeState(next);
+  }
+
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)',
+      padding: '14px 16px', border: '1px solid var(--border)', marginTop: '16px',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {theme === 'dark' ? <Moon size={16} color="var(--text-secondary)" /> : <Sun size={16} color="var(--text-secondary)" />}
+        <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+          {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+        </span>
+      </div>
+      <button
+        onClick={handleToggle}
+        style={{
+          position: 'relative', width: '44px', height: '24px',
+          borderRadius: '12px', border: 'none',
+          background: theme === 'dark' ? 'var(--accent-green)' : 'var(--border)',
+          transition: 'background 0.2s',
+        }}
+        aria-label="Toggle theme"
+      >
+        <span style={{
+          position: 'absolute', top: '3px',
+          left: theme === 'dark' ? '23px' : '3px',
+          width: '18px', height: '18px', borderRadius: '50%',
+          background: '#fff', transition: 'left 0.2s',
+        }} />
+      </button>
+    </div>
+  );
+}
+
 export default function Profile() {
   const openAuthModal = useStore((s) => s.openAuthModal);
 
@@ -258,6 +300,9 @@ export default function Profile() {
         >
           Join IroyinMarket
         </button>
+        <div style={{ maxWidth: '400px', margin: '24px auto 0' }}>
+          <ThemeToggle />
+        </div>
       </div>
     );
   }
@@ -301,6 +346,8 @@ export default function Profile() {
           </div>
         </div>
       </div>
+
+      <ThemeToggle />
 
       <ReferralCard />
 

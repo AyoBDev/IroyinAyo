@@ -1,17 +1,9 @@
-import { useState } from 'react';
-import { TrendingUp, Wallet, Sun, Moon } from 'lucide-react';
+import { TrendingUp, Wallet } from 'lucide-react';
 import useStore from '../store.js';
-import { getTheme, toggleTheme } from '../theme.js';
 
 export default function TopBar({ onPositionsClick }) {
   const user = useStore((s) => s.user);
   const openAuthModal = useStore((s) => s.openAuthModal);
-  const [theme, setThemeState] = useState(getTheme);
-
-  function handleToggle() {
-    const next = toggleTheme();
-    setThemeState(next);
-  }
 
   return (
     <header style={{
@@ -30,19 +22,6 @@ export default function TopBar({ onPositionsClick }) {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <button
-          onClick={handleToggle}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: '36px', height: '36px', borderRadius: 'var(--radius-full)',
-            background: 'var(--bg-surface-container)', border: '1px solid var(--border)',
-            color: 'var(--text-secondary)',
-          }}
-          aria-label="Toggle theme"
-        >
-          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
-
         {user ? (
           <>
             <div style={{
