@@ -82,7 +82,7 @@ function MainApp() {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
         <div style={{ textAlign: 'center' }}>
-          <Loader2 size={32} color="var(--accent-blue)" style={{ animation: 'spin 1s linear infinite', marginBottom: '12px' }} />
+          <Loader2 size={32} color="var(--primary)" style={{ animation: 'spin 1s linear infinite', marginBottom: '12px' }} />
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Loading markets...</p>
         </div>
       </div>
@@ -90,7 +90,7 @@ function MainApp() {
   }
 
   return (
-    <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ paddingTop: '60px' }}>
       <ResolutionToast />
       <TopBar onPositionsClick={() => setShowPositions(!showPositions)} />
       {showPositions && <MyPositions onClose={() => setShowPositions(false)} />}

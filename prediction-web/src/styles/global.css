@@ -6,37 +6,55 @@
 
 :root {
   --bg-primary: #0A0E17;
-  --bg-secondary: #141B2D;
+  --bg-secondary: #111827;
   --bg-card: #141B2D;
   --bg-card-hover: #1A2338;
   --bg-input: #0F1420;
+  --bg-surface-container: #1A2338;
+  --bg-surface-high: #1E2940;
+  --bg-surface-low: #111827;
+
   --border: #1E2940;
   --border-light: #283550;
+
   --text-primary: #F0F4F8;
   --text-secondary: #7B8BA3;
   --text-tertiary: #4A5568;
+
+  --primary: #10B981;
+  --primary-dim: #059669;
+  --primary-bg: rgba(16, 185, 129, 0.10);
+  --primary-border: rgba(16, 185, 129, 0.25);
+
   --accent-green: #10B981;
   --accent-green-dim: #059669;
   --accent-green-bg: rgba(16, 185, 129, 0.08);
   --accent-green-border: rgba(16, 185, 129, 0.25);
+
   --accent-red: #EF4444;
   --accent-red-dim: #DC2626;
   --accent-red-bg: rgba(239, 68, 68, 0.08);
   --accent-red-border: rgba(239, 68, 68, 0.25);
+
   --accent-blue: #6366F1;
   --accent-blue-bg: rgba(99, 102, 241, 0.08);
   --accent-blue-border: rgba(99, 102, 241, 0.2);
+
   --accent-yellow: #F59E0B;
   --accent-yellow-bg: rgba(245, 158, 11, 0.08);
   --accent-yellow-border: rgba(245, 158, 11, 0.25);
+
   --accent-violet: #A78BFA;
   --accent-violet-bg: rgba(167, 139, 250, 0.08);
   --accent-violet-border: rgba(167, 139, 250, 0.2);
+
   --radius: 6px;
   --radius-lg: 12px;
   --radius-xl: 16px;
+  --radius-full: 9999px;
+
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
 }
 
 body {
@@ -46,8 +64,9 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
+  padding-bottom: 80px;
 }
 
 h1, h2, h3, h4 {
@@ -58,11 +77,11 @@ button {
   cursor: pointer;
   border: none;
   font-family: inherit;
-  transition: all 0.12s ease;
+  transition: all 0.15s ease;
 }
 
 button:active {
-  transform: scale(0.97);
+  transform: scale(0.95);
 }
 
 input {
@@ -72,14 +91,17 @@ input {
 }
 
 input:focus {
-  border-color: var(--accent-blue) !important;
-  box-shadow: 0 0 0 2px var(--accent-blue-bg);
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 2px var(--primary-bg);
 }
 
 a {
-  color: var(--accent-blue);
+  color: var(--primary);
   text-decoration: none;
 }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 ::-webkit-scrollbar {
   width: 5px;
@@ -158,9 +180,6 @@ a {
   }
   nav.mobile-only {
     display: flex !important;
-  }
-  .markets-grid {
-    columns: 1 !important;
   }
 }
 

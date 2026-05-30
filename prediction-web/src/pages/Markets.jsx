@@ -22,10 +22,10 @@ export default function Markets() {
 
   return (
     <>
-      <div style={{
-        display: 'flex', gap: '2px', padding: '0 16px',
-        overflowX: 'auto', borderBottom: '1px solid var(--border)',
-        background: 'var(--bg-primary)',
+      {/* Category Chips */}
+      <section className="no-scrollbar" style={{
+        display: 'flex', gap: '8px', padding: '16px 16px',
+        overflowX: 'auto',
       }}>
         {categories.map((cat) => {
           const isActive = activeTab === cat;
@@ -34,31 +34,36 @@ export default function Markets() {
               key={cat}
               onClick={() => setActiveTab(cat)}
               style={{
-                padding: '11px 16px', fontSize: '13px', fontWeight: isActive ? 600 : 500,
-                color: isActive ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                background: isActive ? 'var(--bg-card)' : 'transparent',
-                borderBottom: isActive ? '2px solid var(--accent-blue)' : '2px solid transparent',
-                borderRadius: '6px 6px 0 0', whiteSpace: 'nowrap',
+                padding: '8px 20px',
+                fontSize: '12px',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                borderRadius: 'var(--radius-full)',
+                background: isActive ? 'var(--primary)' : 'var(--bg-surface-container)',
+                color: isActive ? '#fff' : 'var(--text-secondary)',
+                border: isActive ? 'none' : '1px solid var(--border)',
                 textTransform: 'capitalize',
               }}
             >
-              {cat}
+              {cat === 'all' ? 'Trending' : cat}
             </button>
           );
         })}
-      </div>
+      </section>
 
+      {/* Market Feed */}
       <div
         className="app-layout"
         style={{
           display: 'grid', gridTemplateColumns: '1fr 300px',
-          gap: '16px', padding: '16px 24px',
+          gap: '16px', padding: '0 16px 16px',
+          maxWidth: '1400px', margin: '0 auto',
         }}
       >
         <main>
           {activeMarkets.length === 0 && resolvedMarkets.length === 0 ? (
             <div style={{
-              padding: '40px', textAlign: 'center',
+              padding: '48px 20px', textAlign: 'center',
               background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
               border: '1px solid var(--border)',
             }}>
@@ -70,31 +75,24 @@ export default function Markets() {
               </p>
             </div>
           ) : (
-            <>
-              <div className="markets-grid" style={{ columns: '2', columnGap: '10px' }}>
-                {activeMarkets.map((market) => (
-                  <div key={market.id} style={{ breakInside: 'avoid', marginBottom: '10px' }}>
-                    <MarketCard market={market} />
-                  </div>
-                ))}
-              </div>
-
-              {resolvedMarkets.length > 0 && (
-                <div className="markets-grid" style={{ columns: '2', columnGap: '10px', marginTop: '10px' }}>
-                  {resolvedMarkets.map((market) => (
-                    <div key={market.id} style={{ breakInside: 'avoid', marginBottom: '10px' }}>
-                      <MarketCard market={market} />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: '16px',
+            }}>
+              {activeMarkets.map((market) => (
+                <MarketCard key={market.id} market={market} />
+              ))}
+              {resolvedMarkets.map((market) => (
+                <MarketCard key={market.id} market={market} />
+              ))}
+            </div>
           )}
         </main>
 
         <aside className="desktop-sidebar" style={{
-          position: 'sticky', top: '70px', alignSelf: 'start',
-          display: 'flex', flexDirection: 'column', gap: '10px',
+          position: 'sticky', top: '76px', alignSelf: 'start',
+          display: 'flex', flexDirection: 'column', gap: '12px',
         }}>
           <SharpMoney />
           <HowItWorks />
@@ -106,10 +104,10 @@ export default function Markets() {
 
       <div className="mobile-only" style={{ padding: '0 16px 80px' }}>
         <SharpMoney />
-        <div style={{ marginTop: '10px' }}><HowItWorks /></div>
-        <div style={{ marginTop: '10px' }}><PublicChat /></div>
-        <div style={{ marginTop: '10px' }}><ActivityFeed /></div>
-        <div style={{ marginTop: '10px' }}><Leaderboard /></div>
+        <div style={{ marginTop: '12px' }}><HowItWorks /></div>
+        <div style={{ marginTop: '12px' }}><PublicChat /></div>
+        <div style={{ marginTop: '12px' }}><ActivityFeed /></div>
+        <div style={{ marginTop: '12px' }}><Leaderboard /></div>
       </div>
     </>
   );

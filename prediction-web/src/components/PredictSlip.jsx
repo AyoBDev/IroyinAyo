@@ -147,8 +147,8 @@ export default function PredictSlip({ market, outcome, onClose }) {
         onClick={isAuthenticated ? handleSubmit : openAuthModal}
         disabled={isAuthenticated && (amountNum < 1 || submitting)}
         style={{
-          width: '100%', padding: '13px', borderRadius: 'var(--radius)',
-          background: !isAuthenticated ? '#25D366' : amountNum > 0 ? style.accent : 'var(--border)',
+          width: '100%', padding: '13px', borderRadius: 'var(--radius-lg)',
+          background: !isAuthenticated ? 'var(--primary)' : amountNum > 0 ? style.accent : 'var(--border)',
           color: !isAuthenticated ? '#fff' : amountNum > 0 ? '#fff' : 'var(--text-tertiary)',
           fontWeight: 700, fontSize: '14px',
           opacity: submitting ? 0.6 : 1,

@@ -1,4 +1,4 @@
-import { TrendingUp, Wallet } from 'lucide-react';
+import { TrendingUp, Wallet, Search } from 'lucide-react';
 import useStore from '../store.js';
 
 export default function TopBar({ onPositionsClick }) {
@@ -7,58 +7,57 @@ export default function TopBar({ onPositionsClick }) {
 
   return (
     <header style={{
+      position: 'fixed', top: 0, left: 0, right: 0,
+      zIndex: 100, height: '60px',
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      padding: '0 16px',
+      background: 'var(--bg-primary)',
       borderBottom: '1px solid var(--border)',
-      position: 'sticky', top: 0,
-      background: 'var(--bg-primary)', zIndex: 100,
-      backdropFilter: 'blur(12px)',
     }}>
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '14px 24px', maxWidth: '1400px', margin: '0 auto',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <TrendingUp size={22} color="var(--accent-green)" strokeWidth={2.5} />
-          <span style={{ fontWeight: 800, fontSize: '17px', letterSpacing: '-0.5px' }}>IroyinMarket</span>
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <TrendingUp size={22} color="var(--primary)" strokeWidth={2.5} />
+        <h1 style={{ fontWeight: 800, fontSize: '18px', letterSpacing: '-0.5px', color: 'var(--primary)' }}>
+          IroyinMarket
+        </h1>
+      </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {user ? (
-            <>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '7px 14px', borderRadius: '20px',
-                background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-              }}>
-                <Wallet size={14} color="var(--text-tertiary)" />
-                <span style={{ fontWeight: 700, fontSize: '13px', color: 'var(--accent-green)' }}>
-                  {user.points_balance}
-                </span>
-                <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>pts</span>
-              </div>
-              <button
-                onClick={onPositionsClick}
-                style={{
-                  background: 'var(--accent-blue)', color: '#fff',
-                  padding: '7px 16px', borderRadius: '20px', fontSize: '13px',
-                  fontWeight: 600, border: 'none',
-                }}
-              >
-                Portfolio
-              </button>
-            </>
-          ) : (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {user ? (
+          <>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '6px 14px', borderRadius: 'var(--radius-full)',
+              background: 'var(--bg-surface-container)', border: '1px solid var(--border)',
+            }}>
+              <Wallet size={14} color="var(--text-tertiary)" />
+              <span style={{ fontWeight: 700, fontSize: '13px', color: 'var(--primary)' }}>
+                {user.points_balance}
+              </span>
+              <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>pts</span>
+            </div>
             <button
-              onClick={openAuthModal}
+              onClick={onPositionsClick}
               style={{
-                background: '#25D366', color: '#fff',
-                padding: '7px 16px', borderRadius: '20px', fontSize: '13px',
-                fontWeight: 600, border: 'none',
+                background: 'var(--primary)', color: '#fff',
+                padding: '6px 16px', borderRadius: 'var(--radius-full)',
+                fontSize: '12px', fontWeight: 600,
               }}
             >
-              Join
+              Portfolio
             </button>
-          )}
-        </div>
+          </>
+        ) : (
+          <button
+            onClick={openAuthModal}
+            style={{
+              background: 'var(--primary)', color: '#fff',
+              padding: '6px 16px', borderRadius: 'var(--radius-full)',
+              fontSize: '12px', fontWeight: 600,
+            }}
+          >
+            Join
+          </button>
+        )}
       </div>
     </header>
   );
