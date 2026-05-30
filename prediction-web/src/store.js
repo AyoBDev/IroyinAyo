@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { apiFetch } from './api.js';
+import { apiFetch, getToken } from './api.js';
 
 const useStore = create((set, get) => ({
   markets: [],
@@ -24,7 +24,6 @@ const useStore = create((set, get) => ({
   },
 
   fetchUser: async () => {
-    const { getToken } = await import('./api.js');
     if (!getToken()) {
       set({ user: null });
       return;
@@ -38,7 +37,6 @@ const useStore = create((set, get) => ({
   },
 
   fetchPositions: async () => {
-    const { getToken } = await import('./api.js');
     if (!getToken()) {
       set({ positions: [] });
       return;
