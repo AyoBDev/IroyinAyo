@@ -1,15 +1,18 @@
 import { TrendingUp, Crown, User } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { getToken } from '../api.js';
+import useStore from '../store.js';
 
 const tabs = [
   { path: '/', label: 'Markets', icon: TrendingUp },
   { path: '/leaderboard', label: 'Leaderboard', icon: Crown },
-  { path: '/profile', label: 'Profile', icon: User },
+  { path: '/profile', label: 'Profile', icon: User, requiresAuth: true },
 ];
 
 export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
+  const openAuthModal = useStore((s) => s.openAuthModal);
 
   return (
     <nav className="mobile-only" style={{
@@ -25,7 +28,13 @@ export default function BottomNav() {
         return (
           <button
             key={tab.path}
-            onClick={() => navigate(tab.path)}
+            onClick={() => {
+              if (tab.requiresAuth && !getToken()) {
+                openAuthModal();
+              } else {
+                navigate(tab.path);
+              }
+            }}
             style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
               padding: '8px 16px', minHeight: '44px', minWidth: '64px',
