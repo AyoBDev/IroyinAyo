@@ -1,0 +1,6 @@
+1:"$Sreact.fragment"
+2:I[97367,["/admin/_next/static/chunks/0nez8o1b0rww..js","/admin/_next/static/chunks/0n4z.7yu76je-.js","/admin/_next/static/chunks/0sbdyamcgde2v.js"],"ViewportBoundary"]
+3:I[97367,["/admin/_next/static/chunks/0nez8o1b0rww..js","/admin/_next/static/chunks/0n4z.7yu76je-.js","/admin/_next/static/chunks/0sbdyamcgde2v.js"],"MetadataBoundary"]
+4:"$Sreact.suspense"
+5:I[27201,["/admin/_next/static/chunks/0nez8o1b0rww..js","/admin/_next/static/chunks/0n4z.7yu76je-.js","/admin/_next/static/chunks/0sbdyamcgde2v.js"],"IconMark"]
+0:{"rsc":["$","$1","h",{"children":[null,["$","$L2",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L3",null,{"children":["$","$4",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"IroyinMarket Admin"}],["$","meta","1",{"name":"description","content":"Admin dashboard for IroyinMarket"}],["$","link","2",{"rel":"icon","href":"/icon.svg"}],["$","$L5","3",{}]]}]}]}],null]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"vnOjrLj42lK8XOLGx0K9g"}
