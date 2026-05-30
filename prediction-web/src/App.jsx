@@ -7,7 +7,7 @@ import useStore from './store.js';
 import TopBar from './components/TopBar.jsx';
 import BottomNav from './components/BottomNav.jsx';
 import MyPositions from './components/MyPositions.jsx';
-import NoAuth from './components/NoAuth.jsx';
+import AuthModal from './components/NoAuth.jsx';
 import Markets from './pages/Markets.jsx';
 import LeaderboardPage from './pages/LeaderboardPage.jsx';
 import Profile from './pages/Profile.jsx';
@@ -41,9 +41,9 @@ function TokenExchange() {
   return null;
 }
 
-function AuthenticatedApp() {
+function MainApp() {
   const [showPositions, setShowPositions] = useState(false);
-  const { loading, fetchMarkets, fetchUser, fetchPositions, fetchLeaderboard, updateOdds, addFeedItem, updateBalance, resolveMarket } = useStore();
+  const { loading, showAuthModal, closeAuthModal, fetchMarkets, fetchUser, fetchPositions, fetchLeaderboard, updateOdds, addFeedItem, updateBalance, resolveMarket } = useStore();
 
   useEffect(() => {
     fetchMarkets();
@@ -102,19 +102,18 @@ function AuthenticatedApp() {
       </Routes>
 
       <BottomNav />
+      {showAuthModal && <AuthModal onClose={closeAuthModal} />}
     </div>
   );
 }
 
 export default function App() {
-  const token = getToken();
-
   return (
     <BrowserRouter>
       <TokenExchange />
       <Routes>
         <Route path="/share/:marketId" element={<ShareCard />} />
-        <Route path="*" element={token ? <AuthenticatedApp /> : <NoAuth />} />
+        <Route path="*" element={<MainApp />} />
       </Routes>
     </BrowserRouter>
   );
