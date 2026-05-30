@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, ArrowRight, Users, Copy, Check } from 'lucide-react';
 import useStore from '../store.js';
+import { getToken } from '../api.js';
 
 function getSlipStyle(label) {
   const lower = label.toLowerCase();
@@ -20,6 +21,8 @@ export default function PredictSlip({ market, outcome, onClose }) {
   const placePrediction = useStore((s) => s.placePrediction);
   const fetchPositions = useStore((s) => s.fetchPositions);
   const user = useStore((s) => s.user);
+  const openAuthModal = useStore((s) => s.openAuthModal);
+  const isAuthenticated = !!getToken();
   const style = getSlipStyle(outcome.label);
 
   const amountNum = parseInt(amount, 10) || 0;
@@ -141,29 +144,35 @@ export default function PredictSlip({ market, outcome, onClose }) {
 
       {/* Submit button */}
       <button
-        onClick={handleSubmit}
-        disabled={amountNum < 1 || submitting}
+        onClick={isAuthenticated ? handleSubmit : openAuthModal}
+        disabled={isAuthenticated && (amountNum < 1 || submitting)}
         style={{
           width: '100%', padding: '13px', borderRadius: 'var(--radius)',
-          background: amountNum > 0 ? style.accent : 'var(--border)',
-          color: amountNum > 0 ? '#fff' : 'var(--text-tertiary)',
+          background: !isAuthenticated ? '#25D366' : amountNum > 0 ? style.accent : 'var(--border)',
+          color: !isAuthenticated ? '#fff' : amountNum > 0 ? '#fff' : 'var(--text-tertiary)',
           fontWeight: 700, fontSize: '14px',
           opacity: submitting ? 0.6 : 1,
           letterSpacing: '0.2px',
         }}
       >
-        {submitting ? 'Confirming...' : amountNum > 0 ? `Predict ${outcome.label}` : 'Enter amount'}
+        {!isAuthenticated
+          ? 'Sign up to predict'
+          : submitting
+            ? 'Confirming...'
+            : amountNum > 0
+              ? `Predict ${outcome.label}`
+              : 'Enter amount'}
       </button>
 
       {/* Balance hint */}
-      {user && amountNum > 0 && (
+      {isAuthenticated && user && amountNum > 0 && (
         <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
           Balance after: {user.points_balance - amountNum} pts
         </div>
       )}
 
       {/* Referral prompt when low balance */}
-      {user && user.points_balance < 20 && <ReferralPrompt />}
+      {isAuthenticated && user && user.points_balance < 20 && <ReferralPrompt />}
     </div>
   );
 }
