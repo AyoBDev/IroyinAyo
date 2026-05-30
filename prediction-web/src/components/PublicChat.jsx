@@ -9,6 +9,7 @@ export default function PublicChat({ marketId }) {
   const [sending, setSending] = useState(false);
   const user = useStore((s) => s.user);
   const messagesEnd = useRef(null);
+  const messagesContainer = useRef(null);
 
   useEffect(() => {
     const socket = getSocket();
@@ -32,7 +33,9 @@ export default function PublicChat({ marketId }) {
   }, [marketId]);
 
   useEffect(() => {
-    messagesEnd.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainer.current) {
+      messagesContainer.current.scrollTop = messagesContainer.current.scrollHeight;
+    }
   }, [messages]);
 
   function handleSend(e) {
@@ -73,7 +76,7 @@ export default function PublicChat({ marketId }) {
       </div>
 
       {/* Messages */}
-      <div style={{
+      <div ref={messagesContainer} style={{
         flex: 1, overflow: 'auto', padding: '8px 12px',
         display: 'flex', flexDirection: 'column', gap: '6px',
       }}>
