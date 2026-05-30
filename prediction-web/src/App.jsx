@@ -13,6 +13,7 @@ import LeaderboardPage from './pages/LeaderboardPage.jsx';
 import Profile from './pages/Profile.jsx';
 import ResolutionToast from './components/ResolutionToast.jsx';
 import WinPopup from './components/WinPopup.jsx';
+import MarketDetail from './pages/MarketDetail.jsx';
 import ShareCard from './pages/ShareCard.jsx';
 
 function TokenExchange() {
@@ -97,6 +98,7 @@ function MainApp() {
 
       <Routes>
         <Route path="/" element={<Markets />} />
+        <Route path="/market/:marketId" element={<MarketDetail />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="*" element={<Navigate to="/" replace />} />

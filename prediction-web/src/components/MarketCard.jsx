@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, ChevronLeft, ChevronRight, Search, Trophy, Share2, MessageSquare, Users } from 'lucide-react';
 import OutcomeRow from './OutcomeRow.jsx';
 import PredictSlip from './PredictSlip.jsx';
@@ -192,6 +193,7 @@ function MultiOutcomes({ market, outcomes }) {
 }
 
 function LargeMarketCard({ market }) {
+  const navigate = useNavigate();
   const [selectedOutcome, setSelectedOutcome] = useState(null);
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
@@ -221,7 +223,10 @@ function LargeMarketCard({ market }) {
           <TopPercentBadge percent={topPercent} />
         </div>
 
-        <h3 style={{ fontSize: '16px', fontWeight: 600, lineHeight: 1.4, marginBottom: '16px' }}>
+        <h3
+          onClick={() => navigate(`/market/${market.id}`)}
+          style={{ fontSize: '16px', fontWeight: 600, lineHeight: 1.4, marginBottom: '16px', cursor: 'pointer' }}
+        >
           {market.title}
         </h3>
 
@@ -324,6 +329,7 @@ function LargeMarketCard({ market }) {
 }
 
 function SmallMarketCard({ market }) {
+  const navigate = useNavigate();
   const outcomes = market.outcomes || [];
   const sortedOutcomes = [...outcomes].sort((a, b) => b.price - a.price);
   const topOutcome = sortedOutcomes[0];
@@ -349,7 +355,10 @@ function SmallMarketCard({ market }) {
         </div>
 
         {/* Title */}
-        <h3 style={{ fontSize: '16px', fontWeight: 600, lineHeight: 1.4 }}>
+        <h3
+          onClick={() => navigate(`/market/${market.id}`)}
+          style={{ fontSize: '16px', fontWeight: 600, lineHeight: 1.4, cursor: 'pointer' }}
+        >
           {market.title}
         </h3>
 
