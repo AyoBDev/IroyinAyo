@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, Target, Flame, Award, ArrowUpRight, ArrowDownRight, Share2, Users, Copy, Check, Gift } from 'lucide-react';
-import { apiFetch } from '../api.js';
+import { apiFetch, getToken } from '../api.js';
 import useStore from '../store.js';
 
 function PredictorCard({ user }) {
@@ -238,6 +238,30 @@ function ReferralCard() {
 }
 
 export default function Profile() {
+  const openAuthModal = useStore((s) => s.openAuthModal);
+
+  if (!getToken()) {
+    return (
+      <div style={{
+        padding: '60px 24px', textAlign: 'center',
+      }}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '16px' }}>
+          Sign in to view your profile
+        </p>
+        <button
+          onClick={openAuthModal}
+          style={{
+            background: '#25D366', color: '#fff',
+            padding: '10px 24px', borderRadius: '20px', fontSize: '14px',
+            fontWeight: 600, border: 'none',
+          }}
+        >
+          Join IroyinMarket
+        </button>
+      </div>
+    );
+  }
+
   const user = useStore((s) => s.user);
   const positions = useStore((s) => s.positions);
 
