@@ -1,7 +1,10 @@
 import { X, TrendingUp, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import useStore from '../store.js';
+import { getToken } from '../api.js';
 
 export default function MyPositions({ onClose }) {
+  if (!getToken()) return null;
+
   const positions = useStore((s) => s.positions);
 
   return (

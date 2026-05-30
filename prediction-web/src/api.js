@@ -19,8 +19,10 @@ async function apiFetch(path, options = {}) {
 
   const res = await fetch(`${BASE}${path}`, { ...options, headers });
   if (res.status === 401) {
-    clearToken();
-    window.location.reload();
+    if (getToken()) {
+      clearToken();
+      window.location.reload();
+    }
     return null;
   }
   if (!res.ok) {
