@@ -18,14 +18,10 @@ FROM node:22-slim AS runner
 
 WORKDIR /app
 
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
+RUN npm install -g serve
 
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
+COPY --from=builder /app/out ./out
 
 EXPOSE 3001
 
-CMD ["npx", "next", "start", "-p", "3001"]
+CMD ["serve", "out", "-l", "3001", "-s"]
