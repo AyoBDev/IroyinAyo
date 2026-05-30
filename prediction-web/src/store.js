@@ -10,6 +10,9 @@ const useStore = create((set, get) => ({
   toast: null,
   loading: true,
   error: null,
+  showAuthModal: false,
+  openAuthModal: () => set({ showAuthModal: true }),
+  closeAuthModal: () => set({ showAuthModal: false }),
 
   fetchMarkets: async () => {
     try {
@@ -21,6 +24,11 @@ const useStore = create((set, get) => ({
   },
 
   fetchUser: async () => {
+    const { getToken } = await import('./api.js');
+    if (!getToken()) {
+      set({ user: null });
+      return;
+    }
     try {
       const user = await apiFetch('/api/multi-markets/me/info');
       set({ user });
@@ -30,6 +38,11 @@ const useStore = create((set, get) => ({
   },
 
   fetchPositions: async () => {
+    const { getToken } = await import('./api.js');
+    if (!getToken()) {
+      set({ positions: [] });
+      return;
+    }
     try {
       const positions = await apiFetch('/api/multi-markets/me/positions');
       set({ positions });
