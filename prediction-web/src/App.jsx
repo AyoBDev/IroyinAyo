@@ -12,6 +12,7 @@ import Markets from './pages/Markets.jsx';
 import LeaderboardPage from './pages/LeaderboardPage.jsx';
 import Profile from './pages/Profile.jsx';
 import ResolutionToast from './components/ResolutionToast.jsx';
+import WinPopup from './components/WinPopup.jsx';
 import ShareCard from './pages/ShareCard.jsx';
 
 function TokenExchange() {
@@ -103,6 +104,7 @@ function MainApp() {
 
       <BottomNav />
       {showAuthModal && <AuthModal onClose={closeAuthModal} />}
+      <WinPopup />
     </div>
   );
 }

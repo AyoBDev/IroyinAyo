@@ -81,6 +81,37 @@ router.get('/me/positions', authenticateStudent, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.get('/me/wins', authenticateStudent, async (req, res, next) => {
+  try {
+    const wins = await db('multi_market_positions')
+      .join('multi_markets', 'multi_market_positions.market_id', 'multi_markets.id')
+      .join('multi_market_outcomes', 'multi_market_positions.outcome_id', 'multi_market_outcomes.id')
+      .where({
+        'multi_market_positions.student_id': req.student.id,
+        'multi_market_positions.win_acknowledged': false,
+      })
+      .where('multi_market_positions.payout', '>', 0)
+      .select(
+        'multi_market_positions.id',
+        'multi_market_positions.payout',
+        'multi_market_positions.amount',
+        'multi_markets.title as market_title',
+        'multi_market_outcomes.label as outcome_label'
+      );
+    res.json(wins);
+  } catch (err) { next(err); }
+});
+
+router.post('/me/wins/acknowledge', authenticateStudent, async (req, res, next) => {
+  try {
+    await db('multi_market_positions')
+      .where({ student_id: req.student.id })
+      .where('payout', '>', 0)
+      .update({ win_acknowledged: true });
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
 // Admin endpoints (must be before /:id to avoid route conflict)
 router.get('/admin/all', authenticate, async (req, res, next) => {
   try {
