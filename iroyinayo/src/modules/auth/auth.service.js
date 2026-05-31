@@ -18,6 +18,13 @@ function normalizePhone(phone) {
   return cleaned;
 }
 
+function isValidNigerianNumber(normalizedPhone) {
+  if (normalizedPhone.length !== 13) return false;
+  if (!normalizedPhone.startsWith('234')) return false;
+  const firstDigitAfterPrefix = normalizedPhone[3];
+  return ['7', '8', '9'].includes(firstDigitAfterPrefix);
+}
+
 async function sendWhatsAppOTP(phone, message) {
   const jid = `${phone}@s.whatsapp.net`;
   const maxRetries = 3;
@@ -50,6 +57,10 @@ async function sendWhatsAppOTP(phone, message) {
 
 async function sendCode(phoneNumber) {
   const phone = normalizePhone(phoneNumber);
+
+  if (!isValidNigerianNumber(phone)) {
+    throw new ValidationError('Please enter a valid Nigerian phone number (e.g. 08012345678).');
+  }
 
   const recentCodes = await db('verification_codes')
     .where({ phone_number: phone })
@@ -127,6 +138,10 @@ async function verifyCode(phoneNumber, code, name, referralCode) {
 
 async function login(phoneNumber) {
   const phone = normalizePhone(phoneNumber);
+
+  if (!isValidNigerianNumber(phone)) {
+    throw new ValidationError('Please enter a valid Nigerian phone number (e.g. 08012345678).');
+  }
 
   const student = await db('students').where({ phone_number: phone, is_verified: true }).first();
   if (!student) {
