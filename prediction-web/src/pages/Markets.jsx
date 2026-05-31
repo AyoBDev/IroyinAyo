@@ -18,9 +18,24 @@ function AuthWall() {
   const [error, setError] = useState('');
   const [isReturning, setIsReturning] = useState(false);
 
+  function isValidNigerianPhone(num) {
+    const cleaned = num.replace(/[^0-9]/g, '');
+    if (cleaned.startsWith('0') && cleaned.length === 11) {
+      return ['7', '8', '9'].includes(cleaned[1]);
+    }
+    if (cleaned.startsWith('234') && cleaned.length === 13) {
+      return ['7', '8', '9'].includes(cleaned[3]);
+    }
+    return false;
+  }
+
   async function handleSubmitInfo(e) {
     e.preventDefault();
     if (!name.trim() || !phone.trim()) return;
+    if (!isValidNigerianPhone(phone.trim())) {
+      setError('Please enter a valid Nigerian phone number (e.g. 08012345678)');
+      return;
+    }
     setLoading(true);
     setError('');
     try {

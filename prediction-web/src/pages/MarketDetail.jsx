@@ -297,6 +297,18 @@ export default function MarketDetail() {
             </span>
           </div>
 
+          {/* Description */}
+          {market.description && (
+            <div style={{
+              padding: '14px 16px', borderRadius: 'var(--radius-lg)',
+              background: 'var(--bg-surface-container)', border: '1px solid var(--border)',
+              fontSize: '13px', lineHeight: 1.6, color: 'var(--text-secondary)',
+              whiteSpace: 'pre-line',
+            }}>
+              {market.description}
+            </div>
+          )}
+
           {/* Stats row */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', color: 'var(--text-tertiary)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
