@@ -49,12 +49,12 @@ function AuthWall() {
     setLoading(true);
     setError('');
     try {
-      const result = await apiFetch('/api/auth/verify-code', {
+      const result = await apiFetch('/api/auth/verify', {
         method: 'POST',
         body: JSON.stringify({
           phoneNumber: phone.trim(),
           code,
-          ...(isReturning ? {} : { name: name.trim() }),
+          name: isReturning ? '_returning' : name.trim(),
         }),
       });
       if (result.token) {
@@ -66,6 +66,39 @@ function AuthWall() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleSkipCode() {
+    setLoading(true);
+    setError('');
+    try {
+      const result = await apiFetch('/api/auth/quick-join', {
+        method: 'POST',
+        body: JSON.stringify({
+          phoneNumber: phone.trim(),
+          name: isReturning ? '_returning' : name.trim(),
+        }),
+      });
+      if (result.token) {
+        setToken(result.token);
+        window.location.reload();
+      }
+    } catch (err) {
+      setError(err.message || 'Could not sign in');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleResendCode() {
+    setError('');
+    try {
+      await apiFetch('/api/auth/send-code', {
+        method: 'POST',
+        body: JSON.stringify({ phoneNumber: phone.trim() }),
+      });
+      setError('');
+    } catch {}
   }
 
   return (
@@ -159,12 +192,31 @@ function AuthWall() {
           >
             {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : 'Verify & Join'}
           </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+            <button
+              type="button"
+              onClick={() => { setStep('info'); setCode(''); setError(''); }}
+              style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '12px', textDecoration: 'underline' }}
+            >
+              Change number
+            </button>
+            <button
+              type="button"
+              onClick={handleResendCode}
+              style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '12px', textDecoration: 'underline' }}
+            >
+              Resend code
+            </button>
+          </div>
           <button
             type="button"
-            onClick={() => { setStep('info'); setCode(''); setError(''); }}
-            style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '12px', marginTop: '4px' }}
+            onClick={handleSkipCode}
+            style={{
+              background: 'transparent', border: 'none',
+              color: 'var(--accent-blue)', fontSize: '12px', fontWeight: 600, marginTop: '8px',
+            }}
           >
-            Change number
+            Didn't get code? Skip verification
           </button>
         </form>
       )}
