@@ -88,14 +88,99 @@ export default function WinPopup() {
     }
   }
 
-  function handleShare() {
+  async function handleShare() {
     const win = wins[currentIndex];
     const text = `I just won +${win.payout} pts on IroyinMarket!\n"${win.market_title}" — picked ${win.outcome_label}\n\nPredict & compete: ${window.location.origin}`;
-    if (navigator.share) {
-      navigator.share({ text });
-    } else {
-      navigator.clipboard.writeText(text);
+
+    try {
+      const blob = await generateShareImage(win);
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'win.png', { type: 'image/png' })] })) {
+        const file = new File([blob], 'iroyinmarket-win.png', { type: 'image/png' });
+        await navigator.share({ text, files: [file] });
+      } else if (navigator.share) {
+        await navigator.share({ text });
+      } else {
+        navigator.clipboard.writeText(text);
+      }
+    } catch {
+      if (navigator.share) {
+        navigator.share({ text }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(text);
+      }
     }
+  }
+
+  function generateShareImage(win) {
+    return new Promise((resolve) => {
+      const c = document.createElement('canvas');
+      c.width = 600;
+      c.height = 400;
+      const ctx = c.getContext('2d');
+
+      // Background gradient
+      const grad = ctx.createLinearGradient(0, 0, 600, 400);
+      grad.addColorStop(0, '#0A0E17');
+      grad.addColorStop(1, '#0f1a12');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 600, 400);
+
+      // Accent border top
+      const topGrad = ctx.createLinearGradient(0, 0, 600, 0);
+      topGrad.addColorStop(0, '#10B981');
+      topGrad.addColorStop(1, '#F59E0B');
+      ctx.fillStyle = topGrad;
+      ctx.fillRect(0, 0, 600, 5);
+
+      // Trophy circle
+      ctx.beginPath();
+      ctx.arc(300, 100, 40, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(16, 185, 129, 0.15)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Trophy emoji
+      ctx.font = '36px serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🏆', 300, 113);
+
+      // "You Won!" text
+      ctx.font = 'bold 28px Inter, sans-serif';
+      ctx.fillStyle = '#F0F4F8';
+      ctx.textAlign = 'center';
+      ctx.fillText('I Won on IroyinMarket!', 300, 175);
+
+      // Payout
+      ctx.font = 'bold 42px Inter, sans-serif';
+      ctx.fillStyle = '#10B981';
+      ctx.fillText(`+${win.payout} pts`, 300, 230);
+
+      // Market title (truncate if needed)
+      ctx.font = '16px Inter, sans-serif';
+      ctx.fillStyle = '#7B8BA3';
+      let title = win.market_title;
+      if (title.length > 45) title = title.slice(0, 42) + '...';
+      ctx.fillText(`"${title}"`, 300, 275);
+
+      // Outcome
+      ctx.font = 'bold 18px Inter, sans-serif';
+      ctx.fillStyle = '#F0F4F8';
+      ctx.fillText(`Picked: ${win.outcome_label}`, 300, 310);
+
+      // Footer CTA
+      ctx.font = '13px Inter, sans-serif';
+      ctx.fillStyle = '#4A5568';
+      ctx.fillText('Predict & compete for cash prizes', 300, 365);
+
+      // Brand
+      ctx.font = 'bold 12px Inter, sans-serif';
+      ctx.fillStyle = '#10B981';
+      ctx.fillText('IroyinMarket', 300, 388);
+
+      c.toBlob((blob) => resolve(blob), 'image/png');
+    });
   }
 
   if (!visible || wins.length === 0) return null;

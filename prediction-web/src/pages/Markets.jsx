@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { TrendingUp } from 'lucide-react';
+import { getToken } from '../api.js';
 import useStore from '../store.js';
 import MarketCard from '../components/MarketCard.jsx';
 import HowItWorks from '../components/HowItWorks.jsx';
@@ -10,6 +12,38 @@ import SharpMoney from '../components/SharpMoney.jsx';
 export default function Markets() {
   const [activeTab, setActiveTab] = useState('all');
   const { markets } = useStore();
+  const openAuthModal = useStore((s) => s.openAuthModal);
+
+  if (!getToken()) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 24px', textAlign: 'center' }}>
+        <div style={{
+          width: '64px', height: '64px', borderRadius: '50%',
+          background: 'var(--primary-bg)', border: '2px solid var(--primary-border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: '20px',
+        }}>
+          <TrendingUp size={28} color="var(--primary)" />
+        </div>
+        <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px', color: 'var(--text-primary)' }}>
+          Welcome to IroyinMarket
+        </h2>
+        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px', maxWidth: '300px' }}>
+          Predict outcomes on campus events and compete for real cash prizes every week.
+        </p>
+        <button
+          onClick={openAuthModal}
+          style={{
+            background: 'var(--primary)', color: '#fff',
+            padding: '12px 32px', borderRadius: '9999px',
+            fontSize: '14px', fontWeight: 600, border: 'none',
+          }}
+        >
+          Join IroyinMarket
+        </button>
+      </div>
+    );
+  }
 
   const categories = ['all', ...new Set(markets.map((m) => m.category).filter(Boolean))];
 
