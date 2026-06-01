@@ -8,6 +8,8 @@ import PublicChat from '../components/PublicChat.jsx';
 import ActivityFeed from '../components/ActivityFeed.jsx';
 import Leaderboard from '../components/Leaderboard.jsx';
 import SharpMoney from '../components/SharpMoney.jsx';
+import CreateMarketFAB from '../components/CreateMarketFAB.jsx';
+import CreateMarketForm from '../components/CreateMarketForm.jsx';
 
 function AuthWall() {
   const [step, setStep] = useState('info');
@@ -247,6 +249,7 @@ function AuthWall() {
 
 export default function Markets() {
   const [activeTab, setActiveTab] = useState('all');
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const { markets } = useStore();
 
   if (!getToken()) {
@@ -351,6 +354,9 @@ export default function Markets() {
         <div style={{ marginTop: '12px' }}><ActivityFeed /></div>
         <div style={{ marginTop: '12px' }}><Leaderboard /></div>
       </div>
+
+      <CreateMarketFAB onClick={() => setShowCreateForm(true)} />
+      {showCreateForm && <CreateMarketForm onClose={() => setShowCreateForm(false)} />}
     </>
   );
 }
