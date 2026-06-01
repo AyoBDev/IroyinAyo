@@ -402,6 +402,37 @@ async function createUserMarket(studentId, { title, outcomes, category, closesAt
   return getMarketWithOdds(market.id);
 }
 
+async function resolveUserMarket(marketId, outcomeId, studentId) {
+  const market = await db('multi_markets').where({ id: marketId }).first();
+  if (!market) throw new NotFoundError('Market not found');
+  if (market.status !== 'open') throw new ValidationError('Market is not open');
+  if (market.created_by !== studentId) throw new ValidationError('Only the market creator can resolve this market');
+
+  const outcome = await db('multi_market_outcomes').where({ id: outcomeId, market_id: marketId }).first();
+  if (!outcome) throw new ValidationError('Invalid outcome for this market');
+
+  const resolved = await resolveMarket(marketId, outcomeId);
+
+  const volumeResult = await db('multi_market_positions')
+    .where({ market_id: marketId })
+    .sum('amount as total_volume')
+    .first();
+  const totalVolume = parseInt(volumeResult?.total_volume || 0, 10);
+  const creatorFee = Math.floor(totalVolume * (market.creator_fee_percent / 100));
+
+  if (creatorFee > 0) {
+    await gamificationService.addPoints(
+      studentId,
+      creatorFee,
+      'market_creator_reward',
+      `Creator reward for: ${market.title}`,
+      marketId
+    );
+  }
+
+  return { ...resolved, creatorFee };
+}
+
 module.exports = {
   logSumExp,
   calculatePrices,
@@ -415,6 +446,7 @@ module.exports = {
   listOpenMarkets,
   buyPosition,
   resolveMarket,
+  resolveUserMarket,
   getStudentPositions,
   getAutoLiquidityB,
 };

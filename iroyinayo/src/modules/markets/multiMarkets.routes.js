@@ -225,6 +225,22 @@ router.post('/:id/predict', authenticateStudent, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.post('/:id/creator-resolve', authenticateStudent, async (req, res, next) => {
+  try {
+    const { outcomeId } = req.body;
+    if (!outcomeId) throw new ValidationError('outcomeId is required');
+    const result = await multiMarkets.resolveUserMarket(req.params.id, outcomeId, req.student.id);
+
+    const io = req.app.get('io');
+    const outcome = await db('multi_market_outcomes').where({ id: outcomeId }).first();
+    if (io) {
+      io.emit('market:resolved', { marketId: req.params.id, winnerLabel: outcome?.label || '', winnerId: outcomeId });
+    }
+
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
 router.post('/:id/resolve', authenticate, async (req, res, next) => {
   try {
     const { outcomeId } = req.body;
