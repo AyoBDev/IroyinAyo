@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Share2, Clock, Users, MessageSquare, TrendingUp, Trophy } from 'lucide-react';
+import { ArrowLeft, Share2, Clock, Users, MessageSquare, TrendingUp, Trophy, Flag } from 'lucide-react';
 import useStore from '../store.js';
+import { apiFetch, getToken } from '../api.js';
 import PredictSlip from '../components/PredictSlip.jsx';
 import PublicChat from '../components/PublicChat.jsx';
 
@@ -171,6 +172,81 @@ function OutcomeButtons({ market, outcomes }) {
   );
 }
 
+function CreatorResolvePanel({ market }) {
+  const [resolving, setResolving] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const fetchMarkets = useStore((s) => s.fetchMarkets);
+
+  const totalVolume = market.outcomes.reduce((sum, o) => sum + (o.shares_sold || 0), 0);
+  const estimatedFee = Math.floor(totalVolume * 0.05);
+
+  async function handleResolve(outcomeId) {
+    if (!confirm('Are you sure? This cannot be undone.')) return;
+    setResolving(true);
+    setError('');
+    try {
+      await apiFetch(`/api/multi-markets/${market.id}/creator-resolve`, {
+        method: 'POST',
+        body: JSON.stringify({ outcomeId }),
+      });
+      fetchMarkets();
+      navigate('/');
+    } catch (err) {
+      setError(err.message || 'Failed to resolve');
+    } finally {
+      setResolving(false);
+    }
+  }
+
+  return (
+    <div>
+      <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>
+        Your Market
+      </h3>
+      <div style={{
+        padding: '12px 14px', borderRadius: 'var(--radius-lg)',
+        background: 'var(--bg-surface-container)', border: '1px solid var(--border)',
+        marginBottom: '12px', fontSize: '13px', color: 'var(--text-secondary)',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span>Total volume</span>
+          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{totalVolume} pts</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
+          <span>Your earnings on resolve</span>
+          <span style={{ fontWeight: 600, color: 'var(--accent-green)' }}>~{estimatedFee} pts</span>
+        </div>
+      </div>
+      <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '12px' }}>
+        Select the winning outcome to resolve this market and pay out predictions.
+      </p>
+      {error && (
+        <div style={{ color: 'var(--accent-red)', fontSize: '12px', marginBottom: '10px', fontWeight: 600 }}>{error}</div>
+      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {market.outcomes.map((o) => (
+          <button
+            key={o.id}
+            onClick={() => handleResolve(o.id)}
+            disabled={resolving}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '12px 14px', borderRadius: 'var(--radius-lg)',
+              background: 'var(--bg-card)', border: '1px solid var(--border)',
+              color: 'var(--text-primary)', fontSize: '14px', fontWeight: 500,
+              opacity: resolving ? 0.6 : 1, textAlign: 'left',
+            }}
+          >
+            <Trophy size={16} color="var(--accent-yellow)" />
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function SocialSection({ market }) {
   const [showChat, setShowChat] = useState(true);
 
@@ -205,8 +281,10 @@ export default function MarketDetail() {
   const { marketId } = useParams();
   const navigate = useNavigate();
   const markets = useStore((s) => s.markets);
+  const user = useStore((s) => s.user);
 
   const market = markets.find((m) => m.id === marketId);
+  const isCreator = user && market && market.created_by && market.created_by === user.id;
 
   if (!market) {
     return (
@@ -287,6 +365,15 @@ export default function MarketDetail() {
             {market.title}
           </h2>
 
+          {market.creator_name && (
+            <span style={{
+              fontSize: '12px', fontWeight: 500, color: 'var(--text-tertiary)',
+              display: 'flex', alignItems: 'center', gap: '4px',
+            }}>
+              Created by <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{market.creator_name}</span>
+            </span>
+          )}
+
           {/* Probability summary */}
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
             <span style={{ fontSize: '32px', fontWeight: 800, color: 'var(--primary)' }}>
@@ -333,12 +420,18 @@ export default function MarketDetail() {
         {/* Chart */}
         <PriceChart outcomes={outcomes} />
 
-        {/* Action buttons */}
+        {/* Action section */}
         <section>
-          <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px' }}>
-            Make a prediction
-          </h3>
-          <OutcomeButtons market={market} outcomes={outcomes} />
+          {isCreator && market.status === 'open' ? (
+            <CreatorResolvePanel market={market} />
+          ) : (
+            <>
+              <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                Make a prediction
+              </h3>
+              <OutcomeButtons market={market} outcomes={outcomes} />
+            </>
+          )}
         </section>
 
         {/* Social / Commentary */}
