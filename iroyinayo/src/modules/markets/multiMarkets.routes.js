@@ -209,6 +209,14 @@ router.post('/:id/predict', authenticateStudent, async (req, res, next) => {
     if (!Number.isFinite(amount) || amount < 1) throw new ValidationError('Amount must be at least 1');
     if (amount > 1000) throw new ValidationError('Maximum prediction is 1000 points');
 
+    const market = await db('multi_markets').where({ id: req.params.id }).first();
+    if (market && market.created_by && market.created_by === req.student.id) {
+      throw new ValidationError('You cannot predict on your own market');
+    }
+    if (market && market.closes_at && new Date() > new Date(market.closes_at)) {
+      throw new ValidationError('Betting is closed for this market');
+    }
+
     const result = await multiMarkets.buyPosition(req.params.id, outcomeId, req.student.id, amount);
 
     const io = req.app.get('io');
