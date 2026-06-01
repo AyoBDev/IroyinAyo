@@ -282,9 +282,27 @@ export default function MarketDetail() {
   const navigate = useNavigate();
   const markets = useStore((s) => s.markets);
   const user = useStore((s) => s.user);
+  const [showReport, setShowReport] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reporting, setReporting] = useState(false);
 
   const market = markets.find((m) => m.id === marketId);
   const isCreator = user && market && market.created_by && market.created_by === user.id;
+
+  async function handleReport() {
+    if (reportReason.trim().length < 5) return;
+    setReporting(true);
+    try {
+      await apiFetch(`/api/multi-markets/${market.id}/report`, {
+        method: 'POST',
+        body: JSON.stringify({ reason: reportReason.trim() }),
+      });
+      setShowReport(false);
+      setReportReason('');
+    } catch {} finally {
+      setReporting(false);
+    }
+  }
 
   if (!market) {
     return (
@@ -414,6 +432,16 @@ export default function MarketDetail() {
             }}>
               <Share2 size={13} /> Share
             </button>
+            {market.created_by && !isCreator && (
+              <button onClick={() => setShowReport(true)} style={{
+                display: 'flex', alignItems: 'center', gap: '4px',
+                padding: '6px 10px', borderRadius: 'var(--radius-full)',
+                background: 'var(--bg-surface-container)', border: '1px solid var(--border)',
+                color: 'var(--text-tertiary)', fontSize: '12px',
+              }}>
+                <Flag size={12} />
+              </button>
+            )}
           </div>
         </section>
 
@@ -437,6 +465,50 @@ export default function MarketDetail() {
         {/* Social / Commentary */}
         <SocialSection market={market} />
       </div>
+
+      {showReport && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px',
+        }}>
+          <div onClick={() => setShowReport(false)} style={{
+            position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)',
+          }} />
+          <div style={{
+            position: 'relative', background: 'var(--bg-card)',
+            borderRadius: 'var(--radius-xl)', padding: '24px',
+            width: '100%', maxWidth: '340px',
+          }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', color: 'var(--text-primary)' }}>Report Market</h3>
+            <textarea
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              placeholder="Why are you reporting this market?"
+              maxLength={500}
+              rows={3}
+              style={{
+                width: '100%', padding: '10px 12px', fontSize: '14px',
+                background: 'var(--bg-input)', border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)', color: 'var(--text-primary)',
+                resize: 'none',
+              }}
+            />
+            <div style={{ display: 'flex', gap: '8px', marginTop: '12px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowReport(false)} style={{
+                padding: '8px 16px', borderRadius: 'var(--radius)',
+                background: 'var(--bg-surface-container)', border: '1px solid var(--border)',
+                color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600,
+              }}>Cancel</button>
+              <button onClick={handleReport} disabled={reporting || reportReason.trim().length < 5} style={{
+                padding: '8px 16px', borderRadius: 'var(--radius)',
+                background: 'var(--accent-red)', color: '#fff',
+                fontSize: '13px', fontWeight: 600, border: 'none',
+                opacity: reporting ? 0.6 : 1,
+              }}>Report</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
