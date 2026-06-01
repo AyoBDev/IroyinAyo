@@ -177,6 +177,12 @@ async function getMarketWithOdds(marketId) {
     throw new NotFoundError('Market not found');
   }
 
+  let creatorName = null;
+  if (market.created_by) {
+    const creator = await db('students').where({ id: market.created_by }).select('name').first();
+    creatorName = creator?.name || null;
+  }
+
   const outcomes = await db('multi_market_outcomes')
     .where({ market_id: marketId })
     .orderBy('created_at', 'asc');
@@ -191,6 +197,7 @@ async function getMarketWithOdds(marketId) {
 
   return {
     ...market,
+    creator_name: creatorName,
     outcomes: outcomesWithPrices,
   };
 }
