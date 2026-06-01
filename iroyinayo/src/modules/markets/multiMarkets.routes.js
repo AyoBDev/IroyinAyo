@@ -112,6 +112,14 @@ router.post('/me/wins/acknowledge', authenticateStudent, async (req, res, next) 
   } catch (err) { next(err); }
 });
 
+router.post('/create', authenticateStudent, async (req, res, next) => {
+  try {
+    const { title, outcomes, category, closesAt } = req.body;
+    const market = await multiMarkets.createUserMarket(req.student.id, { title, outcomes, category, closesAt });
+    res.json(market);
+  } catch (err) { next(err); }
+});
+
 // Admin endpoints (must be before /:id to avoid route conflict)
 router.get('/admin/all', authenticate, async (req, res, next) => {
   try {

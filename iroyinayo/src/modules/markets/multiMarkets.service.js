@@ -340,12 +340,75 @@ async function getStudentPositions(studentId) {
     .orderBy('multi_market_positions.created_at', 'desc');
 }
 
+async function createUserMarket(studentId, { title, outcomes, category, closesAt }) {
+  if (!title || title.trim().length < 10 || title.trim().length > 150) {
+    throw new ValidationError('Title must be 10-150 characters');
+  }
+  if (!outcomes || !Array.isArray(outcomes) || outcomes.length < 2 || outcomes.length > 10) {
+    throw new ValidationError('Must have 2-10 outcomes');
+  }
+  const trimmedOutcomes = outcomes.map(o => o.trim()).filter(Boolean);
+  if (trimmedOutcomes.length < 2) {
+    throw new ValidationError('Must have at least 2 non-empty outcomes');
+  }
+  if (new Set(trimmedOutcomes.map(o => o.toLowerCase())).size !== trimmedOutcomes.length) {
+    throw new ValidationError('Outcomes must be unique');
+  }
+  for (const label of trimmedOutcomes) {
+    if (label.length > 60) throw new ValidationError('Each outcome must be 60 characters or less');
+  }
+  if (closesAt) {
+    const closeDate = new Date(closesAt);
+    if (isNaN(closeDate.getTime()) || closeDate <= new Date()) {
+      throw new ValidationError('Closing time must be in the future');
+    }
+  }
+
+  const activeCount = await db('multi_markets')
+    .where({ created_by: studentId, status: 'open' })
+    .count('id as count')
+    .first();
+  if (parseInt(activeCount.count, 10) >= 3) {
+    throw new ValidationError('You can only have 3 active markets at a time');
+  }
+
+  const b = await getAutoLiquidityB();
+
+  await gamificationService.deductPoints(
+    studentId,
+    15,
+    'market_creation_fee',
+    `Created market: ${title.trim()}`,
+    null
+  );
+
+  const [market] = await db('multi_markets')
+    .insert({
+      title: title.trim(),
+      liquidity_b: b,
+      status: 'open',
+      created_by: studentId,
+      creator_fee_percent: 5,
+      category: category?.trim() || null,
+      closes_at: closesAt ? new Date(closesAt) : null,
+    })
+    .returning('*');
+
+  for (const label of trimmedOutcomes) {
+    await db('multi_market_outcomes')
+      .insert({ market_id: market.id, label, shares_sold: 0 });
+  }
+
+  return getMarketWithOdds(market.id);
+}
+
 module.exports = {
   logSumExp,
   calculatePrices,
   calculateCost,
   calculateSharesForAmount,
   createMarket,
+  createUserMarket,
   addOutcome,
   removeOutcome,
   getMarketWithOdds,
