@@ -81,6 +81,30 @@ router.get('/me/positions', authenticateStudent, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.get('/me/created', authenticateStudent, async (req, res, next) => {
+  try {
+    const markets = await db('multi_markets')
+      .where({ created_by: req.student.id })
+      .orderBy('created_at', 'desc');
+
+    const marketsWithOdds = await Promise.all(
+      markets.map((m) => multiMarkets.getMarketWithOdds(m.id))
+    );
+
+    const marketsWithVolume = await Promise.all(
+      marketsWithOdds.map(async (m) => {
+        const vol = await db('multi_market_positions')
+          .where({ market_id: m.id })
+          .sum('amount as total_volume')
+          .first();
+        return { ...m, total_volume: parseInt(vol?.total_volume || 0, 10) };
+      })
+    );
+
+    res.json(marketsWithVolume);
+  } catch (err) { next(err); }
+});
+
 router.get('/me/wins', authenticateStudent, async (req, res, next) => {
   try {
     const wins = await db('multi_market_positions')
@@ -173,6 +197,29 @@ router.get('/admin/liquidity-info', authenticate, async (req, res, next) => {
       .countDistinct('students.id as active_users')
       .first();
     res.json({ autoLiquidityB: autoB, activeUsers: parseInt(result?.active_users || 0, 10) });
+  } catch (err) { next(err); }
+});
+
+router.post('/:id/report', authenticateStudent, async (req, res, next) => {
+  try {
+    const { reason } = req.body;
+    if (!reason || reason.trim().length < 5 || reason.trim().length > 500) {
+      throw new ValidationError('Reason must be 5-500 characters');
+    }
+    const market = await db('multi_markets').where({ id: req.params.id }).first();
+    if (!market) throw new ValidationError('Market not found');
+    if (!market.created_by) throw new ValidationError('Cannot report admin-created markets');
+
+    await db('market_reports')
+      .insert({
+        market_id: req.params.id,
+        student_id: req.student.id,
+        reason: reason.trim(),
+      })
+      .onConflict(['market_id', 'student_id'])
+      .ignore();
+
+    res.json({ reported: true });
   } catch (err) { next(err); }
 });
 
