@@ -4,6 +4,71 @@ import { apiFetch, getToken } from '../api.js';
 import useStore from '../store.js';
 import { getTheme, toggleTheme } from '../theme.js';
 
+function MyMarkets() {
+  const [markets, setMarkets] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    apiFetch('/api/multi-markets/me/created')
+      .then(setMarkets)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return null;
+  if (markets.length === 0) return null;
+
+  return (
+    <div style={{
+      background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
+      border: '1px solid var(--border)', padding: '16px', marginTop: '12px',
+    }}>
+      <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>
+        My Markets
+      </h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {markets.map((m) => {
+          const fee = m.status === 'resolved' ? Math.floor(m.total_volume * 0.05) : null;
+          return (
+            <a
+              key={m.id}
+              href={`/market/${m.id}`}
+              style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '10px 12px', borderRadius: 'var(--radius-lg)',
+                background: 'var(--bg-surface-container)', border: '1px solid var(--border)',
+                textDecoration: 'none',
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)',
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>
+                  {m.title}
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                  Vol: {m.total_volume} pts
+                  {fee !== null && <span style={{ color: 'var(--accent-green)', marginLeft: '8px' }}>+{fee} earned</span>}
+                </div>
+              </div>
+              <span style={{
+                fontSize: '11px', fontWeight: 600, padding: '3px 8px',
+                borderRadius: 'var(--radius-full)',
+                background: m.status === 'resolved' ? 'var(--accent-green-bg)' : 'var(--primary-bg)',
+                color: m.status === 'resolved' ? 'var(--accent-green)' : 'var(--primary)',
+                border: `1px solid ${m.status === 'resolved' ? 'var(--accent-green-border)' : 'var(--primary-border)'}`,
+              }}>
+                {m.status === 'resolved' ? 'Resolved' : 'Open'}
+              </span>
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ReferralCard() {
   const [stats, setStats] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -389,8 +454,11 @@ export default function Profile() {
         </section>
       )}
 
+      {/* My Markets */}
+      <MyMarkets />
+
       {/* Trade History */}
-      <section>
+      <section style={{ marginTop: '24px' }}>
         <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px' }}>
           Trade History
         </h3>
