@@ -327,13 +327,95 @@ export default function MarketDetail() {
   const topPercent = topOutcome ? Math.round(topOutcome.price * 100) : 0;
   const totalShares = outcomes.reduce((sum, o) => sum + (o.shares_sold || 0), 0);
 
-  const handleShare = () => {
+  function generateShareImage() {
+    return new Promise((resolve) => {
+      const c = document.createElement('canvas');
+      c.width = 600;
+      c.height = 400;
+      const ctx = c.getContext('2d');
+
+      const grad = ctx.createLinearGradient(0, 0, 600, 400);
+      grad.addColorStop(0, '#0A0E17');
+      grad.addColorStop(1, '#0f1a2e');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 600, 400);
+
+      const topGrad = ctx.createLinearGradient(0, 0, 600, 0);
+      topGrad.addColorStop(0, '#6366F1');
+      topGrad.addColorStop(1, '#10B981');
+      ctx.fillStyle = topGrad;
+      ctx.fillRect(0, 0, 600, 5);
+
+      ctx.font = 'bold 20px Inter, sans-serif';
+      ctx.fillStyle = '#F0F4F8';
+      ctx.textAlign = 'center';
+      let title = market.title;
+      if (title.length > 50) title = title.slice(0, 47) + '...';
+      ctx.fillText(title, 300, 60);
+
+      if (market.category) {
+        ctx.font = '12px Inter, sans-serif';
+        ctx.fillStyle = '#6366F1';
+        ctx.fillText(market.category.toUpperCase(), 300, 90);
+      }
+
+      const sorted = [...outcomes].sort((a, b) => b.price - a.price).slice(0, 5);
+      const barStartY = 120;
+      sorted.forEach((o, i) => {
+        const y = barStartY + i * 48;
+        const pct = Math.round(o.price * 100);
+        const barWidth = Math.max(pct * 3.5, 20);
+
+        ctx.fillStyle = i === 0 ? 'rgba(99, 102, 241, 0.3)' : 'rgba(255,255,255,0.05)';
+        ctx.beginPath();
+        ctx.roundRect(80, y, barWidth, 30, 6);
+        ctx.fill();
+
+        ctx.font = 'bold 14px Inter, sans-serif';
+        ctx.fillStyle = i === 0 ? '#6366F1' : '#7B8BA3';
+        ctx.textAlign = 'left';
+        ctx.fillText(`${pct}%`, 85, y + 20);
+
+        ctx.font = '14px Inter, sans-serif';
+        ctx.fillStyle = '#F0F4F8';
+        let label = o.label;
+        if (label.length > 25) label = label.slice(0, 22) + '...';
+        ctx.fillText(label, 130, y + 20);
+      });
+
+      ctx.font = '13px Inter, sans-serif';
+      ctx.fillStyle = '#4A5568';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${totalShares} predictions`, 300, 365);
+
+      ctx.font = 'bold 12px Inter, sans-serif';
+      ctx.fillStyle = '#6366F1';
+      ctx.fillText('IroyinMarket', 300, 388);
+
+      c.toBlob((blob) => resolve(blob), 'image/png');
+    });
+  }
+
+  const handleShare = async () => {
     const shareUrl = `${window.location.origin}/share/${market.id}`;
     const text = `${topOutcome?.label} leads at ${topPercent}% — "${market.title}" on IroyinMarket`;
-    if (navigator.share) {
-      navigator.share({ text, url: shareUrl });
-    } else {
-      navigator.clipboard.writeText(`${text}\n${shareUrl}`);
+
+    try {
+      const blob = await generateShareImage();
+      const file = new File([blob], 'iroyinmarket-prediction.png', { type: 'image/png' });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ text, url: shareUrl, files: [file] });
+      } else if (navigator.share) {
+        await navigator.share({ text, url: shareUrl });
+      } else {
+        navigator.clipboard.writeText(`${text}\n${shareUrl}`);
+      }
+    } catch {
+      if (navigator.share) {
+        navigator.share({ text, url: shareUrl }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(`${text}\n${shareUrl}`);
+      }
     }
   };
 
