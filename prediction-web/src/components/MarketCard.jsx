@@ -41,7 +41,7 @@ function CardFooter({ market }) {
     const sortedOutcomes = [...outcomes].sort((a, b) => b.price - a.price);
     const topOutcome = sortedOutcomes[0];
     const topPercent = topOutcome ? Math.round(topOutcome.price * 100) : 0;
-    const shareUrl = `${window.location.origin}/share/${market.id}`;
+    const shareUrl = `${window.location.origin}/market/${market.id}`;
     const text = `${topOutcome?.label} leads at ${topPercent}% — "${market.title}" on IroyinMarket`;
     if (navigator.share) {
       navigator.share({ text, url: shareUrl });
@@ -378,7 +378,7 @@ function SmallMarketCard({ market }) {
 
 function ResolvedMarketCard({ market }) {
   const handleShare = () => {
-    const shareUrl = `${window.location.origin}/share/${market.id}`;
+    const shareUrl = `${window.location.origin}/market/${market.id}`;
     const text = `${market.winnerLabel} won "${market.title}" on IroyinMarket!`;
     if (navigator.share) {
       navigator.share({ text, url: shareUrl });
