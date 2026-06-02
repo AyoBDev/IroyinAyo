@@ -397,7 +397,7 @@ export default function MarketDetail() {
   }
 
   const handleShare = async () => {
-    const shareUrl = `${window.location.origin}/share/${market.id}`;
+    const shareUrl = `${window.location.origin}/market/${market.id}`;
     const text = `${topOutcome?.label} leads at ${topPercent}% — "${market.title}" on IroyinMarket`;
 
     try {
