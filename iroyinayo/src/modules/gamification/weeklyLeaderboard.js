@@ -20,8 +20,10 @@ async function getCurrentWeekStandings(limit = 20) {
 
   const standings = await db('multi_market_positions')
     .join('students', 'multi_market_positions.student_id', 'students.id')
+    .join('multi_markets', 'multi_market_positions.market_id', 'multi_markets.id')
     .where('multi_market_positions.created_at', '>=', start)
     .where('multi_market_positions.created_at', '<=', end)
+    .where('multi_markets.status', 'resolved')
     .groupBy('students.id', 'students.name')
     .select(
       'students.id',
