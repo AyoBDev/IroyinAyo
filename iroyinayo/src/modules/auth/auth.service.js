@@ -62,13 +62,23 @@ async function sendCode(phoneNumber) {
     throw new ValidationError('Please enter a valid Nigerian phone number (e.g. 08012345678).');
   }
 
+  // If a code was sent in the last 30 seconds (e.g. by login), skip sending another
+  const veryRecent = await db('verification_codes')
+    .where({ phone_number: phone, used: false })
+    .where('created_at', '>', new Date(Date.now() - 30 * 1000))
+    .first();
+
+  if (veryRecent) {
+    return { sent: true };
+  }
+
   const recentCodes = await db('verification_codes')
     .where({ phone_number: phone })
     .where('created_at', '>', new Date(Date.now() - 10 * 60 * 1000))
     .count('id as count')
     .first();
 
-  if (parseInt(recentCodes.count, 10) >= 3) {
+  if (parseInt(recentCodes.count, 10) >= 5) {
     throw new ValidationError('Too many attempts. Please wait 10 minutes.');
   }
 
@@ -108,21 +118,21 @@ async function verifyCode(phoneNumber, code, name, referralCode) {
   // Find or create student
   let student = await db('students').where({ phone_number: phone }).first();
   if (!student) {
-    if (!referralCode) {
-      throw new ValidationError('Invite code required. Ask a friend who is already on IroyinMarket for their code.');
+    const insertData = { phone_number: phone, name, points_balance: 100, is_verified: true, campus: 'unilorin' };
+
+    if (referralCode) {
+      const referrer = await db('students').where({ referral_code: referralCode }).first();
+      if (referrer) {
+        insertData.referred_by = referrer.id;
+      }
     }
 
-    const referrer = await db('students').where({ referral_code: referralCode }).first();
-    if (!referrer) {
-      throw new ValidationError('Invalid invite code. Check with the person who shared it.');
+    [student] = await db('students').insert(insertData).returning('*');
+
+    if (referralCode && insertData.referred_by) {
+      const { applyReferral } = require('../referrals/referrals.service');
+      applyReferral(student.id, referralCode).catch(() => {});
     }
-
-    [student] = await db('students')
-      .insert({ phone_number: phone, name, points_balance: 100, is_verified: true, referred_by: referrer.id, campus: 'unilorin' })
-      .returning('*');
-
-    const { applyReferral } = require('../referrals/referrals.service');
-    applyReferral(student.id, referralCode).catch(() => {});
   } else {
     const updateFields = { is_verified: true };
     if (name && name !== '_returning') updateFields.name = name;
@@ -154,7 +164,7 @@ async function login(phoneNumber) {
     .count('id as count')
     .first();
 
-  if (parseInt(recentCodes.count, 10) >= 3) {
+  if (parseInt(recentCodes.count, 10) >= 5) {
     throw new ValidationError('Too many attempts. Please wait 10 minutes.');
   }
 
@@ -183,21 +193,21 @@ async function quickJoin(phoneNumber, name, referralCode) {
     return { token, student: { id: student.id, name: student.name, points_balance: student.points_balance } };
   }
 
-  if (!referralCode) {
-    throw new ValidationError('Invite code required. Ask a friend who is already on IroyinMarket for their code.');
+  const insertData = { phone_number: phone, name, points_balance: 100, is_verified: false, campus: 'unilorin' };
+
+  if (referralCode) {
+    const referrer = await db('students').where({ referral_code: referralCode }).first();
+    if (referrer) {
+      insertData.referred_by = referrer.id;
+    }
   }
 
-  const referrer = await db('students').where({ referral_code: referralCode }).first();
-  if (!referrer) {
-    throw new ValidationError('Invalid invite code. Check with the person who shared it.');
+  [student] = await db('students').insert(insertData).returning('*');
+
+  if (referralCode && insertData.referred_by) {
+    const { applyReferral } = require('../referrals/referrals.service');
+    applyReferral(student.id, referralCode).catch(() => {});
   }
-
-  [student] = await db('students')
-    .insert({ phone_number: phone, name, points_balance: 100, is_verified: false, referred_by: referrer.id, campus: 'unilorin' })
-    .returning('*');
-
-  const { applyReferral } = require('../referrals/referrals.service');
-  applyReferral(student.id, referralCode).catch(() => {});
 
   const token = generateStudentToken(student.id);
   return { token, student: { id: student.id, name: student.name, points_balance: student.points_balance } };

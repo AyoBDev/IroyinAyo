@@ -29,7 +29,7 @@ async function notifyMarketResolution(marketId, winnerLabel) {
     const won = pos.payout > 0;
     const text = won
       ? `🏆 *${winnerLabel}* won "${pos.title}"!\n\nYou earned *+${pos.payout} pts*. Nice call! 🎯`
-      : `"${pos.title}" resolved → *${winnerLabel}* won.\n\nBetter luck next time! Check new markets: ${process.env.APP_URL || 'iroyinmarket.com'}`;
+      : `"${pos.title}" resolved → *${winnerLabel}* won.\n\nBetter luck next time! Check new markets: ${process.env.APP_URL || 'https://iroyinayo-production.up.railway.app'}`;
 
     await sendWhatsApp(pos.phone_number, text);
   }
@@ -39,7 +39,7 @@ async function notifyWeeklyWinner(winnerId, weekStart) {
   const winner = await db('students').where({ id: winnerId }).first();
   if (!winner) return;
 
-  const text = `🥇 Congratulations *${winner.name}*!\n\nYou're the #1 predictor this week on IroyinMarket! 🎉\n\nKeep your streak going → ${process.env.APP_URL || 'iroyinmarket.com'}`;
+  const text = `🥇 Congratulations *${winner.name}*!\n\nYou're the #1 predictor this week on IroyinMarket! 🎉\n\nKeep your streak going → ${process.env.APP_URL || 'https://iroyinayo-production.up.railway.app'}`;
   await sendWhatsApp(winner.phone_number, text);
 
   const topPredictors = await db('students')
@@ -50,7 +50,7 @@ async function notifyWeeklyWinner(winnerId, weekStart) {
     .select('phone_number', 'name');
 
   for (const student of topPredictors) {
-    const announcement = `📊 Weekly leaderboard reset!\n\n🥇 *${winner.name}* won this week.\n\nNew week, new chance. Make your predictions now → ${process.env.APP_URL || 'iroyinmarket.com'}`;
+    const announcement = `📊 Weekly leaderboard reset!\n\n🥇 *${winner.name}* won this week.\n\nNew week, new chance. Make your predictions now → ${process.env.APP_URL || 'https://iroyinayo-production.up.railway.app'}`;
     await sendWhatsApp(student.phone_number, announcement);
   }
 }
@@ -67,7 +67,7 @@ async function notifyNewMarket(marketId) {
     .where({ is_verified: true })
     .select('phone_number');
 
-  const text = `🔥 *New Market*\n\n"${market.title}"\n\n${optionsList}${moreText}\n\nPredict now → ${process.env.APP_URL || 'iroyinmarket.com'}`;
+  const text = `🔥 *New Market*\n\n"${market.title}"\n\n${optionsList}${moreText}\n\nPredict now → ${process.env.APP_URL || 'https://iroyinayo-production.up.railway.app'}`;
 
   for (const student of students) {
     await sendWhatsApp(student.phone_number, text);
