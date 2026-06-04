@@ -17,8 +17,40 @@ router.get('/', async (req, res, next) => {
 router.get('/leaderboard', async (req, res, next) => {
   try {
     const weeklyLeaderboard = require('../gamification/weeklyLeaderboard');
-    const standings = await weeklyLeaderboard.getCurrentWeekStandings(20);
-    res.json(standings);
+    let standings = await weeklyLeaderboard.getCurrentWeekStandings(20);
+    let period = 'weekly';
+    if (standings.length === 0) {
+      standings = await weeklyLeaderboard.getAllTimeStandings(20);
+      period = 'all-time';
+    }
+    res.json({ standings, period });
+  } catch (err) { next(err); }
+});
+
+router.get('/top-predictors', async (req, res, next) => {
+  try {
+    const { start, end } = require('../gamification/weeklyLeaderboard').getWeekBounds();
+    const predictors = await db('multi_market_positions')
+      .join('students', 'multi_market_positions.student_id', 'students.id')
+      .where('multi_market_positions.created_at', '>=', start)
+      .where('multi_market_positions.created_at', '<=', end)
+      .groupBy('students.id', 'students.name')
+      .select(
+        'students.id',
+        'students.name',
+        db.raw('COALESCE(SUM(multi_market_positions.amount), 0) as total_wagered'),
+        db.raw('COUNT(multi_market_positions.id) as predictions')
+      )
+      .orderBy('total_wagered', 'desc')
+      .limit(10);
+
+    res.json(predictors.map((s, i) => ({
+      rank: i + 1,
+      id: s.id,
+      name: s.name,
+      points: parseInt(s.total_wagered, 10),
+      predictions: parseInt(s.predictions, 10),
+    })));
   } catch (err) { next(err); }
 });
 

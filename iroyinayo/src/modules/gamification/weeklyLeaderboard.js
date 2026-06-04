@@ -85,4 +85,28 @@ async function getWeeklyRank(studentId) {
   return entry ? entry.rank : null;
 }
 
-module.exports = { getWeekBounds, getCurrentWeekStandings, finalizeWeek, getPastWeeks, getWeeklyRank };
+async function getAllTimeStandings(limit = 20) {
+  const standings = await db('multi_market_positions')
+    .join('students', 'multi_market_positions.student_id', 'students.id')
+    .groupBy('students.id', 'students.name')
+    .select(
+      'students.id',
+      'students.name',
+      db.raw('COALESCE(SUM(multi_market_positions.amount), 0) as total_wagered'),
+      db.raw('COUNT(multi_market_positions.id) as predictions'),
+      db.raw('SUM(CASE WHEN multi_market_positions.payout > 0 THEN 1 ELSE 0 END) as wins')
+    )
+    .orderBy('total_wagered', 'desc')
+    .limit(limit);
+
+  return standings.map((s, i) => ({
+    rank: i + 1,
+    id: s.id,
+    name: s.name,
+    netProfit: parseInt(s.total_wagered, 10),
+    predictions: parseInt(s.predictions, 10),
+    wins: parseInt(s.wins, 10),
+  }));
+}
+
+module.exports = { getWeekBounds, getCurrentWeekStandings, getAllTimeStandings, finalizeWeek, getPastWeeks, getWeeklyRank };
