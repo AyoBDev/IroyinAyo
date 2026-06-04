@@ -6,10 +6,10 @@
     "test": "tests"
   },
   "scripts": {
-    "start": "npx knex migrate:latest && node src/index.js",
+    "start": "node src/index.js",
     "start:api-only": "ENABLE_BOT=false node src/index.js",
     "dev": "node --watch src/index.js",
-    "build": "echo 'Frontend pre-built in public/'",
+    "build": "npx knex migrate:latest",
     "test": "NODE_ENV=test jest --runInBand --forceExit --passWithNoTests",
     "migrate": "knex migrate:latest",
     "migrate:test": "NODE_ENV=test knex migrate:latest",
