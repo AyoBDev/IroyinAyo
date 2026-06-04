@@ -37,6 +37,14 @@ app.set('io', io);
 server.listen(PORT, async () => {
   console.log(`Hackathon Prediction Market API running on port ${PORT}`);
 
+  try {
+    const knex = require('./config/database');
+    await knex.migrate.latest();
+    console.log('Migrations complete');
+  } catch (err) {
+    console.error('Migration failed:', err.message);
+  }
+
   await seedAdminFromEnv();
 
   try {
