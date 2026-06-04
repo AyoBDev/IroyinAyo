@@ -18,46 +18,26 @@ function getWeekBounds(date = new Date()) {
 async function getCurrentWeekStandings(limit = 20) {
   const { start, end } = getWeekBounds();
 
-  let standings = await db('multi_market_positions')
+  const standings = await db('multi_market_positions')
     .join('students', 'multi_market_positions.student_id', 'students.id')
-    .join('multi_markets', 'multi_market_positions.market_id', 'multi_markets.id')
     .where('multi_market_positions.created_at', '>=', start)
     .where('multi_market_positions.created_at', '<=', end)
-    .where('multi_markets.status', 'resolved')
     .groupBy('students.id', 'students.name')
     .select(
       'students.id',
       'students.name',
-      db.raw('COALESCE(SUM(multi_market_positions.payout), 0) - COALESCE(SUM(multi_market_positions.amount), 0) as net_profit'),
+      db.raw('COALESCE(SUM(multi_market_positions.amount), 0) as total_wagered'),
       db.raw('COUNT(multi_market_positions.id) as predictions'),
       db.raw('SUM(CASE WHEN multi_market_positions.payout > 0 THEN 1 ELSE 0 END) as wins')
     )
-    .orderBy('net_profit', 'desc')
+    .orderBy('total_wagered', 'desc')
     .limit(limit);
-
-  // Fallback to all-time if no activity this week
-  if (standings.length === 0) {
-    standings = await db('multi_market_positions')
-      .join('students', 'multi_market_positions.student_id', 'students.id')
-      .join('multi_markets', 'multi_market_positions.market_id', 'multi_markets.id')
-      .where('multi_markets.status', 'resolved')
-      .groupBy('students.id', 'students.name')
-      .select(
-        'students.id',
-        'students.name',
-        db.raw('COALESCE(SUM(multi_market_positions.payout), 0) - COALESCE(SUM(multi_market_positions.amount), 0) as net_profit'),
-        db.raw('COUNT(multi_market_positions.id) as predictions'),
-        db.raw('SUM(CASE WHEN multi_market_positions.payout > 0 THEN 1 ELSE 0 END) as wins')
-      )
-      .orderBy('net_profit', 'desc')
-      .limit(limit);
-  }
 
   return standings.map((s, i) => ({
     rank: i + 1,
     id: s.id,
     name: s.name,
-    netProfit: parseInt(s.net_profit, 10),
+    netProfit: parseInt(s.total_wagered, 10),
     predictions: parseInt(s.predictions, 10),
     wins: parseInt(s.wins, 10),
   }));
