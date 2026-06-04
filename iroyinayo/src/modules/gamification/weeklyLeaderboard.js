@@ -18,7 +18,7 @@ function getWeekBounds(date = new Date()) {
 async function getCurrentWeekStandings(limit = 20) {
   const { start, end } = getWeekBounds();
 
-  const standings = await db('multi_market_positions')
+  let standings = await db('multi_market_positions')
     .join('students', 'multi_market_positions.student_id', 'students.id')
     .join('multi_markets', 'multi_market_positions.market_id', 'multi_markets.id')
     .where('multi_market_positions.created_at', '>=', start)
@@ -34,6 +34,24 @@ async function getCurrentWeekStandings(limit = 20) {
     )
     .orderBy('net_profit', 'desc')
     .limit(limit);
+
+  // Fallback to all-time if no activity this week
+  if (standings.length === 0) {
+    standings = await db('multi_market_positions')
+      .join('students', 'multi_market_positions.student_id', 'students.id')
+      .join('multi_markets', 'multi_market_positions.market_id', 'multi_markets.id')
+      .where('multi_markets.status', 'resolved')
+      .groupBy('students.id', 'students.name')
+      .select(
+        'students.id',
+        'students.name',
+        db.raw('COALESCE(SUM(multi_market_positions.payout), 0) - COALESCE(SUM(multi_market_positions.amount), 0) as net_profit'),
+        db.raw('COUNT(multi_market_positions.id) as predictions'),
+        db.raw('SUM(CASE WHEN multi_market_positions.payout > 0 THEN 1 ELSE 0 END) as wins')
+      )
+      .orderBy('net_profit', 'desc')
+      .limit(limit);
+  }
 
   return standings.map((s, i) => ({
     rank: i + 1,
