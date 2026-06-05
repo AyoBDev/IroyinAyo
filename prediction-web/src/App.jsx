@@ -82,17 +82,17 @@ function MainApp() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <div style={{ textAlign: 'center' }}>
-          <Loader2 size={32} color="var(--primary)" style={{ animation: 'spin 1s linear infinite', marginBottom: '12px' }} />
-          <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Loading markets...</p>
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <Loader2 size={32} className="text-emerald animate-spin mx-auto mb-3" />
+          <p className="text-ink-muted text-body-sm">Loading markets...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ paddingTop: '60px' }}>
+    <div className="pt-14">
       <ResolutionToast />
       <TopBar onPositionsClick={() => setShowPositions(!showPositions)} />
       {showPositions && <MyPositions onClose={() => setShowPositions(false)} />}

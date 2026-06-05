@@ -6,42 +6,27 @@ export default function TopBar({ onPositionsClick }) {
   const openAuthModal = useStore((s) => s.openAuthModal);
 
   return (
-    <header style={{
-      position: 'fixed', top: 0, left: 0, right: 0,
-      zIndex: 100, height: '60px',
-      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      padding: '0 16px',
-      background: 'var(--bg-primary)',
-      borderBottom: '1px solid var(--border)',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <TrendingUp size={22} color="var(--primary)" strokeWidth={2.5} />
-        <h1 style={{ fontWeight: 800, fontSize: '18px', letterSpacing: '-0.5px', color: 'var(--primary)' }}>
+    <header className="fixed top-0 left-0 right-0 z-[100] h-14 flex justify-between items-center px-4 bg-bone border-b border-line">
+      <div className="flex items-center gap-2.5">
+        <TrendingUp size={22} className="text-emerald" strokeWidth={2.5} />
+        <h1 className="font-serif text-lg tracking-tight text-ink">
           IroyinMarket
         </h1>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div className="flex items-center gap-2">
         {user ? (
           <>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              padding: '6px 14px', borderRadius: 'var(--radius-full)',
-              background: 'var(--bg-surface-container)', border: '1px solid var(--border)',
-            }}>
-              <Wallet size={14} color="var(--text-tertiary)" />
-              <span style={{ fontWeight: 700, fontSize: '13px', color: 'var(--primary)' }}>
+            <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-paper border border-line">
+              <Wallet size={14} className="text-ink-muted" />
+              <span className="font-mono text-mono-data font-normal text-emerald">
                 {user.points_balance}
               </span>
-              <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>pts</span>
+              <span className="text-[11px] text-ink-muted">pts</span>
             </div>
             <button
               onClick={onPositionsClick}
-              style={{
-                background: 'var(--primary)', color: '#fff',
-                padding: '6px 16px', borderRadius: 'var(--radius-full)',
-                fontSize: '12px', fontWeight: 600,
-              }}
+              className="bg-emerald text-bone px-4 py-1.5 rounded-xl text-label-sm font-medium hover:bg-emerald-deep transition-colors"
             >
               Portfolio
             </button>
@@ -49,11 +34,7 @@ export default function TopBar({ onPositionsClick }) {
         ) : (
           <button
             onClick={openAuthModal}
-            style={{
-              background: 'var(--primary)', color: '#fff',
-              padding: '6px 16px', borderRadius: 'var(--radius-full)',
-              fontSize: '12px', fontWeight: 600,
-            }}
+            className="bg-emerald text-bone px-4 py-1.5 rounded-xl text-label-sm font-medium hover:bg-emerald-deep transition-colors"
           >
             Join
           </button>

@@ -1,4 +1,4 @@
-import { TrendingUp, Crown, User, Wallet, ChartLine } from 'lucide-react';
+import { TrendingUp, Crown, User, ChartLine } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getToken } from '../api.js';
 import useStore from '../store.js';
@@ -16,15 +16,7 @@ export default function BottomNav() {
   const openAuthModal = useStore((s) => s.openAuthModal);
 
   return (
-    <nav className="mobile-only" style={{
-      position: 'fixed', bottom: 0, left: 0, right: 0,
-      background: 'var(--bg-card)', borderTop: '1px solid var(--border)',
-      display: 'flex', justifyContent: 'space-around', alignItems: 'center',
-      padding: '8px 16px calc(env(safe-area-inset-bottom, 8px) + 8px)',
-      zIndex: 200,
-      borderRadius: 'var(--radius-xl) var(--radius-xl) 0 0',
-      boxShadow: '0 -2px 10px rgba(0,0,0,0.3)',
-    }}>
+    <nav className="mobile-only fixed bottom-0 left-0 right-0 bg-paper/90 backdrop-blur-md border-t border-line flex justify-around items-center px-4 pb-[calc(env(safe-area-inset-bottom,8px)+8px)] pt-2 z-[200]">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = location.pathname === tab.path;
@@ -38,18 +30,14 @@ export default function BottomNav() {
                 navigate(tab.path);
               }
             }}
-            style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px',
-              padding: isActive ? '6px 20px' : '6px 16px',
-              minHeight: '44px',
-              background: isActive ? 'var(--primary-bg)' : 'transparent',
-              borderRadius: 'var(--radius-full)',
-              color: isActive ? 'var(--primary)' : 'var(--text-tertiary)',
-              border: 'none',
-            }}
+            className={`flex flex-col items-center gap-0.5 px-4 py-1.5 min-h-[44px] rounded-full transition-colors ${
+              isActive
+                ? 'bg-accent-green-bg text-emerald'
+                : 'text-ink-muted hover:text-ink-deep'
+            }`}
           >
             <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} />
-            <span style={{ fontSize: '11px', fontWeight: isActive ? 700 : 500 }}>
+            <span className={`text-[11px] ${isActive ? 'font-medium' : 'font-normal'}`}>
               {tab.label}
             </span>
           </button>
