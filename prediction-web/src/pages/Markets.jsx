@@ -14,29 +14,19 @@ import CreateMarketForm from '../components/CreateMarketForm.jsx';
 function SocialProofBanner({ socialProof }) {
   if (!socialProof) return null;
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px', width: '100%', maxWidth: '320px' }}>
+    <div className="flex flex-col gap-2 mb-5 w-full max-w-[320px]">
       {socialProof.activePredictors > 0 && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '8px',
-          padding: '8px 12px', borderRadius: 'var(--radius-lg)',
-          background: 'var(--accent-green-bg, rgba(34,197,94,0.08))',
-          border: '1px solid var(--accent-green-border, rgba(34,197,94,0.2))',
-        }}>
-          <Users size={14} color="var(--accent-green)" />
-          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-            <strong style={{ color: 'var(--accent-green)' }}>{socialProof.activePredictors}</strong> predictors active this week
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent-green-bg border border-accent-green-border">
+          <Users size={14} className="text-accent-green" />
+          <span className="text-xs text-ink-muted">
+            <strong className="text-accent-green">{socialProof.activePredictors}</strong> predictors active this week
           </span>
         </div>
       )}
       {socialProof.recentWinners.length > 0 && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '8px',
-          padding: '8px 12px', borderRadius: 'var(--radius-lg)',
-          background: 'var(--accent-yellow-bg, rgba(250,204,21,0.08))',
-          border: '1px solid var(--accent-yellow-border, rgba(250,204,21,0.2))',
-        }}>
-          <Trophy size={14} color="var(--accent-yellow)" />
-          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent-yellow-bg border border-accent-yellow-border">
+          <Trophy size={14} className="text-accent-yellow" />
+          <span className="text-xs text-ink-muted">
             <strong>{socialProof.recentWinners[0].name}</strong> won +{socialProof.recentWinners[0].payout} pts
           </span>
         </div>
@@ -180,19 +170,14 @@ function AuthWall() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 24px', textAlign: 'center' }}>
-      <div style={{
-        width: '64px', height: '64px', borderRadius: '50%',
-        background: 'var(--primary-bg)', border: '2px solid var(--primary-border)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        marginBottom: '20px',
-      }}>
-        <TrendingUp size={28} color="var(--primary)" />
+    <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+      <div className="w-16 h-16 rounded-full bg-accent-green-bg border-2 border-accent-green-border flex items-center justify-center mb-5">
+        <TrendingUp size={28} className="text-emerald" />
       </div>
-      <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px', color: 'var(--text-primary)' }}>
+      <h2 className="font-serif text-section mb-2 text-ink">
         {isReturning ? 'Welcome back!' : 'Welcome to IroyinMarket'}
       </h2>
-      <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px', maxWidth: '300px' }}>
+      <p className="text-body-sm text-ink-muted mb-6 max-w-[300px]">
         {isReturning
           ? 'Enter the code sent to your WhatsApp to continue.'
           : 'Predict outcomes on campus events and compete for real cash prizes every week.'}
@@ -201,7 +186,7 @@ function AuthWall() {
       <SocialProofBanner socialProof={socialProof} />
 
       {step === 'phone' && (
-        <form onSubmit={handlePhoneSubmit} style={{ width: '100%', maxWidth: '320px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <form onSubmit={handlePhoneSubmit} className="w-full max-w-[320px] flex flex-col gap-3">
           <input
             type="tel"
             value={phone}
@@ -209,31 +194,21 @@ function AuthWall() {
             placeholder="Phone number (e.g. 08012345678)"
             required
             autoFocus
-            style={{
-              width: '100%', padding: '12px 16px', fontSize: '14px',
-              background: 'var(--bg-input)', border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-lg)', color: 'var(--text-primary)',
-            }}
+            className="w-full px-4 py-3 text-body-sm bg-bone border border-line rounded-lg text-ink placeholder:text-ink-muted"
           />
           <button
             type="submit"
             disabled={loading || !phone.trim()}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-              width: '100%', padding: '12px',
-              background: 'var(--primary)', color: '#fff',
-              borderRadius: '9999px', fontSize: '14px', fontWeight: 600, border: 'none',
-              opacity: loading ? 0.6 : 1,
-            }}
+            className="flex items-center justify-center gap-2 w-full py-3 bg-emerald text-bone rounded-xl text-body-sm font-medium disabled:opacity-60 hover:bg-emerald-deep transition-colors"
           >
-            {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <><span>Continue</span><ArrowRight size={16} /></>}
+            {loading ? <Loader2 size={16} className="animate-spin" /> : <><span>Continue</span><ArrowRight size={16} /></>}
           </button>
         </form>
       )}
 
       {step === 'signup' && (
-        <form onSubmit={handleSignupSubmit} style={{ width: '100%', maxWidth: '320px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+        <form onSubmit={handleSignupSubmit} className="w-full max-w-[320px] flex flex-col gap-3">
+          <p className="text-xs text-ink-muted mb-1">
             New here? Tell us your name to get started.
           </p>
           <input
@@ -243,40 +218,26 @@ function AuthWall() {
             placeholder="Your name"
             required
             autoFocus
-            style={{
-              width: '100%', padding: '12px 16px', fontSize: '14px',
-              background: 'var(--bg-input)', border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-lg)', color: 'var(--text-primary)',
-            }}
+            className="w-full px-4 py-3 text-body-sm bg-bone border border-line rounded-lg text-ink placeholder:text-ink-muted"
           />
           <input
             type="text"
             value={referralCode}
             onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
             placeholder="Referral code (optional)"
-            style={{
-              width: '100%', padding: '12px 16px', fontSize: '14px',
-              background: 'var(--bg-input)', border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-lg)', color: 'var(--text-primary)',
-            }}
+            className="w-full px-4 py-3 text-body-sm bg-bone border border-line rounded-lg text-ink placeholder:text-ink-muted"
           />
           <button
             type="submit"
             disabled={loading || !name.trim()}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-              width: '100%', padding: '12px',
-              background: 'var(--primary)', color: '#fff',
-              borderRadius: '9999px', fontSize: '14px', fontWeight: 600, border: 'none',
-              opacity: loading ? 0.6 : 1,
-            }}
+            className="flex items-center justify-center gap-2 w-full py-3 bg-emerald text-bone rounded-xl text-body-sm font-medium disabled:opacity-60 hover:bg-emerald-deep transition-colors"
           >
-            {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <><span>Continue</span><ArrowRight size={16} /></>}
+            {loading ? <Loader2 size={16} className="animate-spin" /> : <><span>Continue</span><ArrowRight size={16} /></>}
           </button>
           <button
             type="button"
             onClick={() => { setStep('phone'); setError(''); }}
-            style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '12px', textDecoration: 'underline', marginTop: '4px' }}
+            className="bg-transparent border-none text-ink-muted text-xs underline mt-1"
           >
             Use a different number
           </button>
@@ -284,8 +245,8 @@ function AuthWall() {
       )}
 
       {step === 'code' && (
-        <form onSubmit={handleCodeSubmit} style={{ width: '100%', maxWidth: '320px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+        <form onSubmit={handleCodeSubmit} className="w-full max-w-[320px] flex flex-col gap-3">
+          <p className="text-xs text-ink-muted mb-1">
             Enter the 6-digit code sent to {phone}
           </p>
           <input
@@ -296,38 +257,27 @@ function AuthWall() {
             placeholder="000000"
             maxLength={6}
             autoFocus
-            style={{
-              width: '100%', padding: '12px 16px', fontSize: '20px', fontWeight: 700,
-              background: 'var(--bg-input)', border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-lg)', color: 'var(--text-primary)',
-              textAlign: 'center', letterSpacing: '4px',
-            }}
+            className="w-full px-4 py-3 text-xl font-bold bg-bone border border-line rounded-lg text-ink text-center tracking-[4px] placeholder:text-ink-muted"
           />
           <button
             type="submit"
             disabled={loading || code.length !== 6}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-              width: '100%', padding: '12px',
-              background: 'var(--primary)', color: '#fff',
-              borderRadius: '9999px', fontSize: '14px', fontWeight: 600, border: 'none',
-              opacity: loading ? 0.6 : 1,
-            }}
+            className="flex items-center justify-center gap-2 w-full py-3 bg-emerald text-bone rounded-xl text-body-sm font-medium disabled:opacity-60 hover:bg-emerald-deep transition-colors"
           >
-            {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : (isReturning ? 'Sign In' : 'Verify & Join')}
+            {loading ? <Loader2 size={16} className="animate-spin" /> : (isReturning ? 'Sign In' : 'Verify & Join')}
           </button>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+          <div className="flex justify-between mt-1">
             <button
               type="button"
               onClick={() => { setStep('phone'); setCode(''); setError(''); setIsReturning(false); }}
-              style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '12px', textDecoration: 'underline' }}
+              className="bg-transparent border-none text-ink-muted text-xs underline"
             >
               Change number
             </button>
             <button
               type="button"
               onClick={handleResendCode}
-              style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '12px', textDecoration: 'underline' }}
+              className="bg-transparent border-none text-ink-muted text-xs underline"
             >
               Resend code
             </button>
@@ -335,10 +285,7 @@ function AuthWall() {
           <button
             type="button"
             onClick={handleSkipCode}
-            style={{
-              background: 'transparent', border: 'none',
-              color: 'var(--accent-blue)', fontSize: '12px', fontWeight: 600, marginTop: '8px',
-            }}
+            className="bg-transparent border-none text-emerald text-xs font-semibold mt-2"
           >
             Didn't get code? Skip verification
           </button>
@@ -346,7 +293,7 @@ function AuthWall() {
       )}
 
       {error && (
-        <p style={{ color: 'var(--accent-red)', fontSize: '12px', marginTop: '12px', fontWeight: 600 }}>
+        <p className="text-accent-red text-xs mt-3 font-semibold">
           {error}
         </p>
       )}
@@ -366,16 +313,10 @@ function LivePredictorCount() {
   if (!count || count < 3) return null;
 
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: '6px',
-      padding: '6px 12px', margin: '0 16px 8px',
-      borderRadius: 'var(--radius-lg)',
-      background: 'var(--accent-green-bg, rgba(34,197,94,0.08))',
-      border: '1px solid var(--accent-green-border, rgba(34,197,94,0.15))',
-    }}>
-      <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-green)', boxShadow: '0 0 6px var(--accent-green)' }} />
-      <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-        <strong style={{ color: 'var(--accent-green)' }}>{count}</strong> predictors active this week
+    <div className="flex items-center gap-2 px-3 py-2 mx-4 mb-2 rounded-lg bg-accent-green-bg border border-accent-green-border">
+      <div className="w-1.5 h-1.5 rounded-full bg-accent-green shadow-[0_0_6px_var(--accent-green)]" />
+      <span className="text-xs text-ink-muted">
+        <strong className="text-accent-green">{count}</strong> predictors active this week
       </span>
     </div>
   );
@@ -404,27 +345,18 @@ export default function Markets() {
       <LivePredictorCount />
 
       {/* Category Chips */}
-      <section className="no-scrollbar" style={{
-        display: 'flex', gap: '8px', padding: '16px 16px',
-        overflowX: 'auto',
-      }}>
+      <section className="no-scrollbar flex gap-2 px-4 py-4 overflow-x-auto">
         {categories.map((cat) => {
           const isActive = activeTab === cat;
           return (
             <button
               key={cat}
               onClick={() => setActiveTab(cat)}
-              style={{
-                padding: '8px 20px',
-                fontSize: '12px',
-                fontWeight: 600,
-                whiteSpace: 'nowrap',
-                borderRadius: 'var(--radius-full)',
-                background: isActive ? 'var(--primary)' : 'var(--bg-surface-container)',
-                color: isActive ? '#fff' : 'var(--text-secondary)',
-                border: isActive ? 'none' : '1px solid var(--border)',
-                textTransform: 'capitalize',
-              }}
+              className={`px-5 py-2 text-xs font-semibold whitespace-nowrap rounded-full capitalize transition-colors ${
+                isActive
+                  ? 'bg-emerald text-bone'
+                  : 'bg-paper text-ink-muted border border-line hover:bg-paper-hover'
+              }`}
             >
               {cat === 'all' ? 'Trending' : cat}
             </button>
@@ -433,34 +365,19 @@ export default function Markets() {
       </section>
 
       {/* Market Feed */}
-      <div
-        className="app-layout"
-        style={{
-          display: 'grid', gridTemplateColumns: '1fr 300px',
-          gap: '16px', padding: '0 16px 16px',
-          maxWidth: '1400px', margin: '0 auto',
-        }}
-      >
+      <div className="app-layout grid grid-cols-[1fr_300px] gap-4 px-4 pb-4 max-w-[1400px] mx-auto">
         <main>
           {activeMarkets.length === 0 && resolvedMarkets.length === 0 ? (
-            <div style={{
-              padding: '48px 20px', textAlign: 'center',
-              background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
-              border: '1px solid var(--border)',
-            }}>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '8px' }}>
+            <div className="px-5 py-12 text-center bg-paper rounded-2xl border border-line">
+              <p className="text-body-sm text-ink-muted mb-2">
                 No markets in this category yet
               </p>
-              <p style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>
+              <p className="text-xs text-ink-muted opacity-70">
                 New markets are added weekly. Check back soon!
               </p>
             </div>
           ) : (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-              gap: '16px',
-            }}>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
               {activeMarkets.map((market) => (
                 <MarketCard key={market.id} market={market} />
               ))}
@@ -471,10 +388,7 @@ export default function Markets() {
           )}
         </main>
 
-        <aside className="desktop-sidebar" style={{
-          position: 'sticky', top: '76px', alignSelf: 'start',
-          display: 'flex', flexDirection: 'column', gap: '12px',
-        }}>
+        <aside className="desktop-sidebar sticky top-[76px] self-start flex flex-col gap-3">
           <SharpMoney />
           <HowItWorks />
           <PublicChat />
@@ -483,12 +397,12 @@ export default function Markets() {
         </aside>
       </div>
 
-      <div className="mobile-only" style={{ padding: '0 16px 80px' }}>
+      <div className="mobile-only px-4 pb-20">
         <SharpMoney />
-        <div style={{ marginTop: '12px' }}><HowItWorks /></div>
-        <div style={{ marginTop: '12px' }}><PublicChat /></div>
-        <div style={{ marginTop: '12px' }}><ActivityFeed /></div>
-        <div style={{ marginTop: '12px' }}><Leaderboard /></div>
+        <div className="mt-3"><HowItWorks /></div>
+        <div className="mt-3"><PublicChat /></div>
+        <div className="mt-3"><ActivityFeed /></div>
+        <div className="mt-3"><Leaderboard /></div>
       </div>
 
       <CreateMarketFAB onClick={() => setShowCreateForm(true)} />
