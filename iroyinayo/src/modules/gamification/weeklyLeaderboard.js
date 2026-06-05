@@ -22,6 +22,7 @@ async function getCurrentWeekStandings(limit = 20) {
     .join('students', 'multi_market_positions.student_id', 'students.id')
     .where('multi_market_positions.created_at', '>=', start)
     .where('multi_market_positions.created_at', '<=', end)
+    .where('students.is_system', false)
     .groupBy('students.id', 'students.name')
     .select(
       'students.id',
@@ -88,6 +89,7 @@ async function getWeeklyRank(studentId) {
 async function getAllTimeStandings(limit = 20) {
   const standings = await db('multi_market_positions')
     .join('students', 'multi_market_positions.student_id', 'students.id')
+    .where('students.is_system', false)
     .groupBy('students.id', 'students.name')
     .select(
       'students.id',

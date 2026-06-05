@@ -34,6 +34,7 @@ router.get('/top-predictors', async (req, res, next) => {
       .join('students', 'multi_market_positions.student_id', 'students.id')
       .where('multi_market_positions.created_at', '>=', start)
       .where('multi_market_positions.created_at', '<=', end)
+      .where('students.is_system', false)
       .groupBy('students.id', 'students.name')
       .select(
         'students.id',
@@ -69,6 +70,7 @@ router.get('/sharp-money', async (req, res, next) => {
       .join('multi_markets', 'multi_market_positions.market_id', 'multi_markets.id')
       .join('multi_market_outcomes', 'multi_market_positions.outcome_id', 'multi_market_outcomes.id')
       .where('students.points_balance', '>=', 500)
+      .where('students.is_system', false)
       .where('multi_markets.status', 'open')
       .orderBy('multi_market_positions.created_at', 'desc')
       .limit(15)
@@ -305,9 +307,11 @@ router.post('/:id/predict', authenticateStudent, async (req, res, next) => {
       const marketWithOdds = await multiMarkets.getMarketWithOdds(req.params.id);
       const outcome = marketWithOdds.outcomes.find(o => o.id === outcomeId);
       io.emit('odds:update', { marketId: marketWithOdds.id, outcomes: marketWithOdds.outcomes.map(o => ({ id: o.id, price: o.price })) });
-      io.emit('prediction:placed', { marketId: marketWithOdds.id, outcomeLabel: outcome ? outcome.label : '', amount });
-      const updatedStudent = await db('students').where({ id: req.student.id }).first();
-      io.to(`student:${req.student.id}`).emit('balance:update', { studentId: req.student.id, balance: updatedStudent.points_balance });
+      const student = await db('students').where({ id: req.student.id }).first();
+      if (!student.is_system) {
+        io.emit('prediction:placed', { marketId: marketWithOdds.id, outcomeLabel: outcome ? outcome.label : '', amount });
+      }
+      io.to(`student:${req.student.id}`).emit('balance:update', { studentId: req.student.id, balance: student.points_balance });
     }
 
     res.json(result);

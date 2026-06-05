@@ -35,7 +35,7 @@ function TopPercentBadge({ percent }) {
 
 function CardFooter({ market }) {
   const outcomes = market.outcomes || [];
-  const totalShares = outcomes.reduce((sum, o) => sum + (o.shares_sold || 0), 0);
+  const participantCount = market.participant_count || 0;
 
   const handleShare = () => {
     const sortedOutcomes = [...outcomes].sort((a, b) => b.price - a.price);
@@ -59,7 +59,9 @@ function CardFooter({ market }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-tertiary)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <Users size={13} />
-          <span style={{ fontSize: '11px', fontWeight: 500 }}>{totalShares}</span>
+          <span style={{ fontSize: '11px', fontWeight: 500 }}>
+            {participantCount} predictor{participantCount !== 1 ? 's' : ''}
+          </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <MessageSquare size={13} />
