@@ -10,12 +10,7 @@ const PAGE_SIZE = 10;
 function CategoryBadge({ category }) {
   if (!category) return null;
   return (
-    <span style={{
-      fontSize: '11px', fontWeight: 600, letterSpacing: '0.5px',
-      padding: '3px 8px', borderRadius: 'var(--radius)',
-      background: 'var(--bg-surface-high)', color: 'var(--text-secondary)',
-      textTransform: 'uppercase',
-    }}>
+    <span className="font-mono text-mono-label uppercase tracking-[1.76px] px-2 py-0.5 rounded-md bg-paper border border-line text-ink-muted">
       {category}
     </span>
   );
@@ -23,12 +18,8 @@ function CategoryBadge({ category }) {
 
 function TopPercentBadge({ percent }) {
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: '2px',
-      background: 'var(--primary-bg)', color: 'var(--primary)',
-      padding: '4px 10px', borderRadius: 'var(--radius-full)',
-    }}>
-      <span style={{ fontSize: '12px', fontWeight: 700 }}>{percent}%</span>
+    <div className="flex items-center gap-0.5 bg-accent-green-bg text-accent-green px-2.5 py-1 rounded-full">
+      <span className="text-[12px] font-bold">{percent}%</span>
     </div>
   );
 }
@@ -51,28 +42,20 @@ function CardFooter({ market }) {
   };
 
   return (
-    <div style={{
-      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      paddingTop: '12px', borderTop: '1px solid var(--border)',
-      marginTop: '4px',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-tertiary)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+    <div className="flex justify-between items-center pt-3 border-t border-line mt-1">
+      <div className="flex items-center gap-3 text-ink-muted">
+        <div className="flex items-center gap-1">
           <Users size={13} />
-          <span style={{ fontSize: '11px', fontWeight: 500 }}>
+          <span className="text-[11px] font-medium">
             {participantCount} predictor{participantCount !== 1 ? 's' : ''}
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <div className="flex items-center gap-1">
           <MessageSquare size={13} />
-          <span style={{ fontSize: '11px', fontWeight: 500 }}>{outcomes.length} options</span>
+          <span className="text-[11px] font-medium">{outcomes.length} options</span>
         </div>
       </div>
-      <button onClick={handleShare} style={{
-        padding: '4px 8px', background: 'var(--bg-surface-container)',
-        borderRadius: 'var(--radius)', border: '1px solid var(--border)',
-        color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center',
-      }}>
+      <button onClick={handleShare} className="p-1 px-2 bg-paper rounded-md border border-line text-ink-muted hover:bg-paper-hover transition-colors flex items-center">
         <Share2 size={12} />
       </button>
     </div>
@@ -82,34 +65,24 @@ function CardFooter({ market }) {
 function OutcomeItem({ outcome, isTop, isSelected, onSelect }) {
   const percent = Math.round(outcome.price * 100);
 
+  const wrapperClasses = [
+    'flex justify-between items-center px-3 py-2.5 rounded-lg cursor-pointer transition-all',
+    isSelected
+      ? 'bg-accent-green-bg border border-accent-green-border'
+      : isTop
+        ? 'bg-paper border border-line'
+        : 'bg-transparent border border-transparent',
+  ].join(' ');
+
   return (
-    <div
-      onClick={onSelect}
-      style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '10px 12px', borderRadius: 'var(--radius-lg)',
-        background: isSelected ? 'var(--primary-bg)' : isTop ? 'var(--bg-surface-container)' : 'transparent',
-        border: isTop && !isSelected ? '1px solid var(--border)' : isSelected ? '1px solid var(--primary-border)' : '1px solid transparent',
-        cursor: 'pointer',
-        transition: 'all 0.15s ease',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <div style={{
-          width: '8px', height: '8px', borderRadius: '50%',
-          background: isTop ? 'var(--primary)' : 'var(--text-tertiary)',
-        }} />
-        <span style={{
-          fontSize: '13px', fontWeight: isTop ? 600 : 400,
-          color: isTop ? 'var(--text-primary)' : 'var(--text-secondary)',
-        }}>
+    <div onClick={onSelect} className={wrapperClasses}>
+      <div className="flex items-center gap-2">
+        <div className={`w-2 h-2 rounded-full ${isTop ? 'bg-emerald' : 'bg-ink-muted'}`} />
+        <span className={`text-[13px] ${isTop ? 'font-semibold text-ink' : 'font-normal text-ink-muted'}`}>
           {outcome.label}
         </span>
       </div>
-      <span style={{
-        fontSize: '13px', fontWeight: 700,
-        color: isTop ? 'var(--primary)' : 'var(--text-secondary)',
-      }}>
+      <span className={`text-[13px] font-bold ${isTop ? 'text-emerald' : 'text-ink-muted'}`}>
         {percent}%
       </span>
     </div>
@@ -126,34 +99,31 @@ function BinaryOutcomes({ market, outcomes }) {
   const yesPercent = Math.round(yesOutcome.price * 100);
   const noPercent = Math.round(noOutcome.price * 100);
 
+  const yesSelected = selectedOutcome === yesOutcome.id;
+  const noSelected = selectedOutcome === noOutcome.id;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <div style={{ display: 'flex', gap: '8px' }}>
+    <div className="flex flex-col gap-2">
+      <div className="flex gap-2">
         <button
-          onClick={() => setSelectedOutcome(selectedOutcome === yesOutcome.id ? null : yesOutcome.id)}
-          style={{
-            flex: 1, padding: '12px',
-            borderRadius: 'var(--radius-lg)',
-            background: selectedOutcome === yesOutcome.id ? 'var(--accent-green)' : 'var(--accent-green-bg)',
-            color: selectedOutcome === yesOutcome.id ? '#fff' : 'var(--accent-green)',
-            fontSize: '13px', fontWeight: 600,
-            border: `1px solid var(--accent-green-border)`,
-            transition: 'all 0.15s ease',
-          }}
+          onClick={() => setSelectedOutcome(yesSelected ? null : yesOutcome.id)}
+          className={[
+            'flex-1 p-3 rounded-lg text-[13px] font-semibold border transition-all',
+            yesSelected
+              ? 'bg-accent-green text-white border-accent-green'
+              : 'bg-accent-green-bg text-accent-green border-accent-green-border',
+          ].join(' ')}
         >
           Yes {yesPercent}%
         </button>
         <button
-          onClick={() => setSelectedOutcome(selectedOutcome === noOutcome.id ? null : noOutcome.id)}
-          style={{
-            flex: 1, padding: '12px',
-            borderRadius: 'var(--radius-lg)',
-            background: selectedOutcome === noOutcome.id ? 'var(--accent-red)' : 'var(--accent-red-bg)',
-            color: selectedOutcome === noOutcome.id ? '#fff' : 'var(--accent-red)',
-            fontSize: '13px', fontWeight: 600,
-            border: `1px solid var(--accent-red-border)`,
-            transition: 'all 0.15s ease',
-          }}
+          onClick={() => setSelectedOutcome(noSelected ? null : noOutcome.id)}
+          className={[
+            'flex-1 p-3 rounded-lg text-[13px] font-semibold border transition-all',
+            noSelected
+              ? 'bg-accent-red text-white border-accent-red'
+              : 'bg-accent-red-bg text-accent-red border-accent-red-border',
+          ].join(' ')}
         >
           No {noPercent}%
         </button>
@@ -174,7 +144,7 @@ function MultiOutcomes({ market, outcomes }) {
   const sorted = [...outcomes].sort((a, b) => b.price - a.price);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+    <div className="flex flex-col gap-1">
       {sorted.map((outcome, index) => (
         <div key={outcome.id}>
           <OutcomeItem
@@ -184,7 +154,7 @@ function MultiOutcomes({ market, outcomes }) {
             onSelect={() => setSelectedOutcome(selectedOutcome === outcome.id ? null : outcome.id)}
           />
           {selectedOutcome === outcome.id && (
-            <div style={{ padding: '8px 0' }}>
+            <div className="py-2">
               <PredictSlip market={market} outcome={outcome} onClose={() => setSelectedOutcome(null)} />
             </div>
           )}
@@ -213,44 +183,38 @@ function LargeMarketCard({ market }) {
   const paginatedOutcomes = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
-    <div style={{
-      background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
-      border: market.is_featured ? '2px solid var(--accent-yellow)' : '1px solid var(--border)',
-      overflow: 'hidden', display: 'flex', flexDirection: 'column',
-      boxShadow: 'var(--shadow-md)',
-    }}>
-      <div style={{ padding: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
+    <div className={[
+      'bg-paper rounded-2xl overflow-hidden flex flex-col border',
+      market.is_featured ? 'border-2 border-accent-yellow' : 'border-line',
+    ].join(' ')}>
+      <div className="p-5">
+        <div className="flex justify-between items-start mb-3">
           <CategoryBadge category={market.category} />
           <TopPercentBadge percent={topPercent} />
         </div>
 
         <h3
           onClick={() => navigate(`/market/${market.id}`)}
-          style={{ fontSize: '16px', fontWeight: 600, lineHeight: 1.4, marginBottom: '16px', cursor: 'pointer' }}
+          className="font-serif text-section leading-tight cursor-pointer hover:text-emerald transition-colors mb-4"
         >
           {market.title}
         </h3>
 
-        <div style={{ position: 'relative', marginBottom: '12px' }}>
-          <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
+        <div className="relative mb-3">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
           <input
             type="text"
             placeholder="Search options..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-            style={{
-              width: '100%', padding: '10px 12px 10px 34px', fontSize: '13px',
-              background: 'var(--bg-input)', border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-lg)', color: 'var(--text-primary)',
-            }}
+            className="w-full py-2.5 pl-8 pr-3 text-body-sm bg-bone border border-line rounded-lg text-ink placeholder:text-ink-muted"
           />
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div className="flex flex-col gap-1">
           {paginatedOutcomes.length === 0 ? (
-            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '13px' }}>
-              No results for "{search}"
+            <div className="p-5 text-center text-ink-muted text-[13px]">
+              No results for &ldquo;{search}&rdquo;
             </div>
           ) : (
             paginatedOutcomes.map((outcome, index) => (
@@ -262,7 +226,7 @@ function LargeMarketCard({ market }) {
                   onSelect={() => setSelectedOutcome(selectedOutcome === outcome.id ? null : outcome.id)}
                 />
                 {selectedOutcome === outcome.id && (
-                  <div style={{ padding: '8px 0' }}>
+                  <div className="py-2">
                     <PredictSlip market={market} outcome={outcome} onClose={() => setSelectedOutcome(null)} />
                   </div>
                 )}
@@ -272,32 +236,19 @@ function LargeMarketCard({ market }) {
         </div>
 
         {totalPages > 1 && (
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            paddingTop: '12px', marginTop: '8px',
-          }}>
+          <div className="flex justify-between items-center pt-3 mt-2">
             <button
               onClick={() => setPage(Math.max(0, page - 1))}
               disabled={page === 0}
-              style={{
-                padding: '6px 12px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius)',
-                background: 'var(--bg-surface-container)', color: page === 0 ? 'var(--text-tertiary)' : 'var(--text-primary)',
-                border: '1px solid var(--border)', opacity: page === 0 ? 0.4 : 1,
-                display: 'flex', alignItems: 'center', gap: '4px',
-              }}
+              className="px-3 py-1.5 text-[12px] font-medium rounded-md bg-paper border border-line text-ink disabled:opacity-40 flex items-center gap-1"
             >
               <ChevronLeft size={14} /> Prev
             </button>
-            <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 500 }}>{page + 1} / {totalPages}</span>
+            <span className="text-[12px] text-ink-muted font-medium">{page + 1} / {totalPages}</span>
             <button
               onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
               disabled={page === totalPages - 1}
-              style={{
-                padding: '6px 12px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius)',
-                background: 'var(--bg-surface-container)', color: page === totalPages - 1 ? 'var(--text-tertiary)' : 'var(--text-primary)',
-                border: '1px solid var(--border)', opacity: page === totalPages - 1 ? 0.4 : 1,
-                display: 'flex', alignItems: 'center', gap: '4px',
-              }}
+              className="px-3 py-1.5 text-[12px] font-medium rounded-md bg-paper border border-line text-ink disabled:opacity-40 flex items-center gap-1"
             >
               Next <ChevronRight size={14} />
             </button>
@@ -307,21 +258,18 @@ function LargeMarketCard({ market }) {
         <CardFooter market={market} />
       </div>
 
-      <div style={{ borderTop: '1px solid var(--border)' }}>
+      <div className="border-t border-line">
         <button
           onClick={() => setShowChat(!showChat)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            width: '100%', padding: '10px 20px',
-            background: showChat ? 'var(--primary-bg)' : 'transparent',
-            color: showChat ? 'var(--primary)' : 'var(--text-tertiary)',
-            fontSize: '12px', fontWeight: 600,
-          }}
+          className={[
+            'flex items-center gap-1.5 w-full px-5 py-2.5 text-[12px] font-semibold',
+            showChat ? 'bg-accent-green-bg text-emerald' : 'bg-transparent text-ink-muted',
+          ].join(' ')}
         >
           <MessageSquare size={13} /> {showChat ? 'Hide' : 'Show'} Commentary
         </button>
         {showChat && (
-          <div style={{ borderTop: '1px solid var(--border)' }}>
+          <div className="border-t border-line">
             <PublicChat marketId={market.id} />
           </div>
         )}
@@ -342,16 +290,13 @@ function SmallMarketCard({ market }) {
     outcomes.some(o => o.label.toLowerCase().startsWith('no'));
 
   return (
-    <div style={{
-      background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
-      border: market.is_featured ? '2px solid var(--accent-yellow)' : '1px solid var(--border)',
-      overflow: 'hidden', display: 'flex', flexDirection: 'column',
-      boxShadow: 'var(--shadow-md)',
-      transition: 'border-color 0.15s ease',
-    }}>
-      <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div className={[
+      'bg-paper rounded-2xl overflow-hidden flex flex-col border transition-colors',
+      market.is_featured ? 'border-2 border-accent-yellow' : 'border-line',
+    ].join(' ')}>
+      <div className="p-5 flex flex-col gap-4">
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+        <div className="flex justify-between items-start">
           <CategoryBadge category={market.category} />
           <TopPercentBadge percent={topPercent} />
         </div>
@@ -359,7 +304,7 @@ function SmallMarketCard({ market }) {
         {/* Title */}
         <h3
           onClick={() => navigate(`/market/${market.id}`)}
-          style={{ fontSize: '16px', fontWeight: 600, lineHeight: 1.4, cursor: 'pointer' }}
+          className="font-serif text-section leading-tight cursor-pointer hover:text-emerald transition-colors"
         >
           {market.title}
         </h3>
@@ -390,44 +335,26 @@ function ResolvedMarketCard({ market }) {
   };
 
   return (
-    <div style={{
-      background: 'var(--bg-card)',
-      borderRadius: 'var(--radius-xl)',
-      border: '1px solid var(--accent-green-border)',
-      overflow: 'hidden', position: 'relative',
-      boxShadow: 'var(--shadow-md)',
-    }}>
-      <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
-        background: 'linear-gradient(90deg, var(--accent-green), var(--accent-yellow))',
-      }} />
+    <div className="bg-paper rounded-2xl border border-accent-green-border overflow-hidden relative">
+      <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-accent-green to-accent-yellow" />
 
-      <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+      <div className="p-5 flex flex-col gap-3">
+        <div className="flex justify-between items-start">
           <CategoryBadge category={market.category} />
-          <span style={{
-            fontSize: '11px', fontWeight: 700, color: 'var(--accent-green)',
-            background: 'var(--accent-green-bg)', padding: '4px 10px', borderRadius: 'var(--radius-full)',
-            display: 'flex', alignItems: 'center', gap: '4px',
-            border: '1px solid var(--accent-green-border)',
-          }}>
+          <span className="text-[11px] font-bold text-accent-green bg-accent-green-bg px-2.5 py-1 rounded-full flex items-center gap-1 border border-accent-green-border">
             <CheckCircle2 size={11} /> Resolved
           </span>
         </div>
 
-        <h3 style={{ fontSize: '16px', fontWeight: 600, lineHeight: 1.4, color: 'var(--text-secondary)' }}>
+        <h3 className="font-serif text-section leading-tight text-ink-muted">
           {market.title}
         </h3>
 
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '10px',
-          padding: '14px', background: 'var(--accent-green-bg)',
-          borderRadius: 'var(--radius-lg)', border: '1px solid var(--accent-green-border)',
-        }}>
-          <Trophy size={20} color="var(--accent-yellow)" />
+        <div className="flex items-center gap-2.5 p-3.5 bg-accent-green-bg rounded-lg border border-accent-green-border">
+          <Trophy size={20} className="text-accent-yellow" />
           <div>
-            <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '2px' }}>Winner</div>
-            <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--accent-green)' }}>
+            <div className="text-[11px] text-ink-muted mb-0.5">Winner</div>
+            <div className="text-[15px] font-bold text-accent-green">
               {market.winnerLabel}
             </div>
           </div>
@@ -435,13 +362,7 @@ function ResolvedMarketCard({ market }) {
 
         <button
           onClick={handleShare}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-            width: '100%', padding: '10px',
-            background: 'var(--bg-surface-container)', border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-lg)', color: 'var(--text-secondary)',
-            fontSize: '12px', fontWeight: 600,
-          }}
+          className="flex items-center justify-center gap-1.5 w-full py-2.5 bg-paper border border-line rounded-lg text-ink-muted text-[12px] font-semibold hover:bg-paper-hover transition-colors"
         >
           <Share2 size={13} /> Share Result
         </button>
