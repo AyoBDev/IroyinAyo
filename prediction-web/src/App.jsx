@@ -15,6 +15,7 @@ import ResolutionToast from './components/ResolutionToast.jsx';
 import WinPopup from './components/WinPopup.jsx';
 import MarketDetail from './pages/MarketDetail.jsx';
 import ShareCard from './pages/ShareCard.jsx';
+import Portfolio from './pages/Portfolio.jsx';
 
 function TokenExchange() {
   const [searchParams] = useSearchParams();
@@ -99,6 +100,7 @@ function MainApp() {
       <Routes>
         <Route path="/" element={<Markets />} />
         <Route path="/market/:marketId" element={<MarketDetail />} />
+        <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="*" element={<Navigate to="/" replace />} />
