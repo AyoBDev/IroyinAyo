@@ -63,7 +63,7 @@ export default function Leaderboard() {
                   fontWeight: 700, fontSize: '12px',
                   color: i < 3 ? 'var(--accent-green)' : 'var(--text-secondary)',
                 }}>
-                  {Number(entry.total_points)}
+                  {entry.netProfit ?? entry.total_points ?? 0}
                 </span>
               </div>
             );
