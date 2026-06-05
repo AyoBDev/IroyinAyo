@@ -109,7 +109,175 @@ function startScheduler(sock) {
     }
   });
 
-  console.log('Scheduler started: AI content (6am), morning digest (8am), midday quiz (12pm), market auto-close (hourly)');
+  // Odds movement notifications — every 15 minutes
+  cron.schedule('*/15 * * * *', async () => {
+    if (!activeSock) return;
+    try {
+      const now = new Date();
+      const hour = now.toLocaleString('en-US', { timeZone: 'Africa/Lagos', hour: 'numeric', hour12: false });
+      const hourNum = parseInt(hour, 10);
+      if (hourNum >= 22 || hourNum < 7) return;
+
+      const openMarkets = await db('multi_markets').where({ status: 'open' });
+
+      for (const market of openMarkets) {
+        const outcomes = await db('multi_market_outcomes')
+          .where({ market_id: market.id })
+          .orderBy('created_at', 'asc');
+        const sharesSold = outcomes.map(o => o.shares_sold);
+        const { calculatePrices } = require('../../modules/markets/multiMarkets.service');
+        const currentPrices = calculatePrices(sharesSold, market.liquidity_b);
+
+        const lastSnapshot = await db('market_price_snapshots')
+          .where({ market_id: market.id })
+          .orderBy('captured_at', 'desc')
+          .first();
+
+        const pricesData = outcomes.map((o, i) => ({ outcome_id: o.id, price: currentPrices[i] }));
+
+        await db('market_price_snapshots').insert({
+          market_id: market.id,
+          prices: JSON.stringify(pricesData),
+        });
+
+        if (!lastSnapshot) continue;
+
+        const oldPrices = JSON.parse(lastSnapshot.prices);
+
+        for (let i = 0; i < outcomes.length; i++) {
+          const oldEntry = oldPrices.find(p => p.outcome_id === outcomes[i].id);
+          if (!oldEntry) continue;
+          const shift = Math.abs(currentPrices[i] - oldEntry.price);
+          if (shift < 0.10) continue;
+
+          const holders = await db('multi_market_positions')
+            .join('students', 'multi_market_positions.student_id', 'students.id')
+            .where('multi_market_positions.market_id', market.id)
+            .where('students.is_system', false)
+            .select('students.id as student_id', 'students.phone_number', 'multi_market_positions.shares', 'multi_market_positions.entry_price');
+
+          const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+
+          for (const holder of holders) {
+            const throttled = await db('notification_throttles')
+              .where({ student_id: holder.student_id, market_id: market.id, type: 'odds_movement' })
+              .where('sent_at', '>', sixHoursAgo)
+              .first();
+            if (throttled) continue;
+
+            const oldPercent = Math.round(oldEntry.price * 100);
+            const newPercent = Math.round(currentPrices[i] * 100);
+            const entryPercent = holder.entry_price ? Math.round(holder.entry_price * 100) : null;
+            const appUrl = process.env.APP_URL || 'https://iroyinayo-production.up.railway.app';
+
+            let text = `Odds moving on your prediction!\n\n"${market.title}"\n${outcomes[i].label}: ${oldPercent}% -> ${newPercent}%`;
+            if (entryPercent != null) {
+              text += `\nYour position: ${holder.shares.toFixed(1)} shares @ ${entryPercent}%`;
+            }
+            text += `\n\nCheck it: ${appUrl}/market/${market.id}`;
+
+            const jid = `${holder.phone_number}@s.whatsapp.net`;
+            try {
+              await activeSock.sendMessage(jid, { text });
+              await db('notification_throttles').insert({
+                student_id: holder.student_id,
+                market_id: market.id,
+                type: 'odds_movement',
+              });
+            } catch (err) {
+              // Skip failed sends
+            }
+            await randomDelay();
+          }
+          break;
+        }
+      }
+
+      const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      await db('market_price_snapshots').where('captured_at', '<', dayAgo).del();
+    } catch (err) {
+      console.error('Odds movement check failed:', err);
+    }
+  }, { timezone: 'Africa/Lagos' });
+
+  // Near-resolution urgency — every 30 minutes
+  cron.schedule('*/30 * * * *', async () => {
+    if (!activeSock) return;
+    try {
+      const now = new Date();
+      const hour = now.toLocaleString('en-US', { timeZone: 'Africa/Lagos', hour: 'numeric', hour12: false });
+      const hourNum = parseInt(hour, 10);
+      if (hourNum >= 22 || hourNum < 7) return;
+
+      const twoHoursFromNow = new Date(Date.now() + 2 * 60 * 60 * 1000);
+
+      const closingMarkets = await db('multi_markets')
+        .where({ status: 'open' })
+        .whereNotNull('closes_at')
+        .where('closes_at', '>', now)
+        .where('closes_at', '<=', twoHoursFromNow);
+
+      const appUrl = process.env.APP_URL || 'https://iroyinayo-production.up.railway.app';
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+      for (const market of closingMarkets) {
+        const outcomes = await db('multi_market_outcomes')
+          .where({ market_id: market.id })
+          .orderBy('created_at', 'asc');
+        const sharesSold = outcomes.map(o => o.shares_sold);
+        const { calculatePrices } = require('../../modules/markets/multiMarkets.service');
+        const prices = calculatePrices(sharesSold, market.liquidity_b);
+        const topIndex = prices.indexOf(Math.max(...prices));
+        const topOutcome = outcomes[topIndex];
+        const topPercent = Math.round(prices[topIndex] * 100);
+
+        const timeRemaining = Math.round((new Date(market.closes_at).getTime() - Date.now()) / (60 * 1000));
+        const timeText = timeRemaining >= 60 ? `${Math.round(timeRemaining / 60)}h` : `${timeRemaining}m`;
+
+        const activeStudents = await db('students')
+          .whereIn('id', function() {
+            this.select('student_id').from('multi_market_positions')
+              .where('created_at', '>', weekAgo)
+              .groupBy('student_id');
+          })
+          .whereNotIn('id', function() {
+            this.select('student_id').from('multi_market_positions')
+              .where('market_id', market.id);
+          })
+          .where('is_system', false)
+          .where('is_banned', false)
+          .select('id', 'phone_number');
+
+        for (const student of activeStudents) {
+          const throttled = await db('notification_throttles')
+            .where({ student_id: student.id, type: 'closing_soon' })
+            .where('sent_at', '>', oneDayAgo)
+            .first();
+          if (throttled) continue;
+
+          const text = `Market closing soon!\n\n"${market.title}" closes in ${timeText}\nLeading: ${topOutcome.label} at ${topPercent}%\n\nPredict now: ${appUrl}/market/${market.id}`;
+
+          const jid = `${student.phone_number}@s.whatsapp.net`;
+          try {
+            await activeSock.sendMessage(jid, { text });
+            await db('notification_throttles').insert({
+              student_id: student.id,
+              market_id: market.id,
+              type: 'closing_soon',
+            });
+          } catch (err) {
+            // Skip failed sends
+          }
+          await randomDelay();
+        }
+      }
+    } catch (err) {
+      console.error('Closing-soon notifications failed:', err);
+    }
+  }, { timezone: 'Africa/Lagos' });
+
+  console.log('Scheduler started: AI content (6am), morning digest (8am), midday quiz (12pm), market auto-close (hourly), odds movement (15min), closing-soon (30min)');
 }
 
 module.exports = { startScheduler, updateSocket };
