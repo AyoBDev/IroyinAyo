@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { TrendingUp, ArrowRight, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { TrendingUp, ArrowRight, Loader2, Users, Trophy } from 'lucide-react';
 import { getToken, setToken, apiFetch } from '../api.js';
 import useStore from '../store.js';
 import MarketCard from '../components/MarketCard.jsx';
@@ -11,14 +11,57 @@ import SharpMoney from '../components/SharpMoney.jsx';
 import CreateMarketFAB from '../components/CreateMarketFAB.jsx';
 import CreateMarketForm from '../components/CreateMarketForm.jsx';
 
+function SocialProofBanner({ socialProof }) {
+  if (!socialProof) return null;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px', width: '100%', maxWidth: '320px' }}>
+      {socialProof.activePredictors > 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '8px',
+          padding: '8px 12px', borderRadius: 'var(--radius-lg)',
+          background: 'var(--accent-green-bg, rgba(34,197,94,0.08))',
+          border: '1px solid var(--accent-green-border, rgba(34,197,94,0.2))',
+        }}>
+          <Users size={14} color="var(--accent-green)" />
+          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+            <strong style={{ color: 'var(--accent-green)' }}>{socialProof.activePredictors}</strong> predictors active this week
+          </span>
+        </div>
+      )}
+      {socialProof.recentWinners.length > 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '8px',
+          padding: '8px 12px', borderRadius: 'var(--radius-lg)',
+          background: 'var(--accent-yellow-bg, rgba(250,204,21,0.08))',
+          border: '1px solid var(--accent-yellow-border, rgba(250,204,21,0.2))',
+        }}>
+          <Trophy size={14} color="var(--accent-yellow)" />
+          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+            <strong>{socialProof.recentWinners[0].name}</strong> won +{socialProof.recentWinners[0].payout} pts
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AuthWall() {
-  const [step, setStep] = useState('info');
+  const [step, setStep] = useState('phone');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isReturning, setIsReturning] = useState(false);
+  const [socialProof, setSocialProof] = useState(null);
+
+  useEffect(() => {
+    apiFetch('/api/multi-markets/social-proof').then(setSocialProof).catch(() => {});
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref) setReferralCode(ref);
+  }, []);
 
   function isValidNigerianPhone(num) {
     const cleaned = num.replace(/[^0-9]/g, '');
@@ -31,9 +74,9 @@ function AuthWall() {
     return false;
   }
 
-  async function handleSubmitInfo(e) {
+  async function handlePhoneSubmit(e) {
     e.preventDefault();
-    if (!name.trim() || !phone.trim()) return;
+    if (!phone.trim()) return;
     if (!isValidNigerianPhone(phone.trim())) {
       setError('Please enter a valid Nigerian phone number (e.g. 08012345678)');
       return;
@@ -43,15 +86,32 @@ function AuthWall() {
     try {
       const result = await apiFetch('/api/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ phoneNumber: phone.trim(), name: name.trim() }),
+        body: JSON.stringify({ phoneNumber: phone.trim() }),
       });
-      setIsReturning(!!result.returning);
-      try {
-        await apiFetch('/api/auth/send-code', {
-          method: 'POST',
-          body: JSON.stringify({ phoneNumber: phone.trim() }),
-        });
-      } catch {}
+      if (result.returning) {
+        setIsReturning(true);
+        setStep('code');
+      } else {
+        setIsReturning(false);
+        setStep('signup');
+      }
+    } catch (err) {
+      setError(err.message || 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSignupSubmit(e) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setLoading(true);
+    setError('');
+    try {
+      await apiFetch('/api/auth/send-code', {
+        method: 'POST',
+        body: JSON.stringify({ phoneNumber: phone.trim() }),
+      });
       setStep('code');
     } catch (err) {
       setError(err.message || 'Something went wrong');
@@ -72,6 +132,7 @@ function AuthWall() {
           phoneNumber: phone.trim(),
           code,
           name: isReturning ? '_returning' : name.trim(),
+          referralCode: !isReturning && referralCode ? referralCode.trim() : undefined,
         }),
       });
       if (result.token) {
@@ -94,6 +155,7 @@ function AuthWall() {
         body: JSON.stringify({
           phoneNumber: phone.trim(),
           name: isReturning ? '_returning' : name.trim(),
+          referralCode: !isReturning && referralCode ? referralCode.trim() : undefined,
         }),
       });
       if (result.token) {
@@ -114,7 +176,6 @@ function AuthWall() {
         method: 'POST',
         body: JSON.stringify({ phoneNumber: phone.trim() }),
       });
-      setError('');
     } catch {}
   }
 
@@ -129,32 +190,25 @@ function AuthWall() {
         <TrendingUp size={28} color="var(--primary)" />
       </div>
       <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px', color: 'var(--text-primary)' }}>
-        Welcome to IroyinMarket
+        {isReturning ? 'Welcome back!' : 'Welcome to IroyinMarket'}
       </h2>
       <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px', maxWidth: '300px' }}>
-        Predict outcomes on campus events and compete for real cash prizes every week.
+        {isReturning
+          ? 'Enter the code sent to your WhatsApp to continue.'
+          : 'Predict outcomes on campus events and compete for real cash prizes every week.'}
       </p>
 
-      {step === 'info' && (
-        <form onSubmit={handleSubmitInfo} style={{ width: '100%', maxWidth: '320px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
-            required
-            style={{
-              width: '100%', padding: '12px 16px', fontSize: '14px',
-              background: 'var(--bg-input)', border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-lg)', color: 'var(--text-primary)',
-            }}
-          />
+      <SocialProofBanner socialProof={socialProof} />
+
+      {step === 'phone' && (
+        <form onSubmit={handlePhoneSubmit} style={{ width: '100%', maxWidth: '320px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <input
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="Phone number (e.g. 08012345678)"
             required
+            autoFocus
             style={{
               width: '100%', padding: '12px 16px', fontSize: '14px',
               background: 'var(--bg-input)', border: '1px solid var(--border)',
@@ -163,7 +217,7 @@ function AuthWall() {
           />
           <button
             type="submit"
-            disabled={loading || !name.trim() || !phone.trim()}
+            disabled={loading || !phone.trim()}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
               width: '100%', padding: '12px',
@@ -173,6 +227,58 @@ function AuthWall() {
             }}
           >
             {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <><span>Continue</span><ArrowRight size={16} /></>}
+          </button>
+        </form>
+      )}
+
+      {step === 'signup' && (
+        <form onSubmit={handleSignupSubmit} style={{ width: '100%', maxWidth: '320px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+            New here? Tell us your name to get started.
+          </p>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your name"
+            required
+            autoFocus
+            style={{
+              width: '100%', padding: '12px 16px', fontSize: '14px',
+              background: 'var(--bg-input)', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-lg)', color: 'var(--text-primary)',
+            }}
+          />
+          <input
+            type="text"
+            value={referralCode}
+            onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+            placeholder="Referral code (optional)"
+            style={{
+              width: '100%', padding: '12px 16px', fontSize: '14px',
+              background: 'var(--bg-input)', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-lg)', color: 'var(--text-primary)',
+            }}
+          />
+          <button
+            type="submit"
+            disabled={loading || !name.trim()}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              width: '100%', padding: '12px',
+              background: 'var(--primary)', color: '#fff',
+              borderRadius: '9999px', fontSize: '14px', fontWeight: 600, border: 'none',
+              opacity: loading ? 0.6 : 1,
+            }}
+          >
+            {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <><span>Continue</span><ArrowRight size={16} /></>}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setStep('phone'); setError(''); }}
+            style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '12px', textDecoration: 'underline', marginTop: '4px' }}
+          >
+            Use a different number
           </button>
         </form>
       )}
@@ -189,6 +295,7 @@ function AuthWall() {
             onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
             placeholder="000000"
             maxLength={6}
+            autoFocus
             style={{
               width: '100%', padding: '12px 16px', fontSize: '20px', fontWeight: 700,
               background: 'var(--bg-input)', border: '1px solid var(--border)',
@@ -207,12 +314,12 @@ function AuthWall() {
               opacity: loading ? 0.6 : 1,
             }}
           >
-            {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : 'Verify & Join'}
+            {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : (isReturning ? 'Sign In' : 'Verify & Join')}
           </button>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
             <button
               type="button"
-              onClick={() => { setStep('info'); setCode(''); setError(''); }}
+              onClick={() => { setStep('phone'); setCode(''); setError(''); setIsReturning(false); }}
               style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '12px', textDecoration: 'underline' }}
             >
               Change number
@@ -247,6 +354,33 @@ function AuthWall() {
   );
 }
 
+function LivePredictorCount() {
+  const [count, setCount] = useState(null);
+
+  useEffect(() => {
+    apiFetch('/api/multi-markets/social-proof')
+      .then(data => setCount(data.activePredictors))
+      .catch(() => {});
+  }, []);
+
+  if (!count || count < 3) return null;
+
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: '6px',
+      padding: '6px 12px', margin: '0 16px 8px',
+      borderRadius: 'var(--radius-lg)',
+      background: 'var(--accent-green-bg, rgba(34,197,94,0.08))',
+      border: '1px solid var(--accent-green-border, rgba(34,197,94,0.15))',
+    }}>
+      <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-green)', boxShadow: '0 0 6px var(--accent-green)' }} />
+      <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+        <strong style={{ color: 'var(--accent-green)' }}>{count}</strong> predictors active this week
+      </span>
+    </div>
+  );
+}
+
 export default function Markets() {
   const [activeTab, setActiveTab] = useState('all');
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -267,6 +401,8 @@ export default function Markets() {
 
   return (
     <>
+      <LivePredictorCount />
+
       {/* Category Chips */}
       <section className="no-scrollbar" style={{
         display: 'flex', gap: '8px', padding: '16px 16px',

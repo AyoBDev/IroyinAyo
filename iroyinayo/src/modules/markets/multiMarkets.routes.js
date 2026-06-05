@@ -14,6 +14,48 @@ router.get('/', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.get('/social-proof', async (req, res, next) => {
+  try {
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const activeResult = await db('multi_market_positions')
+      .join('students', 'multi_market_positions.student_id', 'students.id')
+      .where('multi_market_positions.created_at', '>=', weekAgo)
+      .where('students.is_system', false)
+      .countDistinct('students.id as count')
+      .first();
+
+    const recentWinners = await db('multi_market_positions')
+      .join('students', 'multi_market_positions.student_id', 'students.id')
+      .join('multi_markets', 'multi_market_positions.market_id', 'multi_markets.id')
+      .where('multi_market_positions.payout', '>', 0)
+      .where('students.is_system', false)
+      .orderBy('multi_markets.resolved_at', 'desc')
+      .limit(5)
+      .select(
+        'students.name',
+        'multi_market_positions.payout',
+        'multi_markets.title as market_title',
+        'multi_markets.resolved_at'
+      );
+
+    const totalPredictions = await db('multi_market_positions')
+      .where('created_at', '>=', weekAgo)
+      .count('id as count')
+      .first();
+
+    res.json({
+      activePredictors: parseInt(activeResult?.count || 0, 10),
+      predictionsThisWeek: parseInt(totalPredictions?.count || 0, 10),
+      recentWinners: recentWinners.map(w => ({
+        name: w.name,
+        payout: w.payout,
+        marketTitle: w.market_title,
+      })),
+    });
+  } catch (err) { next(err); }
+});
+
 router.get('/leaderboard', async (req, res, next) => {
   try {
     const weeklyLeaderboard = require('../gamification/weeklyLeaderboard');
@@ -91,8 +133,17 @@ router.get('/me/info', authenticateStudent, async (req, res, next) => {
   try {
     const { getStudentStats } = require('../gamification/titles');
     const weeklyLeaderboard = require('../gamification/weeklyLeaderboard');
+    const { getReferralStats } = require('../referrals/referrals.service');
     const stats = await getStudentStats(req.student.id);
     const weeklyRank = await weeklyLeaderboard.getWeeklyRank(req.student.id);
+    const referralStats = await getReferralStats(req.student.id);
+
+    let referredByName = null;
+    if (req.student.referred_by) {
+      const referrer = await db('students').where({ id: req.student.referred_by }).select('name').first();
+      referredByName = referrer?.name || null;
+    }
+
     res.json({
       id: req.student.id,
       name: req.student.name,
@@ -104,6 +155,10 @@ router.get('/me/info', authenticateStudent, async (req, res, next) => {
       totalPredictions: stats.totalPredictions,
       wins: stats.wins,
       weekly_rank: weeklyRank,
+      is_ambassador: req.student.is_ambassador || false,
+      referral_code: referralStats.code,
+      referral_count: referralStats.referralCount,
+      referred_by_name: referredByName,
     });
   } catch (err) { next(err); }
 });
@@ -434,8 +489,9 @@ router.post('/:id/resolve', authenticate, async (req, res, next) => {
       io.emit('market:resolved', { marketId: req.params.id, winnerLabel: outcome?.label || '', winnerId: outcomeId });
     }
 
-    const { notifyMarketResolution } = require('../notifications/whatsapp');
+    const { notifyMarketResolution, notifyReferralWins } = require('../notifications/whatsapp');
     notifyMarketResolution(req.params.id, outcome?.label || '').catch(() => {});
+    notifyReferralWins(req.params.id).catch(() => {});
 
     res.json(result);
   } catch (err) { next(err); }

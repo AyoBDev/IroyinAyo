@@ -128,4 +128,36 @@ async function notifyNewMarket(marketId) {
   }
 }
 
-module.exports = { sendWhatsApp, sendWhatsAppImage, notifyMarketResolution, notifyWeeklyWinner, notifyNewMarket };
+async function notifyReferralWins(marketId) {
+  const appUrl = process.env.APP_URL || 'https://iroyinayo-production.up.railway.app';
+
+  const wins = await db('multi_market_positions')
+    .join('students', 'multi_market_positions.student_id', 'students.id')
+    .join('multi_markets', 'multi_market_positions.market_id', 'multi_markets.id')
+    .where('multi_market_positions.market_id', marketId)
+    .where('multi_market_positions.payout', '>', 0)
+    .where('students.is_system', false)
+    .whereNotNull('students.referred_by')
+    .select(
+      'students.name as winner_name',
+      'students.referred_by',
+      'multi_market_positions.payout',
+      'multi_markets.title'
+    );
+
+  const referrerIds = [...new Set(wins.map(w => w.referred_by))];
+  if (referrerIds.length === 0) return;
+
+  const referrers = await db('students').whereIn('id', referrerIds).select('id', 'phone_number', 'name');
+  const referrerMap = Object.fromEntries(referrers.map(r => [r.id, r]));
+
+  for (const win of wins) {
+    const referrer = referrerMap[win.referred_by];
+    if (!referrer) continue;
+
+    const text = `Your referral *${win.winner_name}* just won +${win.payout} pts on "${win.title}"!\n\nKeep inviting friends → ${appUrl}`;
+    await sendWhatsApp(referrer.phone_number, text);
+  }
+}
+
+module.exports = { sendWhatsApp, sendWhatsAppImage, notifyMarketResolution, notifyWeeklyWinner, notifyNewMarket, notifyReferralWins };
