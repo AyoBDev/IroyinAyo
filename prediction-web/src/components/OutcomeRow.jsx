@@ -1,66 +1,66 @@
 import { useState, useEffect, useRef } from 'react';
 
-function getOutcomeStyle(label) {
+function getOutcomeClasses(label) {
   const lower = label.toLowerCase();
   if (lower === 'yes' || lower.startsWith('yes')) {
-    return { color: 'var(--accent-green)', bg: 'var(--accent-green-bg)', border: 'var(--accent-green-border)', btnBg: 'var(--accent-green)', btnText: '#fff' };
+    return {
+      colorClass: 'text-accent-green',
+      bgClass: 'bg-accent-green-bg',
+      borderClass: 'border-l-accent-green',
+      btnClass: 'bg-accent-green text-white',
+    };
   }
   if (lower === 'no' || lower.startsWith('no')) {
-    return { color: 'var(--accent-red)', bg: 'var(--accent-red-bg)', border: 'var(--accent-red-border)', btnBg: 'var(--accent-red)', btnText: '#fff' };
+    return {
+      colorClass: 'text-accent-red',
+      bgClass: 'bg-accent-red-bg',
+      borderClass: 'border-l-accent-red',
+      btnClass: 'bg-accent-red text-white',
+    };
   }
-  return { color: 'var(--accent-blue)', bg: 'var(--accent-blue-bg)', border: 'var(--accent-blue-border)', btnBg: 'var(--bg-card-hover)', btnText: 'var(--text-primary)' };
+  return {
+    colorClass: 'text-emerald',
+    bgClass: 'bg-accent-violet-bg',
+    borderClass: 'border-l-emerald',
+    btnClass: 'bg-paper-hover text-ink',
+  };
 }
 
 export default function OutcomeRow({ outcome, isSelected, onSelect }) {
   const cents = Math.round(outcome.price * 100);
   const [animClass, setAnimClass] = useState('');
   const prevPrice = useRef(outcome.price);
-  const style = getOutcomeStyle(outcome.label);
+  const classes = getOutcomeClasses(outcome.label);
 
   useEffect(() => {
     if (outcome.prevPrice !== undefined && outcome.prevPrice !== outcome.price) {
-      setAnimClass(outcome.price > outcome.prevPrice ? 'tick-up' : 'tick-down');
+      setAnimClass(outcome.price > outcome.prevPrice ? 'animate-tick-up' : 'animate-tick-down');
       const timer = setTimeout(() => setAnimClass(''), 400);
       return () => clearTimeout(timer);
     }
     prevPrice.current = outcome.price;
   }, [outcome.price, outcome.prevPrice]);
 
+  const containerClasses = [
+    'flex items-center justify-between px-3 py-2.5 cursor-pointer rounded-md transition-colors my-0.5 border-l-[3px]',
+    isSelected
+      ? `${classes.bgClass} ${classes.borderClass}`
+      : 'border-l-transparent hover:bg-paper-hover',
+  ].join(' ');
+
   return (
-    <div
-      onClick={onSelect}
-      style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '10px 12px', cursor: 'pointer',
-        borderRadius: 'var(--radius)', transition: 'background 0.1s',
-        background: isSelected ? style.bg : 'transparent',
-        borderLeft: isSelected ? `3px solid ${style.color}` : '3px solid transparent',
-        margin: '2px 0',
-      }}
-      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'var(--bg-card-hover)'; }}
-      onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = isSelected ? style.bg : 'transparent'; }}
-    >
-      <span style={{ fontWeight: 500, fontSize: '13px', color: 'var(--text-primary)', flex: 1 }}>
+    <div onClick={onSelect} className={containerClasses}>
+      <span className="font-medium text-label-sm text-ink flex-1">
         {outcome.label}
       </span>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <span className={animClass} style={{
-          fontWeight: 700, fontSize: '14px',
-          color: style.color,
-          minWidth: '36px', textAlign: 'right',
-        }}>
+      <div className="flex items-center gap-2.5">
+        <span className={`font-mono text-mono-data font-normal min-w-[36px] text-right ${classes.colorClass} ${animClass}`}>
           {cents}¢
         </span>
         <button
           onClick={(e) => { e.stopPropagation(); onSelect(); }}
-          style={{
-            padding: '5px 14px', fontSize: '12px', fontWeight: 700,
-            borderRadius: '4px', color: style.btnText,
-            background: style.btnBg,
-            border: 'none',
-            letterSpacing: '0.2px',
-          }}
+          className={`px-3.5 py-1 text-[12px] font-medium rounded-md border-none tracking-wide ${classes.btnClass}`}
         >
           Predict
         </button>
