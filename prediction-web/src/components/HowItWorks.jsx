@@ -31,68 +31,39 @@ export default function HowItWorks() {
     <>
       <button
         onClick={() => setOpen(true)}
-        style={{
-          display: 'flex', alignItems: 'center', gap: '6px',
-          padding: '10px 16px', width: '100%',
-          background: 'var(--bg-card)', border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-xl)', color: 'var(--text-secondary)',
-          fontSize: '13px', fontWeight: 600,
-        }}
+        className="flex items-center gap-1.5 py-2.5 px-4 w-full bg-paper border border-line rounded-2xl text-ink-muted text-[13px] font-semibold"
       >
-        <HelpCircle size={15} color="var(--accent-blue)" />
+        <HelpCircle size={15} className="text-emerald" />
         How It Works
-        <ChevronRight size={14} style={{ marginLeft: 'auto', color: 'var(--text-tertiary)' }} />
+        <ChevronRight size={14} className="ml-auto text-ink-muted" />
       </button>
 
       {open && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 1000,
-          background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '20px',
-        }}>
-          <div style={{
-            background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
-            border: '1px solid var(--border)', width: '100%', maxWidth: '420px',
-            overflow: 'hidden', animation: 'slideUp 0.2s ease-out',
-          }}>
-            <div style={{
-              padding: '18px 20px', borderBottom: '1px solid var(--border)',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            }}>
-              <h2 style={{ fontSize: '16px', fontWeight: 700 }}>How It Works</h2>
+        <div className="fixed inset-0 z-[1000] bg-black/70 backdrop-blur-sm flex items-center justify-center p-5">
+          <div className="bg-paper rounded-2xl border border-line w-full max-w-[420px] overflow-hidden animate-slide-up shadow-float">
+            <div className="py-4 px-5 border-b border-line flex justify-between items-center">
+              <h2 className="font-serif text-base text-ink">How It Works</h2>
               <button
                 onClick={() => setOpen(false)}
-                style={{
-                  background: 'var(--bg-secondary)', borderRadius: '50%',
-                  width: '28px', height: '28px', display: 'flex',
-                  alignItems: 'center', justifyContent: 'center', border: 'none',
-                }}
+                className="bg-bone rounded-full w-7 h-7 flex items-center justify-center"
               >
-                <X size={14} color="var(--text-secondary)" />
+                <X size={14} className="text-ink-muted" />
               </button>
             </div>
 
-            <div style={{ padding: '20px' }}>
+            <div className="p-5">
               {steps.map((step, i) => {
                 const Icon = step.icon;
                 return (
-                  <div key={i} style={{
-                    display: 'flex', gap: '14px', marginBottom: i < steps.length - 1 ? '20px' : 0,
-                  }}>
-                    <div style={{
-                      width: '36px', height: '36px', borderRadius: '10px',
-                      background: 'var(--accent-blue-bg)', border: '1px solid var(--accent-blue-border)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      flexShrink: 0,
-                    }}>
-                      <Icon size={16} color="var(--accent-blue)" />
+                  <div key={i} className={`flex gap-3.5 ${i < steps.length - 1 ? 'mb-5' : ''}`}>
+                    <div className="w-9 h-9 rounded-[10px] bg-accent-green-bg border border-accent-green-border flex items-center justify-center shrink-0">
+                      <Icon size={16} className="text-emerald" />
                     </div>
                     <div>
-                      <h3 style={{ fontSize: '13px', fontWeight: 700, marginBottom: '4px' }}>
+                      <h3 className="font-serif text-[13px] mb-1">
                         {step.title}
                       </h3>
-                      <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                      <p className="text-xs text-ink-muted leading-relaxed">
                         {step.description}
                       </p>
                     </div>
@@ -101,12 +72,9 @@ export default function HowItWorks() {
               })}
             </div>
 
-            <div style={{ padding: '0 20px 20px' }}>
-              <div style={{
-                padding: '12px 16px', borderRadius: 'var(--radius)',
-                background: 'var(--accent-green-bg)', border: '1px solid var(--accent-green-border)',
-              }}>
-                <p style={{ fontSize: '12px', color: 'var(--accent-green)', fontWeight: 600 }}>
+            <div className="px-5 pb-5">
+              <div className="py-3 px-4 rounded-md bg-accent-green-bg border border-accent-green-border">
+                <p className="text-xs text-accent-green font-semibold">
                   Points are free and refill automatically. There is no real money involved.
                 </p>
               </div>

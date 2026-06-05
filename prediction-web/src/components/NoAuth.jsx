@@ -92,45 +92,29 @@ export default function AuthModal({ onClose }) {
   return (
     <div
       onClick={onClose}
-      style={{
-        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-        background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center',
-        justifyContent: 'center', zIndex: 1000, padding: '1rem',
-      }}
+      className="fixed inset-0 bg-black/70 flex items-center justify-center z-[1000] p-4"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{
-          background: 'var(--bg-primary)', borderRadius: 'var(--radius-xl)',
-          padding: '2rem', maxWidth: '420px', width: '100%', textAlign: 'center',
-          position: 'relative',
-        }}
+        className="bg-bone rounded-2xl p-8 max-w-[420px] w-full text-center relative shadow-float-lg"
       >
         <button
           onClick={onClose}
-          style={{
-            position: 'absolute', top: '12px', right: '12px',
-            background: 'none', border: 'none', color: 'var(--text-secondary)',
-            cursor: 'pointer', padding: '4px',
-          }}
+          className="absolute top-3 right-3 text-ink-muted p-1"
         >
           <X size={20} />
         </button>
 
-        <TrendingUp size={40} color="var(--accent-green)" strokeWidth={2.5} style={{ marginBottom: '20px' }} />
-        <h1 style={{ fontSize: '26px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.5px' }}>IroyinMarket</h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', maxWidth: '340px', marginBottom: '36px', lineHeight: 1.6, marginLeft: 'auto', marginRight: 'auto' }}>
+        <TrendingUp size={40} className="text-accent-green mb-5" strokeWidth={2.5} />
+        <h1 className="font-serif text-2xl text-ink mb-2 tracking-tight">IroyinMarket</h1>
+        <p className="text-ink-muted text-sm max-w-[340px] mb-9 leading-relaxed mx-auto">
           Predict campus events, sports, and pop culture. Earn points, climb the leaderboard, win prizes.
         </p>
 
-        <div style={{
-          background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
-          padding: '28px 36px', border: '1px solid var(--border)', textAlign: 'center',
-          maxWidth: '360px', width: '100%', marginLeft: 'auto', marginRight: 'auto',
-        }}>
+        <div className="bg-paper rounded-2xl py-7 px-9 border border-line text-center max-w-[360px] w-full mx-auto">
           {step === 'phone' && (
             <form onSubmit={handlePhoneSubmit}>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600, marginBottom: '16px' }}>
+              <p className="text-ink-muted text-[13px] font-semibold mb-4">
                 Enter your phone number to get started
               </p>
               <input
@@ -138,30 +122,22 @@ export default function AuthModal({ onClose }) {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="08012345678"
-                style={{
-                  width: '100%', padding: '12px 16px', borderRadius: '12px',
-                  border: '1px solid var(--border)', background: 'var(--bg-primary)',
-                  color: 'var(--text-primary)', fontSize: '16px', textAlign: 'center',
-                  outline: 'none', marginBottom: '12px',
-                }}
+                className="w-full py-3 px-4 rounded-xl border border-line bg-bone text-ink text-base text-center outline-none mb-3 placeholder:text-ink-muted"
               />
-              <p style={{ color: 'var(--text-tertiary)', fontSize: '11px', marginBottom: '16px' }}>
+              <p className="text-ink-muted text-[11px] mb-4">
                 Returning users log in instantly. New users get a WhatsApp code.
               </p>
               {error && (
-                <p style={{ color: '#ef4444', fontSize: '12px', marginBottom: '12px' }}>{error}</p>
+                <p className="text-accent-red text-xs mb-3">{error}</p>
               )}
               <button
                 type="submit"
                 disabled={loading || !phone.trim()}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                  padding: '12px 24px', borderRadius: '24px', fontSize: '14px', fontWeight: 700,
-                  background: '#25D366', color: '#fff', border: 'none', cursor: 'pointer',
-                  width: '100%', opacity: loading || !phone.trim() ? 0.6 : 1,
-                }}
+                className={`flex items-center justify-center gap-2 py-3 px-6 rounded-full text-sm font-bold bg-emerald text-bone w-full ${
+                  loading || !phone.trim() ? 'opacity-60' : 'hover:bg-emerald-deep'
+                }`}
               >
-                {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : null}
+                {loading ? <Loader2 size={16} className="animate-spin" /> : null}
                 Continue
                 {!loading && <ArrowRight size={14} />}
               </button>
@@ -170,10 +146,10 @@ export default function AuthModal({ onClose }) {
 
           {step === 'code' && (
             <form onSubmit={handleCodeSubmit}>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>
+              <p className="text-ink-muted text-[13px] font-semibold mb-2">
                 Enter verification code
               </p>
-              <p style={{ color: 'var(--text-tertiary)', fontSize: '11px', marginBottom: '16px' }}>
+              <p className="text-ink-muted text-[11px] mb-4">
                 Check your WhatsApp for a 6-digit code
               </p>
               <input
@@ -183,39 +159,26 @@ export default function AuthModal({ onClose }) {
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ''))}
                 placeholder="000000"
-                style={{
-                  width: '100%', padding: '14px 16px', borderRadius: '12px',
-                  border: '1px solid var(--border)', background: 'var(--bg-primary)',
-                  color: 'var(--text-primary)', fontSize: '24px', textAlign: 'center',
-                  letterSpacing: '8px', outline: 'none', marginBottom: '12px',
-                  fontWeight: 700,
-                }}
+                className="w-full py-3.5 px-4 rounded-xl border border-line bg-bone text-ink text-2xl text-center tracking-[8px] outline-none mb-3 font-bold placeholder:text-ink-muted"
               />
               {error && (
-                <p style={{ color: '#ef4444', fontSize: '12px', marginBottom: '12px' }}>{error}</p>
+                <p className="text-accent-red text-xs mb-3">{error}</p>
               )}
               <button
                 type="submit"
                 disabled={code.length !== 6}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                  padding: '12px 24px', borderRadius: '24px', fontSize: '14px', fontWeight: 700,
-                  background: '#25D366', color: '#fff', border: 'none', cursor: 'pointer',
-                  width: '100%', opacity: code.length !== 6 ? 0.6 : 1,
-                }}
+                className={`flex items-center justify-center gap-2 py-3 px-6 rounded-full text-sm font-bold bg-emerald text-bone w-full ${
+                  code.length !== 6 ? 'opacity-60' : 'hover:bg-emerald-deep'
+                }`}
               >
                 Next
                 <ArrowRight size={14} />
               </button>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px' }}>
+              <div className="flex justify-between mt-3">
                 <button
                   type="button"
                   onClick={() => { setStep('phone'); setCode(''); setError(''); }}
-                  style={{
-                    background: 'none', border: 'none',
-                    color: 'var(--text-tertiary)', fontSize: '12px', cursor: 'pointer',
-                    textDecoration: 'underline',
-                  }}
+                  className="text-ink-muted text-xs underline"
                 >
                   Different number
                 </button>
@@ -242,11 +205,7 @@ export default function AuthModal({ onClose }) {
                       setStep('name');
                     }
                   }}
-                  style={{
-                    background: 'none', border: 'none',
-                    color: 'var(--accent-blue)', fontSize: '12px', cursor: 'pointer',
-                    fontWeight: 600,
-                  }}
+                  className="text-emerald text-xs font-semibold"
                 >
                   Didn't get code? Skip
                 </button>
@@ -256,10 +215,10 @@ export default function AuthModal({ onClose }) {
 
           {step === 'name' && (
             <form onSubmit={handleNameSubmit}>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>
+              <p className="text-ink-muted text-[13px] font-semibold mb-2">
                 Almost there!
               </p>
-              <p style={{ color: 'var(--text-tertiary)', fontSize: '11px', marginBottom: '16px' }}>
+              <p className="text-ink-muted text-[11px] mb-4">
                 IroyinMarket is invite-only. Enter your name and the code from whoever invited you.
               </p>
               <input
@@ -268,12 +227,7 @@ export default function AuthModal({ onClose }) {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Your name"
                 maxLength={30}
-                style={{
-                  width: '100%', padding: '12px 16px', borderRadius: '12px',
-                  border: '1px solid var(--border)', background: 'var(--bg-primary)',
-                  color: 'var(--text-primary)', fontSize: '16px', textAlign: 'center',
-                  outline: 'none', marginBottom: '12px',
-                }}
+                className="w-full py-3 px-4 rounded-xl border border-line bg-bone text-ink text-base text-center outline-none mb-3 placeholder:text-ink-muted"
               />
               <input
                 type="text"
@@ -281,28 +235,19 @@ export default function AuthModal({ onClose }) {
                 onChange={(e) => setReferralCode(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
                 placeholder="Invite code (e.g. AYOB3K9F)"
                 maxLength={12}
-                style={{
-                  width: '100%', padding: '12px 16px', borderRadius: '12px',
-                  border: '1px solid var(--border)', background: 'var(--bg-primary)',
-                  color: 'var(--text-primary)', fontSize: '16px', textAlign: 'center',
-                  outline: 'none', marginBottom: '12px', textTransform: 'uppercase',
-                  letterSpacing: '2px',
-                }}
+                className="w-full py-3 px-4 rounded-xl border border-line bg-bone text-ink text-base text-center outline-none mb-3 uppercase tracking-widest placeholder:text-ink-muted placeholder:normal-case placeholder:tracking-normal"
               />
               {error && (
-                <p style={{ color: '#ef4444', fontSize: '12px', marginBottom: '12px' }}>{error}</p>
+                <p className="text-accent-red text-xs mb-3">{error}</p>
               )}
               <button
                 type="submit"
                 disabled={loading || !name.trim() || !referralCode.trim()}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                  padding: '12px 24px', borderRadius: '24px', fontSize: '14px', fontWeight: 700,
-                  background: '#25D366', color: '#fff', border: 'none', cursor: 'pointer',
-                  width: '100%', opacity: loading || !name.trim() || !referralCode.trim() ? 0.6 : 1,
-                }}
+                className={`flex items-center justify-center gap-2 py-3 px-6 rounded-full text-sm font-bold bg-emerald text-bone w-full ${
+                  loading || !name.trim() || !referralCode.trim() ? 'opacity-60' : 'hover:bg-emerald-deep'
+                }`}
               >
-                {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : null}
+                {loading ? <Loader2 size={16} className="animate-spin" /> : null}
                 Start Predicting
                 {!loading && <ArrowRight size={14} />}
               </button>

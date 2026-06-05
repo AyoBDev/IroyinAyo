@@ -14,47 +14,33 @@ export default function SharpMoney() {
   if (picks.length === 0) return null;
 
   return (
-    <div style={{
-      background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
-      border: '1px solid var(--border)', overflow: 'hidden',
-    }}>
-      <div style={{
-        padding: '14px 16px', borderBottom: '1px solid var(--border)',
-        display: 'flex', alignItems: 'center', gap: '8px',
-      }}>
-        <Eye size={13} color="var(--accent-yellow)" />
-        <h3 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-secondary)' }}>
+    <div className="bg-paper rounded-2xl border border-line overflow-hidden">
+      <div className="py-3.5 px-4 border-b border-line flex items-center gap-2">
+        <Eye size={13} className="text-accent-yellow" />
+        <h3 className="font-serif text-xs uppercase tracking-wide text-ink-muted">
           Sharp Money
         </h3>
       </div>
 
-      <div style={{ maxHeight: '300px', overflow: 'auto', padding: '6px' }}>
+      <div className="max-h-[300px] overflow-auto p-1.5">
         {picks.map((pick) => (
-          <div key={pick.id} style={{
-            padding: '10px 12px', borderRadius: 'var(--radius)',
-            margin: '2px 0',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-              <div style={{
-                width: '18px', height: '18px', borderRadius: '50%',
-                background: 'var(--accent-yellow-bg)', border: '1px solid var(--accent-yellow-border)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '9px', fontWeight: 700, color: 'var(--accent-yellow)',
-              }}>
+          <div key={pick.id} className="py-2.5 px-3 rounded-md my-0.5">
+            <div className="flex items-center gap-1.5 mb-1">
+              <div className="w-[18px] h-[18px] rounded-full bg-accent-yellow-bg border border-accent-yellow-border flex items-center justify-center text-[9px] font-bold text-accent-yellow">
                 {pick.student_name?.charAt(0)?.toUpperCase() || '?'}
               </div>
-              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-primary)' }}>
+              <span className="text-[11px] font-semibold text-ink">
                 {pick.student_name}
               </span>
-              <span style={{ fontSize: '10px', color: 'var(--accent-yellow)', fontWeight: 600, marginLeft: 'auto' }}>
+              <span className="text-[10px] text-accent-yellow font-semibold ml-auto font-mono">
                 {pick.amount} pts
               </span>
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginLeft: '24px' }}>
-              <TrendingUp size={10} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
-              <span style={{ color: 'var(--accent-green)', fontWeight: 600 }}>{pick.outcome_label}</span>
-              <span style={{ color: 'var(--text-tertiary)' }}> in </span>
-              <span style={{ color: 'var(--text-secondary)' }}>{pick.market_title}</span>
+            <div className="text-[11px] text-ink-muted ml-6">
+              <TrendingUp size={10} className="inline align-middle mr-1" />
+              <span className="text-accent-green font-semibold">{pick.outcome_label}</span>
+              <span className="text-ink-muted"> in </span>
+              <span className="text-ink-muted">{pick.market_title}</span>
             </div>
           </div>
         ))}

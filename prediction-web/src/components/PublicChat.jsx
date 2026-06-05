@@ -52,37 +52,23 @@ export default function PublicChat({ marketId }) {
   }
 
   return (
-    <div style={{
-      background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
-      border: '1px solid var(--border)', overflow: 'hidden',
-      display: 'flex', flexDirection: 'column', height: '360px',
-    }}>
+    <div className="bg-paper rounded-2xl border border-line overflow-hidden flex flex-col h-[360px]">
       {/* Header */}
-      <div style={{
-        padding: '12px 16px', borderBottom: '1px solid var(--border)',
-        display: 'flex', alignItems: 'center', gap: '8px',
-      }}>
-        <MessageSquare size={13} color="var(--accent-blue)" />
-        <h3 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-secondary)' }}>
+      <div className="py-3 px-4 border-b border-line flex items-center gap-2">
+        <MessageSquare size={13} className="text-emerald" />
+        <h3 className="font-serif text-xs uppercase tracking-wide text-ink-muted">
           Chat
         </h3>
-        <span style={{
-          fontSize: '10px', color: 'var(--text-tertiary)',
-          background: 'var(--bg-secondary)', padding: '2px 6px', borderRadius: '8px',
-          marginLeft: 'auto',
-        }}>
+        <span className="text-[10px] text-ink-muted bg-bone py-0.5 px-1.5 rounded-lg ml-auto font-mono">
           {messages.length} msgs
         </span>
       </div>
 
       {/* Messages */}
-      <div ref={messagesContainer} style={{
-        flex: 1, overflow: 'auto', padding: '8px 12px',
-        display: 'flex', flexDirection: 'column', gap: '6px',
-      }}>
+      <div ref={messagesContainer} className="flex-1 overflow-auto py-2 px-3 flex flex-col gap-1.5">
         {messages.length === 0 ? (
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <p style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-ink-muted text-xs">
               Say something...
             </p>
           </div>
@@ -90,18 +76,17 @@ export default function PublicChat({ marketId }) {
           messages.map((msg, i) => {
             const isMe = user && msg.userId === user.id;
             return (
-              <div key={msg.id || i} style={{
-                padding: '8px 10px', borderRadius: 'var(--radius)',
-                background: isMe ? 'var(--accent-blue-bg)' : 'var(--bg-secondary)',
-                border: isMe ? '1px solid var(--accent-blue-border)' : '1px solid transparent',
-                maxWidth: '90%', alignSelf: isMe ? 'flex-end' : 'flex-start',
-              }}>
+              <div key={msg.id || i} className={`py-2 px-2.5 rounded-md max-w-[90%] ${
+                isMe
+                  ? 'bg-accent-green-bg border border-accent-green-border self-end'
+                  : 'bg-bone border border-transparent self-start'
+              }`}>
                 {!isMe && (
-                  <div style={{ fontSize: '10px', color: 'var(--accent-blue)', fontWeight: 600, marginBottom: '2px' }}>
+                  <div className="text-[10px] text-emerald font-semibold mb-0.5">
                     {msg.userName || 'Anon'}
                   </div>
                 )}
-                <div style={{ fontSize: '12px', color: 'var(--text-primary)', wordBreak: 'break-word' }}>
+                <div className="text-xs text-ink break-words">
                   {msg.text}
                 </div>
               </div>
@@ -112,31 +97,21 @@ export default function PublicChat({ marketId }) {
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSend} style={{
-        padding: '10px 12px', borderTop: '1px solid var(--border)',
-        display: 'flex', gap: '8px',
-      }}>
+      <form onSubmit={handleSend} className="py-2.5 px-3 border-t border-line flex gap-2">
         <input
           type="text"
           placeholder="Type a message..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           maxLength={200}
-          style={{
-            flex: 1, padding: '9px 12px', fontSize: '12px',
-            background: 'var(--bg-input)', border: '1px solid var(--border)',
-            borderRadius: 'var(--radius)', color: 'var(--text-primary)',
-          }}
+          className="flex-1 py-2 px-3 text-xs bg-bone border border-line rounded-md text-ink placeholder:text-ink-muted"
         />
         <button
           type="submit"
           disabled={!input.trim()}
-          style={{
-            padding: '8px 12px', borderRadius: 'var(--radius)',
-            background: input.trim() ? 'var(--accent-blue)' : 'var(--bg-secondary)',
-            color: input.trim() ? '#fff' : 'var(--text-tertiary)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
+          className={`py-2 px-3 rounded-md flex items-center justify-center ${
+            input.trim() ? 'bg-emerald text-bone' : 'bg-bone text-ink-muted'
+          }`}
         >
           <Send size={14} />
         </button>

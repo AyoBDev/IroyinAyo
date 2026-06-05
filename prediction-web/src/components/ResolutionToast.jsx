@@ -8,26 +8,17 @@ export default function ResolutionToast() {
   if (!toast || toast.type !== 'resolution') return null;
 
   return (
-    <div style={{
-      position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)',
-      zIndex: 9999, animation: 'slideUp 0.3s ease-out',
-      background: 'linear-gradient(135deg, var(--bg-card), var(--accent-green-bg))',
-      border: '1px solid var(--accent-green-border)',
-      borderRadius: 'var(--radius-xl)', padding: '14px 20px',
-      display: 'flex', alignItems: 'center', gap: '12px',
-      boxShadow: '0 8px 32px rgba(34, 197, 94, 0.2)',
-      maxWidth: '360px', width: 'calc(100% - 32px)',
-    }}>
-      <Trophy size={22} color="var(--accent-yellow)" />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent-green)', marginBottom: '2px' }}>
+    <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[9999] animate-slide-up bg-paper border border-accent-green-border rounded-2xl py-3.5 px-5 flex items-center gap-3 shadow-float max-w-[360px] w-[calc(100%-32px)]">
+      <Trophy size={22} className="text-accent-yellow" />
+      <div className="flex-1 min-w-0">
+        <div className="text-xs font-bold text-accent-green mb-0.5">
           Market Resolved!
         </div>
-        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div className="text-xs text-ink-muted overflow-hidden text-ellipsis whitespace-nowrap">
           {toast.winner} wins "{toast.title}"
         </div>
       </div>
-      <button onClick={dismiss} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', padding: '4px' }}>
+      <button onClick={dismiss} className="text-ink-muted p-1">
         <X size={14} />
       </button>
     </div>

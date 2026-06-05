@@ -68,35 +68,19 @@ export default function CreateMarketForm({ onClose }) {
   }
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 9999,
-      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-    }}>
-      <div onClick={onClose} style={{
-        position: 'absolute', inset: 0,
-        background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)',
-      }} />
-      <div style={{
-        position: 'relative', width: '100%', maxWidth: '480px',
-        maxHeight: '90vh', overflowY: 'auto',
-        background: 'var(--bg-card)', borderRadius: '24px 24px 0 0',
-        padding: '24px', paddingBottom: '40px',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>Create a Market</h2>
-          <button onClick={onClose} style={{
-            width: '32px', height: '32px', borderRadius: '50%',
-            background: 'var(--bg-surface-container)', border: 'none',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'var(--text-tertiary)',
-          }}>
+    <div className="fixed inset-0 z-[9999] flex items-end justify-center">
+      <div onClick={onClose} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      <div className="relative w-full max-w-[480px] max-h-[90vh] overflow-y-auto bg-paper rounded-t-3xl p-6 pb-10 shadow-float">
+        <div className="flex justify-between items-center mb-5">
+          <h2 className="font-serif text-lg text-ink">Create a Market</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-paper border border-line flex items-center justify-center text-ink-muted">
             <X size={16} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
+            <label className="text-xs font-semibold text-ink-muted mb-1.5 block">
               Question
             </label>
             <input
@@ -105,55 +89,37 @@ export default function CreateMarketForm({ onClose }) {
               onChange={(e) => setTitle(e.target.value)}
               placeholder="What do you want to predict?"
               maxLength={150}
-              style={{
-                width: '100%', padding: '12px 14px', fontSize: '14px',
-                background: 'var(--bg-input)', border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-lg)', color: 'var(--text-primary)',
-              }}
+              className="w-full py-3 px-3.5 text-sm bg-bone border border-line rounded-lg text-ink placeholder:text-ink-muted"
             />
-            <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '4px', display: 'block' }}>
+            <span className="text-[11px] text-ink-muted mt-1 block font-mono">
               {title.trim().length}/150
             </span>
           </div>
 
           <div>
-            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
+            <label className="text-xs font-semibold text-ink-muted mb-1.5 block">
               Options ({outcomes.length}/10)
             </label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="flex flex-col gap-2">
               {outcomes.map((outcome, i) => (
-                <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <div key={i} className="flex gap-2 items-center">
                   <input
                     type="text"
                     value={outcome}
                     onChange={(e) => updateOutcome(i, e.target.value)}
                     placeholder={`Option ${i + 1}`}
                     maxLength={60}
-                    style={{
-                      flex: 1, padding: '10px 12px', fontSize: '14px',
-                      background: 'var(--bg-input)', border: '1px solid var(--border)',
-                      borderRadius: 'var(--radius)', color: 'var(--text-primary)',
-                    }}
+                    className="flex-1 py-2.5 px-3 text-sm bg-bone border border-line rounded-md text-ink placeholder:text-ink-muted"
                   />
                   {outcomes.length > 2 && (
-                    <button type="button" onClick={() => removeOutcome(i)} style={{
-                      width: '32px', height: '32px', borderRadius: 'var(--radius)',
-                      background: 'var(--accent-red-bg)', border: '1px solid var(--accent-red-border)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: 'var(--accent-red)',
-                    }}>
+                    <button type="button" onClick={() => removeOutcome(i)} className="w-8 h-8 rounded-md bg-accent-red-bg border border-accent-red-border flex items-center justify-center text-accent-red">
                       <Trash2 size={14} />
                     </button>
                   )}
                 </div>
               ))}
               {outcomes.length < 10 && (
-                <button type="button" onClick={addOutcome} style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                  padding: '10px', borderRadius: 'var(--radius)',
-                  background: 'var(--bg-surface-container)', border: '1px dashed var(--border)',
-                  color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 500,
-                }}>
+                <button type="button" onClick={addOutcome} className="flex items-center justify-center gap-1.5 py-2.5 rounded-md bg-paper border border-dashed border-line text-ink-muted text-[13px] font-medium">
                   <Plus size={14} /> Add option
                 </button>
               )}
@@ -161,7 +127,7 @@ export default function CreateMarketForm({ onClose }) {
           </div>
 
           <div>
-            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
+            <label className="text-xs font-semibold text-ink-muted mb-1.5 block">
               Category (optional)
             </label>
             <input
@@ -169,16 +135,12 @@ export default function CreateMarketForm({ onClose }) {
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               placeholder="e.g. sports, entertainment, campus"
-              style={{
-                width: '100%', padding: '10px 12px', fontSize: '14px',
-                background: 'var(--bg-input)', border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)', color: 'var(--text-primary)',
-              }}
+              className="w-full py-2.5 px-3 text-sm bg-bone border border-line rounded-md text-ink placeholder:text-ink-muted"
             />
           </div>
 
           <div>
-            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
+            <label className="text-xs font-semibold text-ink-muted mb-1.5 block">
               Closes at (optional)
             </label>
             <input
@@ -186,40 +148,26 @@ export default function CreateMarketForm({ onClose }) {
               value={closesAt}
               onChange={(e) => setClosesAt(e.target.value)}
               min={new Date().toISOString().slice(0, 16)}
-              style={{
-                width: '100%', padding: '10px 12px', fontSize: '14px',
-                background: 'var(--bg-input)', border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)', color: 'var(--text-primary)',
-              }}
+              className="w-full py-2.5 px-3 text-sm bg-bone border border-line rounded-md text-ink"
             />
           </div>
 
           {error && (
-            <div style={{
-              padding: '10px 12px', borderRadius: 'var(--radius)',
-              background: 'var(--accent-red-bg)', border: '1px solid var(--accent-red-border)',
-              color: 'var(--accent-red)', fontSize: '12px', fontWeight: 600,
-            }}>
+            <div className="py-2.5 px-3 rounded-md bg-accent-red-bg border border-accent-red-border text-accent-red text-xs font-semibold">
               {error}
             </div>
           )}
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 600 }}>
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-xs text-ink-muted font-mono font-semibold">
               Cost: 15 pts
             </span>
             <button
               type="submit"
               disabled={loading}
-              style={{
-                padding: '12px 24px', borderRadius: 'var(--radius-xl)',
-                background: 'var(--primary)', color: '#fff',
-                fontSize: '14px', fontWeight: 600, border: 'none',
-                opacity: loading ? 0.6 : 1,
-                display: 'flex', alignItems: 'center', gap: '8px',
-              }}
+              className={`py-3 px-6 rounded-2xl bg-emerald text-bone text-sm font-semibold flex items-center gap-2 ${loading ? 'opacity-60' : 'hover:bg-emerald-deep'}`}
             >
-              {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : 'Create Market'}
+              {loading ? <Loader2 size={16} className="animate-spin" /> : 'Create Market'}
             </button>
           </div>
         </form>

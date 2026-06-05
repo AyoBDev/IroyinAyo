@@ -28,30 +28,19 @@ export default function RecentPayouts() {
   if (loading) return null;
 
   return (
-    <div style={{
-      background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
-      border: '1px solid var(--border)', overflow: 'hidden',
-      marginTop: '24px',
-    }}>
-      <div style={{
-        padding: '14px 16px', borderBottom: '1px solid var(--border)',
-        display: 'flex', alignItems: 'center', gap: '8px',
-      }}>
-        <div style={{
-          width: '6px', height: '6px', borderRadius: '50%',
-          background: 'var(--accent-green)',
-          boxShadow: '0 0 6px var(--accent-green)',
-        }} />
-        <Wallet size={13} color="var(--text-secondary)" />
-        <h3 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-secondary)' }}>
+    <div className="bg-paper rounded-2xl border border-line overflow-hidden mt-6">
+      <div className="py-3.5 px-4 border-b border-line flex items-center gap-2">
+        <div className="w-1.5 h-1.5 rounded-full bg-accent-green animate-pulse" />
+        <Wallet size={13} className="text-ink-muted" />
+        <h3 className="font-serif text-xs uppercase tracking-wide text-ink-muted">
           Recent Cashouts
         </h3>
       </div>
 
-      <div style={{ padding: '8px' }}>
+      <div className="p-2">
         {payouts.length === 0 ? (
-          <div style={{ padding: '24px 16px', textAlign: 'center' }}>
-            <p style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>
+          <div className="py-6 px-4 text-center">
+            <p className="text-ink-muted text-xs">
               Be the first to cash out! Earn 500+ points to redeem.
             </p>
           </div>
@@ -59,18 +48,15 @@ export default function RecentPayouts() {
           payouts.map((payout, i) => (
             <div
               key={i}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '10px 12px', borderRadius: 'var(--radius)',
-              }}
+              className="flex items-center gap-2.5 py-2.5 px-3 rounded-md"
             >
-              <CheckCircle2 size={14} color="var(--accent-green)" />
-              <div style={{ flex: 1, fontSize: '12px', color: 'var(--text-secondary)' }}>
-                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{payout.name}</span>
+              <CheckCircle2 size={14} className="text-accent-green" />
+              <div className="flex-1 text-xs text-ink-muted">
+                <span className="font-semibold text-ink">{payout.name}</span>
                 {' cashed out '}
-                <span style={{ fontWeight: 600, color: 'var(--accent-green)' }}>{payout.reward_name}</span>
+                <span className="font-semibold text-accent-green">{payout.reward_name}</span>
               </div>
-              <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
+              <span className="text-[11px] text-ink-muted whitespace-nowrap font-mono">
                 {timeAgo(payout.fulfilled_at)}
               </span>
             </div>

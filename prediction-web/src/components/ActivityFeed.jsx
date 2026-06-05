@@ -5,49 +5,32 @@ export default function ActivityFeed() {
   const feed = useStore((s) => s.feed);
 
   return (
-    <div style={{
-      background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
-      border: '1px solid var(--border)', overflow: 'hidden',
-    }}>
-      <div style={{
-        padding: '14px 16px', borderBottom: '1px solid var(--border)',
-        display: 'flex', alignItems: 'center', gap: '8px',
-      }}>
-        <div style={{
-          width: '6px', height: '6px', borderRadius: '50%',
-          background: 'var(--accent-green)',
-          animation: 'pulse 2s infinite',
-          boxShadow: '0 0 6px var(--accent-green)',
-        }} />
-        <Activity size={13} color="var(--text-secondary)" />
-        <h3 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-secondary)' }}>Live</h3>
+    <div className="bg-paper rounded-2xl border border-line overflow-hidden">
+      <div className="px-4 py-3.5 border-b border-line flex items-center gap-2">
+        <div className="w-1.5 h-1.5 rounded-full bg-accent-green animate-pulse" />
+        <Activity size={13} className="text-ink-muted" />
+        <h3 className="font-serif text-xs uppercase tracking-wide text-ink-muted">Live</h3>
       </div>
 
-      <div style={{ maxHeight: '350px', overflow: 'auto' }}>
+      <div className="max-h-[350px] overflow-auto">
         {feed.length === 0 ? (
-          <div style={{ padding: '28px 16px', textAlign: 'center' }}>
-            <Zap size={20} color="var(--text-tertiary)" style={{ marginBottom: '8px' }} />
-            <p style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>
+          <div className="py-7 px-4 text-center">
+            <Zap size={20} className="text-ink-muted mb-2" />
+            <p className="text-ink-muted text-xs">
               Waiting for predictions...
             </p>
           </div>
         ) : (
-          <div style={{ padding: '6px' }}>
+          <div className="p-1.5">
             {feed.map((item, i) => (
               <div
                 key={`${item.timestamp}-${i}`}
-                style={{
-                  fontSize: '12px', color: 'var(--text-secondary)',
-                  padding: '9px 10px', borderRadius: 'var(--radius)',
-                  animation: i === 0 ? 'fadeIn 0.3s ease' : undefined,
-                  margin: '2px 0',
-                  background: i === 0 ? 'var(--bg-card-hover)' : 'transparent',
-                }}
+                className={`text-xs text-ink-muted py-2 px-2.5 rounded-md my-0.5 ${i === 0 ? 'animate-fade-in bg-paper-hover' : ''}`}
               >
-                <span style={{ color: 'var(--accent-green)', marginRight: '6px', fontSize: '8px' }}>●</span>
-                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{item.amount} pts</strong>
+                <span className="text-accent-green mr-1.5 text-[8px]">●</span>
+                <strong className="text-ink font-semibold">{item.amount} pts</strong>
                 {' on '}
-                <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{item.outcomeLabel}</strong>
+                <strong className="text-ink font-semibold">{item.outcomeLabel}</strong>
               </div>
             ))}
           </div>

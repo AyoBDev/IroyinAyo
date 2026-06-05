@@ -2,15 +2,15 @@ import { useState } from 'react';
 import { X, ArrowRight, Users, Copy, Check } from 'lucide-react';
 import useStore from '../store.js';
 
-function getSlipStyle(label) {
+function getSlipClasses(label) {
   const lower = label.toLowerCase();
   if (lower === 'yes' || lower.startsWith('yes')) {
-    return { accent: 'var(--accent-green)', bg: 'var(--accent-green-bg)', border: 'var(--accent-green-border)' };
+    return { accent: 'text-accent-green', bg: 'bg-accent-green-bg', border: 'border-accent-green-border', accentBg: 'bg-accent-green' };
   }
   if (lower === 'no' || lower.startsWith('no')) {
-    return { accent: 'var(--accent-red)', bg: 'var(--accent-red-bg)', border: 'var(--accent-red-border)' };
+    return { accent: 'text-accent-red', bg: 'bg-accent-red-bg', border: 'border-accent-red-border', accentBg: 'bg-accent-red' };
   }
-  return { accent: 'var(--accent-blue)', bg: 'var(--accent-blue-bg)', border: 'var(--accent-blue-border)' };
+  return { accent: 'text-emerald', bg: 'bg-accent-green-bg', border: 'border-accent-green-border', accentBg: 'bg-emerald' };
 }
 
 export default function BetSlip({ market, outcome, onClose }) {
@@ -20,7 +20,7 @@ export default function BetSlip({ market, outcome, onClose }) {
   const placePrediction = useStore((s) => s.placePrediction);
   const fetchPositions = useStore((s) => s.fetchPositions);
   const user = useStore((s) => s.user);
-  const style = getSlipStyle(outcome.label);
+  const cls = getSlipClasses(outcome.label);
 
   const amountNum = parseInt(amount, 10) || 0;
   const payout = amountNum > 0 ? Math.floor(amountNum / outcome.price) : 0;
@@ -48,47 +48,33 @@ export default function BetSlip({ market, outcome, onClose }) {
   }
 
   return (
-    <div style={{
-      padding: '16px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)',
-      marginTop: '6px', animation: 'slideUp 0.15s ease',
-      border: `1px solid ${style.border}`,
-    }}>
+    <div className={`p-4 bg-bone rounded-lg mt-1.5 animate-slide-up border ${cls.border}`}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{
-            width: '8px', height: '8px', borderRadius: '50%', background: style.accent,
-          }} />
-          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+      <div className="flex justify-between items-center mb-3.5">
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${cls.accentBg}`} />
+          <span className="text-[13px] font-semibold text-ink">
             {outcome.label}
           </span>
-          <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
+          <span className="text-xs text-ink-muted">
             @ {Math.round(outcome.price * 100)}¢
           </span>
         </div>
-        <button onClick={onClose} style={{
-          background: 'var(--bg-card)', color: 'var(--text-tertiary)',
-          width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          borderRadius: 'var(--radius)',
-        }}>
+        <button onClick={onClose} className="bg-paper text-ink-muted w-6 h-6 flex items-center justify-center rounded-md">
           <X size={14} />
         </button>
       </div>
 
       {/* Amount input */}
-      <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
-        <div style={{ flex: 1, position: 'relative' }}>
-          <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', fontSize: '13px', fontWeight: 600 }}>pts</span>
+      <div className="flex gap-1.5 mb-3">
+        <div className="flex-1 relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted text-[13px] font-semibold">pts</span>
           <input
             type="number"
             placeholder="0"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            style={{
-              width: '100%', padding: '11px 12px 11px 40px', background: 'var(--bg-input)',
-              border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-              color: 'var(--text-primary)', fontSize: '15px', fontWeight: 600,
-            }}
+            className="w-full py-2.5 pr-3 pl-10 bg-bone border border-line rounded-md text-ink text-[15px] font-semibold placeholder:text-ink-muted"
             autoFocus
           />
         </div>
@@ -96,13 +82,11 @@ export default function BetSlip({ market, outcome, onClose }) {
           <button
             key={v}
             onClick={() => setAmount(String(v))}
-            style={{
-              padding: '8px 10px',
-              background: amount === String(v) ? style.bg : 'var(--bg-card)',
-              border: `1px solid ${amount === String(v) ? style.border : 'var(--border)'}`,
-              borderRadius: 'var(--radius)', color: amount === String(v) ? style.accent : 'var(--text-secondary)',
-              fontSize: '12px', fontWeight: 700, minWidth: '38px',
-            }}
+            className={`px-2.5 py-2 border rounded-md text-xs font-bold min-w-[38px] ${
+              amount === String(v)
+                ? `${cls.bg} ${cls.border} ${cls.accent}`
+                : 'bg-paper border-line text-ink-muted'
+            }`}
           >
             {v}
           </button>
@@ -111,23 +95,15 @@ export default function BetSlip({ market, outcome, onClose }) {
 
       {/* Payout display */}
       {amountNum > 0 && (
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          padding: '12px 14px', background: 'var(--bg-card)',
-          borderRadius: 'var(--radius)', marginBottom: '12px',
-          border: '1px solid var(--border)',
-        }}>
-          <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>Potential return</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>{amountNum} pts</span>
-            <ArrowRight size={12} color="var(--text-tertiary)" />
-            <span style={{ fontSize: '15px', fontWeight: 800, color: style.accent }}>
+        <div className="flex justify-between items-center py-3 px-3.5 bg-paper rounded-md mb-3 border border-line">
+          <div className="text-xs text-ink-muted">Potential return</div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-ink-muted font-mono">{amountNum} pts</span>
+            <ArrowRight size={12} className="text-ink-muted" />
+            <span className={`text-[15px] font-bold font-mono ${cls.accent}`}>
               {payout} pts
             </span>
-            <span style={{
-              fontSize: '11px', fontWeight: 600, color: 'var(--accent-green)',
-              background: 'var(--accent-green-bg)', padding: '2px 6px', borderRadius: '4px',
-            }}>
+            <span className="text-[11px] font-semibold text-accent-green bg-accent-green-bg px-1.5 py-0.5 rounded">
               +{profit}
             </span>
           </div>
@@ -136,11 +112,7 @@ export default function BetSlip({ market, outcome, onClose }) {
 
       {/* Error */}
       {error && (
-        <div style={{
-          color: 'var(--accent-red)', fontSize: '12px', marginBottom: '10px',
-          padding: '10px 12px', background: 'var(--accent-red-bg)', borderRadius: 'var(--radius)',
-          border: '1px solid var(--accent-red-border)',
-        }}>
+        <div className="text-accent-red text-xs mb-2.5 py-2.5 px-3 bg-accent-red-bg rounded-md border border-accent-red-border">
           {error}
         </div>
       )}
@@ -149,24 +121,20 @@ export default function BetSlip({ market, outcome, onClose }) {
       <button
         onClick={handleSubmit}
         disabled={amountNum < 1 || submitting}
-        style={{
-          width: '100%', padding: '13px', borderRadius: 'var(--radius)',
-          background: amountNum > 0 ? style.accent : 'var(--border)',
-          color: amountNum > 0 ? '#fff' : 'var(--text-tertiary)',
-          fontWeight: 700, fontSize: '14px',
-          opacity: submitting ? 0.6 : 1,
-          letterSpacing: '0.2px',
-        }}
+        className={`w-full py-3.5 rounded-xl font-bold text-sm tracking-wide ${
+          amountNum > 0
+            ? `${cls.accentBg} text-bone`
+            : 'bg-line text-ink-muted'
+        } ${submitting ? 'opacity-60' : ''}`}
       >
         {submitting ? 'Confirming...' : amountNum > 0 ? `Predict ${outcome.label}` : 'Enter amount'}
       </button>
 
       {/* Balance hint */}
       {user && amountNum > 0 && (
-        <div style={{
-          textAlign: 'center', marginTop: '8px', fontSize: '11px',
-          color: amountNum > user.points_balance ? 'var(--accent-red)' : 'var(--text-tertiary)',
-        }}>
+        <div className={`text-center mt-2 text-[11px] font-mono ${
+          amountNum > user.points_balance ? 'text-accent-red' : 'text-ink-muted'
+        }`}>
           {amountNum > user.points_balance
             ? `Not enough points (you have ${user.points_balance})`
             : `Balance after: ${user.points_balance - amountNum} pts`}
@@ -191,28 +159,21 @@ function ReferralPrompt() {
   }
 
   return (
-    <div style={{
-      marginTop: '12px', padding: '12px 14px', borderRadius: 'var(--radius)',
-      background: 'var(--accent-blue-bg)', border: '1px solid var(--accent-blue-border)',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-        <Users size={14} color="var(--accent-blue)" />
-        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent-blue)' }}>
+    <div className="mt-3 py-3 px-3.5 rounded-md bg-accent-green-bg border border-accent-green-border">
+      <div className="flex items-center gap-2 mb-1.5">
+        <Users size={14} className="text-emerald" />
+        <span className="text-xs font-bold text-emerald">
           Low on points? Refer friends!
         </span>
       </div>
-      <p style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '8px' }}>
+      <p className="text-[11px] text-ink-muted leading-relaxed mb-2">
         Share IroyinMarket with friends. When they join and start predicting, you both earn bonus points.
       </p>
       <button
         onClick={handleCopy}
-        style={{
-          display: 'flex', alignItems: 'center', gap: '6px', width: '100%',
-          padding: '8px 12px', borderRadius: 'var(--radius)',
-          background: 'var(--bg-card)', border: '1px solid var(--border)',
-          color: copied ? 'var(--accent-green)' : 'var(--text-secondary)',
-          fontSize: '11px', fontWeight: 600,
-        }}
+        className={`flex items-center gap-1.5 w-full py-2 px-3 rounded-md bg-paper border border-line text-[11px] font-semibold ${
+          copied ? 'text-accent-green' : 'text-ink-muted'
+        }`}
       >
         {copied ? <Check size={12} /> : <Copy size={12} />}
         {copied ? 'Link copied!' : 'Copy invite link'}

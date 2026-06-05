@@ -216,130 +216,83 @@ export default function WinPopup() {
   const profit = win.payout - win.amount;
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0,
-      zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '16px',
-    }}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
         onClick={dismiss}
-        style={{
-          position: 'absolute', inset: 0,
-          background: 'rgba(11, 28, 48, 0.5)',
-          backdropFilter: 'blur(8px)',
-        }}
+        className="absolute inset-0 bg-black/50 backdrop-blur-lg"
       />
 
       {/* Confetti */}
       <canvas
         ref={canvasRef}
-        style={{ position: 'absolute', inset: 0, pointerEvents: 'none', width: '100%', height: '100%' }}
+        className="absolute inset-0 pointer-events-none w-full h-full"
       />
       <Confetti canvasRef={canvasRef} />
 
       {/* Modal */}
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{
-          position: 'relative',
-          background: 'var(--bg-card)',
-          borderRadius: '32px',
-          width: '100%', maxWidth: '360px',
-          overflow: 'hidden',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          animation: 'popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-        }}
+        className="relative bg-paper rounded-[32px] w-full max-w-[360px] overflow-hidden shadow-float-lg animate-pop-in"
       >
         {/* Decorative gradient top */}
-        <div style={{
-          position: 'absolute', top: 0, left: 0, width: '100%', height: '120px',
-          background: 'linear-gradient(135deg, var(--accent-green-bg), var(--primary-bg))',
-          opacity: 0.4,
-        }} />
+        <div className="absolute top-0 left-0 w-full h-[120px] bg-gradient-to-br from-accent-green-bg to-accent-green-bg/40 opacity-40" />
 
-        <div style={{ position: 'relative', padding: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+        <div className="relative p-8 flex flex-col items-center text-center">
           {/* Close button */}
-          <button onClick={dismiss} style={{
-            position: 'absolute', top: '16px', right: '16px',
-            width: '32px', height: '32px', borderRadius: '50%',
-            background: 'var(--bg-surface-container)', border: 'none',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'var(--text-tertiary)',
-          }}>
+          <button onClick={dismiss} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-paper border border-line flex items-center justify-center text-ink-muted">
             <X size={16} />
           </button>
 
           {/* Trophy icon with pulsing ring */}
-          <div style={{ position: 'relative', width: '120px', height: '120px', marginBottom: '24px' }}>
-            <div style={{
-              position: 'absolute', inset: 0, borderRadius: '50%',
-              background: 'var(--accent-green-bg)',
-              animation: 'pulse 2s ease-in-out infinite',
-            }} />
-            <div style={{
-              position: 'relative', width: '100%', height: '100%', borderRadius: '50%',
-              background: 'var(--accent-green-bg)', border: '2px solid var(--accent-green-border)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <Trophy size={56} color="var(--accent-yellow)" fill="var(--accent-yellow)" />
+          <div className="relative w-[120px] h-[120px] mb-6">
+            <div className="absolute inset-0 rounded-full bg-accent-green-bg animate-pulse" />
+            <div className="relative w-full h-full rounded-full bg-accent-green-bg border-2 border-accent-green-border flex items-center justify-center">
+              <Trophy size={56} className="text-accent-yellow fill-accent-yellow" />
             </div>
             {/* Sparkles */}
-            <Sparkles size={20} color="var(--accent-green)" style={{ position: 'absolute', top: '-4px', right: '-4px' }} />
-            <Sparkles size={16} color="var(--primary)" style={{ position: 'absolute', top: '16px', left: '-8px' }} />
+            <Sparkles size={20} className="text-accent-green absolute -top-1 -right-1" />
+            <Sparkles size={16} className="text-emerald absolute top-4 -left-2" />
           </div>
 
           {/* Headline */}
-          <h2 style={{ fontSize: '32px', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary)', marginBottom: '8px' }}>
+          <h2 className="font-serif text-[32px] text-ink mb-2 tracking-tight">
             You Won!
           </h2>
-          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px', padding: '0 16px' }}>
-            Your prediction for <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>"{win.market_title}"</span> was spot on!
+          <p className="text-sm text-ink-muted mb-6 px-4">
+            Your prediction for <span className="font-semibold text-ink">"{win.market_title}"</span> was spot on!
           </p>
 
           {/* Payout card */}
-          <div style={{
-            width: '100%', background: 'var(--bg-surface-container)',
-            borderRadius: '16px', padding: '16px', marginBottom: '24px',
-            border: '1px solid var(--border)',
-          }}>
-            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '4px' }}>
+          <div className="w-full bg-paper border border-line rounded-2xl p-4 mb-6">
+            <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider block mb-1">
               Total Payout
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '32px', fontWeight: 700, color: 'var(--accent-green)' }}>
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-[32px] font-bold text-accent-green font-mono">
                 +{win.payout} pts
               </span>
             </div>
             {profit > 0 && (
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', display: 'block' }}>
-                {win.amount} invested → {profit} profit
+              <span className="text-xs text-ink-muted mt-1 block font-mono">
+                {win.amount} invested &rarr; {profit} profit
               </span>
             )}
           </div>
 
           {/* Action buttons */}
-          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <button onClick={handleShare} style={{
-              width: '100%', padding: '14px',
-              background: 'var(--primary)', color: '#fff',
-              borderRadius: 'var(--radius-xl)', fontSize: '14px', fontWeight: 600,
-              border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-            }}>
+          <div className="w-full flex flex-col gap-3">
+            <button onClick={handleShare} className="w-full py-3.5 bg-emerald text-bone rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 hover:bg-emerald-deep">
               <Share2 size={16} />
               Share to Social
             </button>
-            <button onClick={dismiss} style={{
-              width: '100%', padding: '12px',
-              background: 'transparent', color: 'var(--text-secondary)',
-              border: 'none', fontSize: '13px', fontWeight: 600,
-            }}>
+            <button onClick={dismiss} className="w-full py-3 text-ink-muted text-[13px] font-semibold">
               {currentIndex < wins.length - 1 ? 'Next Win →' : 'Back to Market'}
             </button>
           </div>
 
           {wins.length > 1 && (
-            <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '8px' }}>
+            <div className="text-[11px] text-ink-muted mt-2 font-mono">
               {currentIndex + 1} of {wins.length} wins
             </div>
           )}
