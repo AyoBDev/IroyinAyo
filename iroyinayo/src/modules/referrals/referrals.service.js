@@ -63,6 +63,15 @@ async function applyReferral(referredStudentId, referralCode) {
   await gamificationService.addPoints(referrer.id, REFERRER_BONUS, 'referral', `Referral bonus: new user joined`);
   await gamificationService.addPoints(referredStudentId, REFERRED_BONUS, 'referral', `Welcome bonus: referred by ${referrer.name}`);
 
+  // Auto-promote to ambassador at 10 referrals
+  const totalReferrals = await db('referrals')
+    .where({ referrer_id: referrer.id })
+    .count('id as count')
+    .first();
+  if (parseInt(totalReferrals.count, 10) >= 10 && !referrer.is_ambassador) {
+    await db('students').where({ id: referrer.id }).update({ is_ambassador: true });
+  }
+
   return { referrerBonus: REFERRER_BONUS, referredBonus: REFERRED_BONUS };
 }
 

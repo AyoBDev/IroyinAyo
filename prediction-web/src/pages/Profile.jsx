@@ -319,12 +319,32 @@ export default function Profile() {
           </span>
         </div>
         <div>
-          <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
-            {user.name}
-          </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
-            {user.phone || user.email || ''}
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+              {user.name}
+            </h1>
+            {user.is_ambassador && (
+              <span style={{
+                fontSize: '10px', fontWeight: 700, padding: '2px 8px',
+                borderRadius: '9999px', background: 'var(--accent-violet-bg)',
+                color: 'var(--accent-violet)', border: '1px solid var(--accent-violet-border)',
+                textTransform: 'uppercase', letterSpacing: '0.5px',
+              }}>Ambassador</span>
+            )}
+          </div>
+          {user.referred_by_name && (
+            <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+              Invited by <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{user.referred_by_name}</span>
+            </p>
+          )}
+          {user.referral_count > 0 && (
+            <p style={{ fontSize: '11px', color: 'var(--accent-green)', marginTop: '2px', fontWeight: 600 }}>
+              {user.referral_count} friend{user.referral_count !== 1 ? 's' : ''} invited
+              {!user.is_ambassador && user.referral_count < 10 && (
+                <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}> ({10 - user.referral_count} more to become Ambassador)</span>
+              )}
+            </p>
+          )}
         </div>
       </div>
 
