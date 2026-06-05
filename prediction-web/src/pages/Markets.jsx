@@ -313,7 +313,7 @@ function LivePredictorCount() {
   if (!count || count < 3) return null;
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 mx-4 mb-2 rounded-lg bg-accent-green-bg border border-accent-green-border">
+    <div className="flex items-center gap-2 px-3 py-2 mx-4 mt-3 mb-2 rounded-lg bg-accent-green-bg border border-accent-green-border">
       <div className="w-1.5 h-1.5 rounded-full bg-accent-green shadow-[0_0_6px_var(--accent-green)]" />
       <span className="text-xs text-ink-muted">
         <strong className="text-accent-green">{count}</strong> predictors active this week
