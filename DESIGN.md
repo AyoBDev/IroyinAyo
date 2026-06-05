@@ -1,4 +1,4 @@
-# Design System — IroyinMarket
+# Design System — IroyinMarket (Recivo Warm Editorial)
 
 ## Product Context
 - **What this is:** Campus prediction market where students predict hackathon winners and football outcomes, competing for cash prizes
@@ -8,97 +8,130 @@
 - **Memorable thing:** "This feels like a game I play with my friends, not a betting site."
 
 ## Aesthetic Direction
-- **Direction:** Playful meets Industrial — rounded bouncy UI elements with data-dense market cards. Discord meets a sports app.
-- **Decoration level:** Intentional — subtle gradients on hero cards, glowing accents on live markets, grain on empty states
-- **Mood:** Fun, competitive, identity-driven. Social energy like a group chat about sports, not cold fintech or aggressive gambling
-- **Differentiation from peers:** Polymarket is cold fintech. Manifold is playful tech startup. Sportybet is dense gambling. IroyinMarket is campus social gaming — your accuracy IS your reputation.
+- **Direction:** Warm Editorial — cream parchment backgrounds, serif display headings, flat cards with subtle borders. Recivo-inspired editorial confidence.
+- **Decoration level:** Minimal — flat surfaces, no shadows on cards, shadows only on floating elements (modals, toasts, FABs)
+- **Mood:** Confident, polished, editorial. Feels designed by a human, not AI-generated. Campus energy with grown-up taste.
+- **Differentiation from peers:** Polymarket is cold fintech. Manifold is playful tech startup. Sportybet is dense gambling. IroyinMarket is warm editorial gaming — your accuracy IS your reputation.
 
 ## Typography
-- **Display/Hero:** Satoshi (geometric, confident, slightly rounded — game brand energy without shouting)
-- **Body:** DM Sans (clean readability, pairs with Satoshi, supports tabular-nums for odds)
-- **UI/Labels:** DM Sans 500-600 weight
-- **Data/Tables:** DM Sans with font-variant-numeric: tabular-nums (aligned percentage columns)
-- **Code:** JetBrains Mono
-- **Loading:** Satoshi via Fontshare CDN (`https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap`), DM Sans via Google Fonts
+- **Display/Hero:** Fraunces (editorial serif, tight leading, negative tracking — brand confidence)
+- **Body:** Instrument Sans (clean sans-serif, OpenType features enabled)
+- **UI/Labels:** Instrument Sans 500 weight
+- **Data/Tables:** JetBrains Mono (monospace for aligned numbers, percentages, scores)
+- **Loading:** Self-hosted woff2 from `/public/fonts/`
+- **Font stacks:**
+  - Serif: `'Fraunces', ui-serif, Georgia, serif`
+  - Sans: `'Instrument Sans', ui-sans-serif, system-ui, sans-serif`
+  - Mono: `'JetBrains Mono', ui-monospace, monospace`
+- **OpenType features:** `"calt", "cv11", "kern", "ss01", "ss02", "ss03"`
 - **Scale:**
-  - xs: 10px — timestamps, labels
-  - sm: 11px — badges, captions
-  - base: 13px — body text, outcome rows
-  - md: 14px — card titles, nav items
-  - lg: 16px — section headings
-  - xl: 18px — page titles, profile name
-  - 2xl: 22px — hero stats
-  - 3xl: 28px — big percentage displays
-  - display: 42px — marketing hero
+  - hero: 80px / 76px line-height / -2px tracking (Fraunces)
+  - section: 26px / 26px line-height / -0.65px tracking (Fraunces)
+  - body: 16px / 24.8px line-height / -0.08px tracking (Instrument Sans 400)
+  - body-sm: 14px / 21.7px line-height / -0.08px tracking (Instrument Sans 400)
+  - label: 15px / 23.25px line-height / -0.08px tracking (Instrument Sans 500)
+  - label-sm: 13.5px / 20.925px line-height / -0.08px tracking (Instrument Sans 400)
+  - mono-label: 11px / 17.05px line-height / 1.76px tracking (JetBrains Mono)
+  - mono-data: 11.5px / 17.825px line-height / 2.53px tracking (JetBrains Mono)
 
-## Color
-- **Approach:** Restrained but punchy — few colors, each with clear purpose
-- **Background:** #0A0E17 (deep navy-black, warmer than pure black)
-- **Surface/Card:** #141B2D (blue-tinted dark)
-- **Surface hover:** #1A2338
-- **Border:** #1E2940 (subtle blue edge)
-- **Border light:** #283550 (emphasis borders)
-- **Text primary:** #F0F4F8 (warm white)
-- **Text muted:** #7B8BA3 (steel blue — secondary info)
-- **Text dim:** #4A5568 (tertiary — timestamps, labels)
-- **Accent green:** #10B981 (emerald — wins, profit, positive actions)
-- **Accent green bg:** rgba(16, 185, 129, 0.08)
-- **Accent green border:** rgba(16, 185, 129, 0.25)
-- **Accent yellow:** #F59E0B (amber — crowns, trophies, streaks, rank #1)
-- **Accent yellow bg:** rgba(245, 158, 11, 0.08)
-- **Accent indigo:** #6366F1 (primary accent — CTAs, active states, navigation)
-- **Accent indigo bg:** rgba(99, 102, 241, 0.08)
-- **Accent indigo border:** rgba(99, 102, 241, 0.2)
-- **Accent red:** #EF4444 (losses, errors, destructive actions)
-- **Accent red bg:** rgba(239, 68, 68, 0.08)
-- **Accent violet:** #A78BFA (gamification layer — titles, badges, XP, level-ups)
-- **Accent violet bg:** rgba(167, 139, 250, 0.08)
-- **Accent violet border:** rgba(167, 139, 250, 0.2)
+## Color — Light Theme (Primary)
+- **Background (bone):** #fbf7ef (warm off-white parchment)
+- **Surface/Card (paper):** #f4efe6 (slightly deeper parchment)
+- **Surface hover (paper-hover):** #ede7db
+- **Primary CTA (emerald):** #0f3d2e (deep forest green)
+- **Primary hover (emerald-deep):** #144d39
+- **Decorative (gold):** #e6c764 (warm gold highlights)
+- **Decorative secondary (ochre):** #b08923
+- **Text primary (ink):** #14110f (near-black warm)
+- **Text secondary (ink-deep):** #2a2521 (nav text)
+- **Text muted (ink-muted):** #6b6055 (captions, metadata)
+- **Border (line):** #d6cdb8 (warm dividers)
+
+## Color — Semantic Accents (Warmed)
+- **Green:** #2d8a6e (wins, profit, positive) / bg: rgba(45,138,110,0.08) / border: rgba(45,138,110,0.25)
+- **Red:** #c44b4b (losses, errors, destructive) / bg: rgba(196,75,75,0.08) / border: rgba(196,75,75,0.25)
+- **Yellow:** #c9922a (rank, trophies, streaks) / bg: rgba(201,146,42,0.08) / border: rgba(201,146,42,0.25)
+- **Violet:** #8b6cc4 (gamification, badges, XP, titles) / bg: rgba(139,108,196,0.08) / border: rgba(139,108,196,0.2)
+
+## Color — Dark Theme (Warm Dark Variant)
+- **Background (bone):** #1a1714
+- **Surface/Card (paper):** #242019
+- **Surface hover (paper-hover):** #2e2920
+- **Primary CTA (emerald):** #2ed49a (inverted for contrast)
+- **Primary hover (emerald-deep):** #25b07f
+- **Decorative (gold):** #e6c764
+- **Decorative secondary (ochre):** #d4a833 (brightened)
+- **Text primary (ink):** #f4efe6
+- **Text secondary (ink-deep):** #e0d9ce
+- **Text muted (ink-muted):** #a89a8a
+- **Border (line):** #3d3529
+
+Dark semantic accents use the same hex values — they have sufficient contrast on dark backgrounds.
 
 ### Color Usage Rules
 - Green = money/wins/positive. Never decorative.
 - Yellow = rank/achievement/celebration. Trophies, crowns, streaks.
-- Indigo = interactive/navigation/CTA. Active tabs, primary buttons, selected states.
+- Emerald = interactive/navigation/CTA. Active tabs, primary buttons, selected states.
 - Violet = identity/gamification. Titles (Oracle, Prophet), badges, XP.
 - Red = loss/error/destructive. Never for decoration.
+- Gold/Ochre = decorative only. Headlines, stickers, highlights.
 
 ## Spacing
 - **Base unit:** 4px
-- **Density:** Comfortable — not cramped like Sportybet, not wasteful like Manifold
-- **Scale:** 2xs(2px) xs(4px) sm(8px) md(16px) lg(24px) xl(32px) 2xl(48px) 3xl(64px)
+- **Scale:** xs(4px) sm(8px) md(12px) base(16px) lg(20px) xl(24px) 2xl(28px) 3xl(32px) 4xl(40px) 5xl(48px) 6xl(64px) 7xl(80px) 8xl(128px)
 - **Touch targets:** 44px minimum height/width for all interactive elements
-- **Card padding:** 16-20px internal, 10-12px gap between cards
+- **Card padding:** 16-20px internal, 12px gap between cards
 - **Page padding:** 16px on mobile, 24px on desktop
 
 ## Layout
-- **Approach:** Grid-disciplined with playful card sizes
-- **Mobile:** Single column, masonry for market cards (break-inside: avoid)
+- **Mobile:** Single column
 - **Desktop (900px+):** 2-column grid — main content (1fr) + sidebar (300px)
 - **Max content width:** 1400px
-- **Border radius:** sm: 6px (inputs, outcome rows), lg: 12px (cards, modals), xl: 16px (hero cards, profile card), full: 9999px (pills, avatars, buttons)
+- **Border radius:** sm(4px) md(6px) lg(8px) xl(12px) 2xl(16px) 3xl(24px) full(9999px)
 - **Navigation:** Bottom tab bar on mobile (Markets | Leaderboard | Profile), top bar only on desktop
 - **Breakpoint:** 900px (single breakpoint, mobile-first)
 
+## Depth & Shadows
+- **Cards:** Flat. No shadow. Background: paper, border: 1px line, radius: 2xl.
+- **Floating elements (modals, toasts, dropdowns):** shadow-float `0 4px 16px rgba(20,17,15,0.08)` (light) / `0 4px 16px rgba(0,0,0,0.3)` (dark)
+- **Large floats:** shadow-float-lg `0 8px 32px rgba(20,17,15,0.12)` (light) / `0 8px 32px rgba(0,0,0,0.4)` (dark)
+- **Modal overlay:** `rgba(20,17,15,0.4)` + `backdrop-filter: blur(8px)`
+
 ## Motion
-- **Approach:** Intentional — every animation has a purpose, never gratuitous
 - **Easing:** enter(ease-out) exit(ease-in) move(ease-in-out)
 - **Duration:**
-  - micro: 50-100ms (button press scale, toggle switch)
-  - short: 150-250ms (card entrance, odds tick animation, tab switch)
-  - medium: 250-400ms (page transition, celebration burst, toast slide-in)
-  - long: 400-700ms (resolution confetti, share card generation)
-- **Specific animations:**
-  - Odds tick: color flash (green up, red down) + scale(1.08) over 400ms
   - Button press: scale(0.97) over 120ms
   - Card entrance: fadeIn + translateY(-4px) over 200ms
-  - Resolution toast: slideUp from bottom over 300ms
-  - Market resolve: gradient border pulse + trophy entrance
+  - Odds tick up: green flash + scale(1.08) over 400ms
+  - Odds tick down: red flash + scale(1.08) over 400ms
+  - Toast slide: slideUp from bottom over 300ms
+  - Page transition: fadeIn over 200ms
+
+## Component Patterns
+- **Cards:** bg-paper, border border-line, rounded-2xl, no shadow, hover: bg-paper-hover
+- **Buttons (primary):** bg-emerald text-bone rounded-xl, hover: bg-emerald-deep, press: scale(0.97)
+- **Buttons (secondary):** bg-paper text-ink border border-line rounded-xl
+- **Inputs:** bg-bone border border-line rounded-lg, focus: emerald border + ring
+- **TopBar:** bg-bone border-b border-line, logo in font-serif, nav in font-sans 13.5px
+- **BottomNav:** bg-paper/90 backdrop-blur-md border-t border-line, 64px height
+- **Toasts:** bg-paper border border-line rounded-2xl shadow-float, 3px accent left border
+
+## Do's and Don'ts
+| Do | Don't |
+|----|-------|
+| Use bone/paper contrast for layer separation | Don't add shadows to cards |
+| Use emerald only for the primary action per screen | Don't use emerald decoratively |
+| Keep mono fonts for data/numbers only | Don't use JetBrains Mono for labels or body |
+| Maintain 44px minimum touch targets | Don't shrink interactive elements below this |
+| Use line color for all borders consistently | Don't mix border colors within a view |
+| Maintain WCAG AA contrast (4.5:1 normal text) | Don't place ink-muted on paper without checking |
 
 ## Decisions Log
 | Date | Decision | Rationale |
 |------|----------|-----------|
-| 2026-05-20 | Initial design system created | /design-consultation based on competitive research (Polymarket, Manifold, Sportybet) and user's memorable-thing: gamification + social platform |
-| 2026-05-20 | Indigo (#6366F1) as primary accent | Reads as social/gaming (Discord, Twitch) vs. fintech blue. Distinguishes from every betting app |
-| 2026-05-20 | Violet (#A78BFA) for gamification layer | Separates identity system (titles, badges, XP) from market UI. Makes social identity impossible to miss |
-| 2026-05-20 | Satoshi as display typeface | Geometric confidence without banking coldness. Brand recognition in screenshots/shares. Nobody in this space uses it |
-| 2026-05-20 | DM Sans over Inter/system fonts | Pairs with Satoshi, supports tabular-nums for odds, feels designed without being heavy |
+| 2026-05-20 | Initial design system created | Competitive research (Polymarket, Manifold, Sportybet) |
+| 2026-06-05 | Full Recivo redesign adopted | Warm editorial aesthetic — polished, not AI-generated, fresh direction |
+| 2026-06-05 | Self-hosted fonts (Fraunces, Instrument Sans, JetBrains Mono) | Better performance/privacy vs CDN |
+| 2026-06-05 | Migrated to Tailwind CSS | Utility classes mapped to design tokens for maintainability |
+| 2026-06-05 | Flat cards, shadows for floats only | Matches editorial flatness; overlays need visual separation |
+| 2026-06-05 | Keep dark mode (warm variant) | User preference; derived warm darks from palette |
