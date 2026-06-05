@@ -18,10 +18,14 @@ FROM node:22-slim AS runner
 
 WORKDIR /app
 
-RUN npm install -g serve
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
-COPY --from=builder /app/out ./out
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
 
 EXPOSE 3001
 
-CMD ["serve", "out", "-l", "3001", "-s"]
+ENV PORT=3001
+CMD ["node", "server.js"]
