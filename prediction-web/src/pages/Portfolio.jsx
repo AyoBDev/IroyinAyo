@@ -41,20 +41,20 @@ export default function Portfolio() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
-        <Loader2 size={24} color="var(--primary)" style={{ animation: 'spin 1s linear infinite' }} />
+      <div className="flex justify-center py-[60px]">
+        <Loader2 size={24} className="text-emerald animate-spin" />
       </div>
     );
   }
 
   if (!portfolio || (portfolio.open.length === 0 && portfolio.resolved.length === 0)) {
     return (
-      <div style={{ padding: '60px 24px', textAlign: 'center' }}>
-        <ChartLine size={32} color="var(--text-tertiary)" style={{ marginBottom: '12px' }} />
-        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '6px' }}>
+      <div className="py-[60px] px-6 text-center">
+        <ChartLine size={32} className="text-ink-muted mb-3 mx-auto" />
+        <p className="text-ink-muted text-sm mb-1.5">
           No predictions yet.
         </p>
-        <p style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>
+        <p className="text-ink-muted text-xs">
           Find a market you believe in!
         </p>
       </div>
@@ -64,52 +64,43 @@ export default function Portfolio() {
   const totalUnrealized = portfolio.open.reduce((sum, p) => sum + p.unrealized_pnl, 0);
 
   return (
-    <div style={{ padding: '16px', maxWidth: '700px', margin: '0 auto', paddingBottom: '100px' }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '16px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>Portfolio</h2>
+    <div className="p-4 max-w-[700px] mx-auto pb-[100px]">
+      <div className="flex items-baseline justify-between mb-4">
+        <h2 className="font-serif text-section font-semibold text-ink">Portfolio</h2>
         {portfolio.open.length > 0 && (
-          <span style={{
-            fontSize: '13px', fontWeight: 700,
-            color: totalUnrealized >= 0 ? 'var(--accent-green)' : 'var(--accent-red)',
-          }}>
+          <span className={`font-mono text-[13px] font-bold ${totalUnrealized >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
             {totalUnrealized >= 0 ? '+' : ''}{totalUnrealized.toFixed(1)} pts
           </span>
         )}
       </div>
 
       {portfolio.open.length > 0 && (
-        <div style={{ marginBottom: '24px' }}>
-          <h3 style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-green)', animation: 'pulse 2s infinite', boxShadow: '0 0 6px var(--accent-green)' }} />
+        <div className="mb-6">
+          <h3 className="text-[11px] font-bold uppercase tracking-wide text-ink-muted mb-2.5 flex items-center gap-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-accent-green animate-pulse" />
             Open Positions
           </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div className="flex flex-col gap-2">
             {portfolio.open.map(pos => (
               <div
                 key={pos.id}
                 onClick={() => navigate(`/market/${pos.market_id}`)}
-                style={{
-                  background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
-                  border: '1px solid var(--border)', padding: '16px', cursor: 'pointer',
-                }}
+                className="bg-paper rounded-2xl border border-line p-4 cursor-pointer"
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
-                  <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', flex: 1, marginRight: '12px' }}>
+                <div className="flex justify-between items-start mb-2">
+                  <p className="text-[13px] font-semibold text-ink flex-1 mr-3">
                     {pos.market_title}
                   </p>
-                  <span style={{
-                    fontSize: '13px', fontWeight: 700,
-                    color: pos.unrealized_pnl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)',
-                  }}>
+                  <span className={`font-mono text-[13px] font-bold ${pos.unrealized_pnl >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
                     {pos.unrealized_pnl >= 0 ? '+' : ''}{pos.unrealized_pnl.toFixed(1)}
                   </span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{pos.outcome_label}</span>
+                <div className="flex items-center gap-4 text-xs text-ink-muted">
+                  <span className="font-semibold text-emerald">{pos.outcome_label}</span>
                   {pos.entry_price != null && (
-                    <span>{Math.round(pos.entry_price * 100)}% → {Math.round(pos.current_price * 100)}%</span>
+                    <span className="font-mono">{Math.round(pos.entry_price * 100)}% → {Math.round(pos.current_price * 100)}%</span>
                   )}
-                  <span>{pos.shares.toFixed(1)} shares</span>
+                  <span className="font-mono">{pos.shares.toFixed(1)} shares</span>
                 </div>
               </div>
             ))}
@@ -119,38 +110,26 @@ export default function Portfolio() {
 
       {portfolio.resolved.length > 0 && (
         <div>
-          <h3 style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary)', marginBottom: '10px' }}>
+          <h3 className="text-[11px] font-bold uppercase tracking-wide text-ink-muted mb-2.5">
             Resolved
           </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div className="flex flex-col gap-2">
             {portfolio.resolved.map(pos => (
               <div
                 key={pos.id}
-                style={{
-                  background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
-                  border: '1px solid var(--border)', padding: '16px',
-                  opacity: 0.8,
-                }}
+                className="bg-paper rounded-2xl border border-line p-4 opacity-80"
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '6px' }}>
-                  <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', flex: 1, marginRight: '12px' }}>
+                <div className="flex justify-between items-start mb-1.5">
+                  <p className="text-[13px] font-semibold text-ink-muted flex-1 mr-3">
                     {pos.market_title}
                   </p>
-                  <span style={{
-                    fontSize: '13px', fontWeight: 700,
-                    color: pos.won ? 'var(--accent-green)' : 'var(--accent-red)',
-                  }}>
+                  <span className={`font-mono text-[13px] font-bold ${pos.won ? 'text-accent-green' : 'text-accent-red'}`}>
                     {pos.won ? `+${pos.payout}` : `-${pos.amount}`} pts
                   </span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
-                  <span style={{ color: 'var(--text-tertiary)' }}>{pos.outcome_label}</span>
-                  <span style={{
-                    fontSize: '10px', fontWeight: 600, padding: '2px 6px',
-                    borderRadius: 'var(--radius)',
-                    background: pos.won ? 'var(--accent-green-bg)' : 'var(--accent-red-bg)',
-                    color: pos.won ? 'var(--accent-green)' : 'var(--accent-red)',
-                  }}>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-ink-muted">{pos.outcome_label}</span>
+                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${pos.won ? 'bg-accent-green-bg text-accent-green' : 'bg-accent-red-bg text-accent-red'}`}>
                     {pos.won ? 'Won' : 'Lost'}
                   </span>
                 </div>

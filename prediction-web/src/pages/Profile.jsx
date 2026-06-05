@@ -19,46 +19,29 @@ function MyMarkets() {
   if (markets.length === 0) return null;
 
   return (
-    <div style={{
-      background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
-      border: '1px solid var(--border)', padding: '16px', marginTop: '12px',
-    }}>
-      <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>
+    <div className="bg-paper rounded-2xl border border-line p-4 mt-3">
+      <h3 className="text-sm font-bold text-ink mb-3">
         My Markets
       </h3>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div className="flex flex-col gap-2.5">
         {markets.map((m) => {
           const fee = m.status === 'resolved' ? Math.floor(m.total_volume * 0.05) : null;
           return (
             <a
               key={m.id}
               href={`/market/${m.id}`}
-              style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '10px 12px', borderRadius: 'var(--radius-lg)',
-                background: 'var(--bg-surface-container)', border: '1px solid var(--border)',
-                textDecoration: 'none',
-              }}
+              className="flex justify-between items-center px-3 py-2.5 rounded-lg bg-paper border border-line no-underline"
             >
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)',
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                }}>
+              <div className="flex-1 min-w-0">
+                <div className="text-[13px] font-semibold text-ink whitespace-nowrap overflow-hidden text-ellipsis">
                   {m.title}
                 </div>
-                <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                <div className="text-[11px] text-ink-muted mt-0.5">
                   Vol: {m.total_volume} pts
-                  {fee !== null && <span style={{ color: 'var(--accent-green)', marginLeft: '8px' }}>+{fee} earned</span>}
+                  {fee !== null && <span className="text-accent-green ml-2">+{fee} earned</span>}
                 </div>
               </div>
-              <span style={{
-                fontSize: '11px', fontWeight: 600, padding: '3px 8px',
-                borderRadius: 'var(--radius-full)',
-                background: m.status === 'resolved' ? 'var(--accent-green-bg)' : 'var(--primary-bg)',
-                color: m.status === 'resolved' ? 'var(--accent-green)' : 'var(--primary)',
-                border: `1px solid ${m.status === 'resolved' ? 'var(--accent-green-border)' : 'var(--primary-border)'}`,
-              }}>
+              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${m.status === 'resolved' ? 'bg-accent-green-bg text-accent-green border-accent-green/30' : 'bg-accent-green-bg text-emerald border-emerald/30'}`}>
                 {m.status === 'resolved' ? 'Resolved' : 'Open'}
               </span>
             </a>
@@ -119,97 +102,64 @@ function ReferralCard() {
   if (!stats) return null;
 
   return (
-    <div style={{
-      background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
-      border: '1px solid var(--border)', overflow: 'hidden', marginTop: '24px',
-    }}>
-      <div style={{
-        padding: '14px 20px', borderBottom: '1px solid var(--border)',
-        display: 'flex', alignItems: 'center', gap: '8px',
-      }}>
-        <Gift size={14} color="var(--accent-violet)" />
-        <h3 style={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+    <div className="bg-paper rounded-2xl border border-line overflow-hidden mt-6">
+      <div className="px-5 py-3.5 border-b border-line flex items-center gap-2">
+        <Gift size={14} className="text-accent-violet" />
+        <h3 className="text-[13px] font-bold uppercase tracking-wide">
           Refer Friends
         </h3>
       </div>
 
-      <div style={{ padding: '20px' }}>
-        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-          You both get <span style={{ color: 'var(--accent-green)', fontWeight: 700 }}>50 pts</span> when a friend joins with your code.
+      <div className="p-5">
+        <p className="text-xs text-ink-muted mb-3">
+          You both get <span className="text-accent-green font-bold">50 pts</span> when a friend joins with your code.
         </p>
 
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '8px',
-          padding: '10px 14px', background: 'var(--bg-primary)',
-          borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)',
-          marginBottom: '10px',
-        }}>
-          <span style={{ flex: 1, fontSize: '15px', fontWeight: 700, letterSpacing: '1px', fontFamily: 'monospace' }}>
+        <div className="flex items-center gap-2 px-3.5 py-2.5 bg-bone rounded-lg border border-line mb-2.5">
+          <span className="flex-1 text-[15px] font-bold tracking-wider font-mono">
             {stats.code}
           </span>
-          <button onClick={handleCopy} style={{
-            padding: '6px 10px', background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-            borderRadius: 'var(--radius)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600,
-          }}>
-            {copied ? <><Check size={12} color="var(--accent-green)" /> Copied</> : <><Copy size={12} /> Copy</>}
+          <button onClick={handleCopy} className="px-2.5 py-1.5 bg-paper border border-line rounded-md text-ink-muted flex items-center gap-1 text-[11px] font-semibold">
+            {copied ? <><Check size={12} className="text-accent-green" /> Copied</> : <><Copy size={12} /> Copy</>}
           </button>
         </div>
 
-        <button onClick={handleShare} style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-          width: '100%', padding: '12px', marginBottom: '14px',
-          background: 'var(--accent-violet-bg)', border: '1px solid var(--accent-violet-border)',
-          borderRadius: '9999px', color: 'var(--accent-violet)', fontSize: '12px', fontWeight: 700,
-        }}>
+        <button onClick={handleShare} className="flex items-center justify-center gap-2 w-full py-3 mb-3.5 bg-accent-violet-bg border border-accent-violet/30 rounded-full text-accent-violet text-xs font-bold">
           <Share2 size={13} /> Share Referral Link
         </button>
 
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '14px' }}>
-          <div style={{ flex: 1, padding: '10px', background: 'var(--bg-primary)', borderRadius: 'var(--radius)', textAlign: 'center' }}>
-            <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>{stats.referralCount}</div>
-            <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginTop: '2px' }}>Referred</div>
+        <div className="flex gap-3 mb-3.5">
+          <div className="flex-1 p-2.5 bg-bone rounded-md text-center">
+            <div className="font-mono text-base font-bold text-ink">{stats.referralCount}</div>
+            <div className="text-[10px] text-ink-muted mt-0.5">Referred</div>
           </div>
-          <div style={{ flex: 1, padding: '10px', background: 'var(--bg-primary)', borderRadius: 'var(--radius)', textAlign: 'center' }}>
-            <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--accent-green)' }}>+{stats.totalEarned}</div>
-            <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginTop: '2px' }}>Pts Earned</div>
+          <div className="flex-1 p-2.5 bg-bone rounded-md text-center">
+            <div className="font-mono text-base font-bold text-accent-green">+{stats.totalEarned}</div>
+            <div className="text-[10px] text-ink-muted mt-0.5">Pts Earned</div>
           </div>
         </div>
 
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '14px' }}>
-          <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '8px', fontWeight: 500 }}>Have a referral code?</div>
-          <div style={{ display: 'flex', gap: '8px' }}>
+        <div className="border-t border-line pt-3.5">
+          <div className="text-[11px] text-ink-muted mb-2 font-medium">Have a referral code?</div>
+          <div className="flex gap-2">
             <input
               type="text"
               value={codeInput}
               onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
               placeholder="Enter code"
               maxLength={8}
-              style={{
-                flex: 1, padding: '10px 12px', fontSize: '13px', fontWeight: 600,
-                background: 'var(--bg-input)', border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)', color: 'var(--text-primary)',
-                letterSpacing: '1px', fontFamily: 'monospace',
-              }}
+              className="flex-1 px-3 py-2.5 text-[13px] font-semibold bg-bone border border-line rounded-md text-ink tracking-wider font-mono"
             />
             <button
               onClick={handleApply}
               disabled={applying || !codeInput.trim()}
-              style={{
-                padding: '10px 16px', fontSize: '12px', fontWeight: 700,
-                background: codeInput.trim() ? 'var(--accent-green)' : 'var(--bg-secondary)',
-                color: codeInput.trim() ? '#fff' : 'var(--text-tertiary)',
-                borderRadius: 'var(--radius)', border: 'none',
-                opacity: applying ? 0.6 : 1,
-              }}
+              className={`px-4 py-2.5 text-xs font-bold rounded-md border-none ${codeInput.trim() ? 'bg-accent-green text-white' : 'bg-paper text-ink-muted'} ${applying ? 'opacity-60' : ''}`}
             >
               Apply
             </button>
           </div>
           {message && (
-            <div style={{
-              marginTop: '8px', fontSize: '12px', fontWeight: 600,
-              color: message.type === 'success' ? 'var(--accent-green)' : 'var(--accent-red)',
-            }}>
+            <div className={`mt-2 text-xs font-semibold ${message.type === 'success' ? 'text-accent-green' : 'text-accent-red'}`}>
               {message.text}
             </div>
           )}
@@ -228,33 +178,19 @@ function ThemeToggle() {
   }
 
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
-      padding: '16px 20px', border: '1px solid var(--border)', marginTop: '24px',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        {theme === 'dark' ? <Moon size={18} color="var(--text-secondary)" /> : <Sun size={18} color="var(--accent-yellow)" />}
-        <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+    <div className="flex items-center justify-between bg-paper rounded-2xl px-5 py-4 border border-line mt-6">
+      <div className="flex items-center gap-2.5">
+        {theme === 'dark' ? <Moon size={18} className="text-ink-muted" /> : <Sun size={18} className="text-accent-yellow" />}
+        <span className="text-sm font-semibold text-ink">
           {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
         </span>
       </div>
       <button
         onClick={handleToggle}
-        style={{
-          position: 'relative', width: '44px', height: '24px',
-          borderRadius: '12px', border: 'none',
-          background: theme === 'dark' ? 'var(--accent-green)' : 'var(--border)',
-          transition: 'background 0.2s',
-        }}
+        className={`relative w-11 h-6 rounded-xl border-none transition-colors duration-200 ${theme === 'dark' ? 'bg-accent-green' : 'bg-line'}`}
         aria-label="Toggle theme"
       >
-        <span style={{
-          position: 'absolute', top: '3px',
-          left: theme === 'dark' ? '23px' : '3px',
-          width: '18px', height: '18px', borderRadius: '50%',
-          background: '#fff', transition: 'left 0.2s',
-        }} />
+        <span className={`absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white transition-[left] duration-200 ${theme === 'dark' ? 'left-[23px]' : 'left-[3px]'}`} />
       </button>
     </div>
   );
@@ -265,21 +201,17 @@ export default function Profile() {
 
   if (!getToken()) {
     return (
-      <div style={{ padding: '60px 24px', textAlign: 'center' }}>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '16px' }}>
+      <div className="py-[60px] px-6 text-center">
+        <p className="text-ink-muted text-sm mb-4">
           Sign in to view your portfolio
         </p>
         <button
           onClick={openAuthModal}
-          style={{
-            background: 'var(--primary)', color: '#fff',
-            padding: '10px 24px', borderRadius: '9999px', fontSize: '14px',
-            fontWeight: 600, border: 'none',
-          }}
+          className="bg-emerald text-white px-6 py-2.5 rounded-full text-sm font-semibold border-none"
         >
           Join IroyinMarket
         </button>
-        <div style={{ maxWidth: '400px', margin: '24px auto 0' }}>
+        <div className="max-w-[400px] mx-auto mt-6">
           <ThemeToggle />
         </div>
       </div>
@@ -291,8 +223,8 @@ export default function Profile() {
 
   if (!user) {
     return (
-      <div style={{ padding: '40px 16px', textAlign: 'center' }}>
-        <p style={{ color: 'var(--text-tertiary)' }}>Loading profile...</p>
+      <div className="py-10 px-4 text-center">
+        <p className="text-ink-muted">Loading profile...</p>
       </div>
     );
   }
@@ -306,42 +238,33 @@ export default function Profile() {
   const winRate = resolvedPositions.length > 0 ? Math.round((totalWins / resolvedPositions.length) * 100) : 0;
 
   return (
-    <div style={{ padding: '16px', maxWidth: '700px', margin: '0 auto', paddingBottom: '100px' }}>
+    <div className="p-4 max-w-[700px] mx-auto pb-[100px]">
       {/* Profile Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <div style={{
-          width: '48px', height: '48px', borderRadius: '50%',
-          background: 'var(--primary-bg)', border: '2px solid var(--primary-border)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-        }}>
-          <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--primary)' }}>
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-12 h-12 rounded-full bg-accent-green-bg border-2 border-emerald/30 flex items-center justify-center shrink-0">
+          <span className="text-xl font-extrabold text-emerald">
             {user.name?.charAt(0)?.toUpperCase() || '?'}
           </span>
         </div>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+          <div className="flex items-center gap-2">
+            <h1 className="font-serif text-xl font-bold text-ink leading-tight">
               {user.name}
             </h1>
             {user.is_ambassador && (
-              <span style={{
-                fontSize: '10px', fontWeight: 700, padding: '2px 8px',
-                borderRadius: '9999px', background: 'var(--accent-violet-bg)',
-                color: 'var(--accent-violet)', border: '1px solid var(--accent-violet-border)',
-                textTransform: 'uppercase', letterSpacing: '0.5px',
-              }}>Ambassador</span>
+              <span className="text-accent-violet bg-accent-violet-bg rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide border border-accent-violet/30">Ambassador</span>
             )}
           </div>
           {user.referred_by_name && (
-            <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
-              Invited by <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{user.referred_by_name}</span>
+            <p className="text-[11px] text-ink-muted mt-0.5">
+              Invited by <span className="font-semibold text-ink-muted">{user.referred_by_name}</span>
             </p>
           )}
           {user.referral_count > 0 && (
-            <p style={{ fontSize: '11px', color: 'var(--accent-green)', marginTop: '2px', fontWeight: 600 }}>
+            <p className="text-[11px] text-accent-green mt-0.5 font-semibold">
               {user.referral_count} friend{user.referral_count !== 1 ? 's' : ''} invited
               {!user.is_ambassador && user.referral_count < 10 && (
-                <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}> ({10 - user.referral_count} more to become Ambassador)</span>
+                <span className="text-ink-muted font-normal"> ({10 - user.referral_count} more to become Ambassador)</span>
               )}
             </p>
           )}
@@ -349,77 +272,57 @@ export default function Profile() {
       </div>
 
       {/* Hero: Portfolio Summary */}
-      <section style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+      <section className="mb-6">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+            <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1">
               Points Balance
             </p>
-            <h2 style={{ fontSize: '32px', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+            <h2 className="font-mono text-mono-data font-bold tracking-tight text-ink">
               {user.points_balance} pts
             </h2>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '4px',
-              background: 'var(--accent-green-bg)', border: '1px solid var(--accent-green-border)',
-              padding: '4px 12px', borderRadius: '9999px',
-            }}>
-              <TrendingUp size={14} color="var(--accent-green)" />
-              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--accent-green)' }}>
+          <div className="flex flex-col items-end">
+            <div className="flex items-center gap-1 bg-accent-green-bg border border-accent-green/30 px-3 py-1 rounded-full">
+              <TrendingUp size={14} className="text-accent-green" />
+              <span className="text-xs font-semibold text-accent-green">
                 {accuracy}% accuracy
               </span>
             </div>
-            <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+            <p className="text-[11px] text-ink-muted mt-1">
               {streak} week streak
             </p>
           </div>
         </div>
 
         {/* Bento Stats Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-          <div style={{
-            background: 'var(--bg-card)', padding: '20px',
-            borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)',
-            display: 'flex', flexDirection: 'column', gap: '8px',
-          }}>
-            <Star size={20} color="var(--primary)" />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-paper p-5 rounded-2xl border border-line flex flex-col gap-2">
+            <Star size={20} className="text-emerald" />
             <div>
-              <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '2px' }}>Rank</p>
-              <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>{title}</p>
+              <p className="text-[11px] text-ink-muted mb-0.5">Rank</p>
+              <p className="font-serif text-lg font-semibold text-ink">{title}</p>
             </div>
           </div>
-          <div style={{
-            background: 'var(--bg-card)', padding: '20px',
-            borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)',
-            display: 'flex', flexDirection: 'column', gap: '8px',
-          }}>
-            <Wallet size={20} color="var(--accent-green)" />
+          <div className="bg-paper p-5 rounded-2xl border border-line flex flex-col gap-2">
+            <Wallet size={20} className="text-accent-green" />
             <div>
-              <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '2px' }}>Available</p>
-              <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>{user.points_balance} pts</p>
+              <p className="text-[11px] text-ink-muted mb-0.5">Available</p>
+              <p className="font-mono text-lg font-semibold text-ink">{user.points_balance} pts</p>
             </div>
           </div>
-          <div style={{
-            background: 'var(--bg-card)', padding: '20px',
-            borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)',
-            display: 'flex', flexDirection: 'column', gap: '8px',
-          }}>
-            <History size={20} color="var(--accent-blue)" />
+          <div className="bg-paper p-5 rounded-2xl border border-line flex flex-col gap-2">
+            <History size={20} className="text-emerald" />
             <div>
-              <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '2px' }}>Total Predictions</p>
-              <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>{positions.length}</p>
+              <p className="text-[11px] text-ink-muted mb-0.5">Total Predictions</p>
+              <p className="font-mono text-lg font-semibold text-ink">{positions.length}</p>
             </div>
           </div>
-          <div style={{
-            background: 'var(--bg-card)', padding: '20px',
-            borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)',
-            display: 'flex', flexDirection: 'column', gap: '8px',
-          }}>
-            <Trophy size={20} color="var(--accent-yellow)" />
+          <div className="bg-paper p-5 rounded-2xl border border-line flex flex-col gap-2">
+            <Trophy size={20} className="text-accent-yellow" />
             <div>
-              <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '2px' }}>Win Rate</p>
-              <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>{winRate}%</p>
+              <p className="text-[11px] text-ink-muted mb-0.5">Win Rate</p>
+              <p className="font-mono text-lg font-semibold text-ink">{winRate}%</p>
             </div>
           </div>
         </div>
@@ -427,44 +330,34 @@ export default function Profile() {
 
       {/* Active Positions */}
       {activePositions.length > 0 && (
-        <section style={{ marginBottom: '24px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px' }}>
+        <section className="mb-6">
+          <h3 className="font-serif text-section font-semibold text-ink mb-3">
             Active Positions
           </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className="flex flex-col gap-3">
             {activePositions.slice(0, 5).map((pos) => (
-              <div key={pos.id} style={{
-                background: 'var(--bg-card)', padding: '20px',
-                borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)',
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                  <div style={{ flex: 1, paddingRight: '12px' }}>
-                    <span style={{
-                      fontSize: '11px', fontWeight: 600, color: 'var(--primary)',
-                      background: 'var(--primary-bg)', padding: '2px 8px', borderRadius: '4px',
-                      textTransform: 'uppercase', letterSpacing: '-0.02em',
-                    }}>
+              <div key={pos.id} className="bg-paper p-5 rounded-2xl border border-line">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1 pr-3">
+                    <span className="text-[11px] font-semibold text-emerald bg-accent-green-bg px-2 py-0.5 rounded uppercase tracking-tight">
                       {pos.market_category || 'Market'}
                     </span>
-                    <h4 style={{ fontSize: '14px', fontWeight: 600, marginTop: '8px', color: 'var(--text-primary)', lineHeight: '1.3' }}>
+                    <h4 className="text-sm font-semibold mt-2 text-ink leading-tight">
                       {pos.market_title}
                     </h4>
                   </div>
-                  <div style={{
-                    background: 'var(--accent-green-bg)', border: '1px solid var(--accent-green-border)',
-                    padding: '4px 8px', borderRadius: 'var(--radius-lg)', textAlign: 'center', minWidth: '50px',
-                  }}>
-                    <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--accent-green)', lineHeight: 1 }}>{pos.outcome_label}</p>
-                    <p style={{ fontSize: '16px', fontWeight: 700, color: 'var(--accent-green)' }}>
+                  <div className="bg-accent-green-bg border border-accent-green/30 px-2 py-1 rounded-lg text-center min-w-[50px]">
+                    <p className="text-[11px] font-semibold text-accent-green leading-none">{pos.outcome_label}</p>
+                    <p className="font-mono text-base font-bold text-accent-green">
                       {Number(pos.shares).toFixed(1)}
                     </p>
                   </div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-ink-muted">
                     {Number(pos.shares).toFixed(1)} shares
                   </span>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  <span className="text-[13px] font-semibold text-ink-muted">
                     Active
                   </span>
                 </div>
@@ -478,28 +371,25 @@ export default function Profile() {
       <MyMarkets />
 
       {/* Trade History */}
-      <section style={{ marginTop: '24px' }}>
-        <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px' }}>
+      <section className="mt-6">
+        <h3 className="font-serif text-section font-semibold text-ink mb-3">
           Trade History
         </h3>
-        <div style={{
-          background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
-          border: '1px solid var(--border)', overflow: 'hidden',
-        }}>
+        <div className="bg-paper rounded-2xl border border-line overflow-hidden">
           {resolvedPositions.length === 0 && activePositions.length === 0 ? (
-            <div style={{ padding: '32px 20px', textAlign: 'center' }}>
-              <Target size={24} color="var(--text-tertiary)" style={{ margin: '0 auto 10px' }} />
-              <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '6px' }}>
+            <div className="py-8 px-5 text-center">
+              <Target size={24} className="text-ink-muted mx-auto mb-2.5" />
+              <p className="text-ink-muted text-sm mb-1.5">
                 No predictions yet
               </p>
-              <p style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>
+              <p className="text-ink-muted text-xs">
                 Pick your first market to start building your record.
               </p>
             </div>
           ) : resolvedPositions.length === 0 ? (
-            <div style={{ padding: '32px 20px', textAlign: 'center' }}>
-              <History size={24} color="var(--text-tertiary)" style={{ margin: '0 auto 10px' }} />
-              <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
+            <div className="py-8 px-5 text-center">
+              <History size={24} className="text-ink-muted mx-auto mb-2.5" />
+              <p className="text-ink-muted text-sm">
                 No resolved trades yet. Your history will appear here.
               </p>
             </div>
@@ -508,33 +398,25 @@ export default function Profile() {
               {resolvedPositions.slice(0, 20).map((pos, i) => {
                 const isWin = pos.payout > 0;
                 return (
-                  <div key={pos.id} style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '16px 20px',
-                    borderBottom: i < resolvedPositions.length - 1 ? '1px solid var(--border)' : 'none',
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                      <div style={{
-                        width: '40px', height: '40px', borderRadius: '50%',
-                        background: isWin ? 'var(--accent-green-bg)' : 'var(--accent-red-bg)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                      }}>
+                  <div key={pos.id} className={`flex items-center justify-between px-5 py-4 ${i < resolvedPositions.length - 1 ? 'border-b border-line' : ''}`}>
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isWin ? 'bg-accent-green-bg' : 'bg-accent-red-bg'}`}>
                         {isWin
-                          ? <ArrowUpRight size={18} color="var(--accent-green)" />
-                          : <ArrowDownRight size={18} color="var(--accent-red)" />
+                          ? <ArrowUpRight size={18} className="text-accent-green" />
+                          : <ArrowDownRight size={18} className="text-accent-red" />
                         }
                       </div>
-                      <div style={{ minWidth: 0 }}>
-                        <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-ink overflow-hidden text-ellipsis whitespace-nowrap">
                           {pos.market_title}
                         </p>
-                        <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                        <p className="text-[11px] text-ink-muted mt-0.5">
                           Position: {pos.outcome_label}
                         </p>
                       </div>
                     </div>
-                    <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
-                      <p style={{ fontSize: '14px', fontWeight: 700, color: isWin ? 'var(--accent-green)' : 'var(--accent-red)' }}>
+                    <div className="text-right shrink-0 ml-3">
+                      <p className={`font-mono text-sm font-bold ${isWin ? 'text-accent-green' : 'text-accent-red'}`}>
                         {isWin ? `+${pos.payout}` : 'Lost'}
                       </p>
                     </div>
@@ -559,13 +441,7 @@ export default function Profile() {
             navigator.clipboard.writeText(text);
           }
         }}
-        style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-          width: '100%', marginTop: '24px', padding: '14px',
-          background: 'var(--primary-bg)', border: '1px solid var(--primary-border)',
-          borderRadius: '9999px', color: 'var(--primary)',
-          fontSize: '13px', fontWeight: 700,
-        }}
+        className="flex items-center justify-center gap-2 w-full mt-6 py-3.5 bg-accent-green-bg border border-emerald/30 rounded-full text-emerald text-[13px] font-bold"
       >
         <Share2 size={14} /> Share Profile
       </button>

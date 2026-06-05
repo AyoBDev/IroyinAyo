@@ -14,22 +14,12 @@ function PriceChart({ outcomes }) {
   const topPercent = Math.round(top.price * 100);
 
   return (
-    <div style={{
-      background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
-      border: '1px solid var(--border)', padding: '20px',
-      position: 'relative', overflow: 'hidden', height: '200px',
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <h3 style={{ fontSize: '16px', fontWeight: 600 }}>Price History</h3>
-        <div style={{ display: 'flex', gap: '4px' }}>
+    <div className="bg-paper rounded-2xl border border-line p-5 relative overflow-hidden h-[200px]">
+      <div className="flex justify-between items-center mb-3">
+        <h3 className="font-serif text-base font-semibold">Price History</h3>
+        <div className="flex gap-1">
           {['1D', '1W', '1M'].map((label, i) => (
-            <button key={label} style={{
-              padding: '4px 10px', borderRadius: 'var(--radius)',
-              fontSize: '11px', fontWeight: 600,
-              background: i === 1 ? 'var(--primary-bg)' : 'var(--bg-surface-container)',
-              color: i === 1 ? 'var(--primary)' : 'var(--text-tertiary)',
-              border: i === 1 ? '1px solid var(--primary-border)' : '1px solid var(--border)',
-            }}>
+            <button key={label} className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border ${i === 1 ? 'bg-accent-green-bg text-emerald border-emerald/30' : 'bg-paper text-ink-muted border-line'}`}>
               {label}
             </button>
           ))}
@@ -39,18 +29,18 @@ function PriceChart({ outcomes }) {
       <svg
         viewBox="0 0 400 100"
         preserveAspectRatio="none"
-        style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '120px', padding: '0 20px' }}
+        className="absolute bottom-0 left-0 right-0 h-[120px] px-5"
       >
         <defs>
           <linearGradient id="chartGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" style={{ stopColor: 'var(--primary)', stopOpacity: 0.3 }} />
-            <stop offset="100%" style={{ stopColor: 'var(--primary)', stopOpacity: 0 }} />
+            <stop offset="0%" style={{ stopColor: 'var(--color-emerald)', stopOpacity: 0.3 }} />
+            <stop offset="100%" style={{ stopColor: 'var(--color-emerald)', stopOpacity: 0 }} />
           </linearGradient>
         </defs>
         <path
           d={`M0,${100 - topPercent * 0.8} Q100,${100 - topPercent * 0.7} 200,${100 - topPercent * 0.85} T400,${100 - topPercent}`}
           fill="none"
-          stroke="var(--primary)"
+          stroke="var(--color-emerald)"
           strokeWidth="2.5"
           strokeLinecap="round"
         />
@@ -78,37 +68,21 @@ function OutcomeButtons({ market, outcomes }) {
     const noPercent = Math.round(noOutcome.price * 100);
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+      <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => setSelectedOutcome(selectedOutcome === yesOutcome.id ? null : yesOutcome.id)}
-            style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-              padding: '16px', borderRadius: 'var(--radius-xl)',
-              background: selectedOutcome === yesOutcome.id ? 'var(--accent-green)' : 'var(--accent-green-bg)',
-              color: selectedOutcome === yesOutcome.id ? '#fff' : 'var(--accent-green)',
-              border: '1px solid var(--accent-green-border)',
-              fontSize: '16px', fontWeight: 700,
-              transition: 'all 0.15s ease',
-            }}
+            className={`flex flex-col items-center gap-1 p-4 rounded-2xl border text-base font-bold transition-all duration-150 ${selectedOutcome === yesOutcome.id ? 'bg-accent-green text-white border-accent-green' : 'bg-accent-green-bg text-accent-green border-accent-green/30'}`}
           >
             <span>Yes</span>
-            <span style={{ fontSize: '13px', opacity: 0.8 }}>{yesPercent}%</span>
+            <span className="text-[13px] opacity-80">{yesPercent}%</span>
           </button>
           <button
             onClick={() => setSelectedOutcome(selectedOutcome === noOutcome.id ? null : noOutcome.id)}
-            style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-              padding: '16px', borderRadius: 'var(--radius-xl)',
-              background: selectedOutcome === noOutcome.id ? 'var(--accent-red)' : 'var(--accent-red-bg)',
-              color: selectedOutcome === noOutcome.id ? '#fff' : 'var(--accent-red)',
-              border: '1px solid var(--accent-red-border)',
-              fontSize: '16px', fontWeight: 700,
-              transition: 'all 0.15s ease',
-            }}
+            className={`flex flex-col items-center gap-1 p-4 rounded-2xl border text-base font-bold transition-all duration-150 ${selectedOutcome === noOutcome.id ? 'bg-accent-red text-white border-accent-red' : 'bg-accent-red-bg text-accent-red border-accent-red/30'}`}
           >
             <span>No</span>
-            <span style={{ fontSize: '13px', opacity: 0.8 }}>{noPercent}%</span>
+            <span className="text-[13px] opacity-80">{noPercent}%</span>
           </button>
         </div>
         {selectedOutcome && (
@@ -123,7 +97,7 @@ function OutcomeButtons({ market, outcomes }) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+    <div className="flex flex-col gap-1.5">
       {sorted.map((outcome, index) => {
         const percent = Math.round(outcome.price * 100);
         const isTop = index === 0;
@@ -133,35 +107,20 @@ function OutcomeButtons({ market, outcomes }) {
           <div key={outcome.id}>
             <button
               onClick={() => setSelectedOutcome(isSelected ? null : outcome.id)}
-              style={{
-                width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '14px 16px', borderRadius: 'var(--radius-lg)',
-                background: isSelected ? 'var(--primary-bg)' : isTop ? 'var(--bg-surface-container)' : 'var(--bg-card)',
-                border: isSelected ? '1px solid var(--primary-border)' : '1px solid var(--border)',
-                transition: 'all 0.15s ease',
-              }}
+              className={`w-full flex justify-between items-center px-4 py-3.5 rounded-lg border transition-all duration-150 ${isSelected ? 'bg-accent-green-bg border-emerald/30' : isTop ? 'bg-paper border-line' : 'bg-paper border-line'}`}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{
-                  width: '10px', height: '10px', borderRadius: '50%',
-                  background: isTop ? 'var(--primary)' : 'var(--text-tertiary)',
-                }} />
-                <span style={{
-                  fontSize: '14px', fontWeight: isTop ? 600 : 400,
-                  color: 'var(--text-primary)',
-                }}>
+              <div className="flex items-center gap-2.5">
+                <div className={`w-2.5 h-2.5 rounded-full ${isTop ? 'bg-emerald' : 'bg-ink-muted'}`} />
+                <span className={`text-sm text-ink ${isTop ? 'font-semibold' : 'font-normal'}`}>
                   {outcome.label}
                 </span>
               </div>
-              <span style={{
-                fontSize: '14px', fontWeight: 700,
-                color: isTop ? 'var(--primary)' : 'var(--text-secondary)',
-              }}>
+              <span className={`font-mono text-sm font-bold ${isTop ? 'text-emerald' : 'text-ink-muted'}`}>
                 {percent}%
               </span>
             </button>
             {isSelected && (
-              <div style={{ marginTop: '8px' }}>
+              <div className="mt-2">
                 <PredictSlip market={market} outcome={outcome} onClose={() => setSelectedOutcome(null)} />
               </div>
             )}
@@ -201,44 +160,34 @@ function CreatorResolvePanel({ market }) {
 
   return (
     <div>
-      <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>
+      <h3 className="text-sm font-semibold text-ink-muted mb-2">
         Your Market
       </h3>
-      <div style={{
-        padding: '12px 14px', borderRadius: 'var(--radius-lg)',
-        background: 'var(--bg-surface-container)', border: '1px solid var(--border)',
-        marginBottom: '12px', fontSize: '13px', color: 'var(--text-secondary)',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+      <div className="p-3 rounded-lg bg-paper border border-line mb-3 text-[13px] text-ink-muted">
+        <div className="flex justify-between">
           <span>Total volume</span>
-          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{totalVolume} pts</span>
+          <span className="font-mono font-semibold text-ink">{totalVolume} pts</span>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
+        <div className="flex justify-between mt-1.5">
           <span>Your earnings on resolve</span>
-          <span style={{ fontWeight: 600, color: 'var(--accent-green)' }}>~{estimatedFee} pts</span>
+          <span className="font-mono font-semibold text-accent-green">~{estimatedFee} pts</span>
         </div>
       </div>
-      <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '12px' }}>
+      <p className="text-xs text-ink-muted mb-3">
         Select the winning outcome to resolve this market and pay out predictions.
       </p>
       {error && (
-        <div style={{ color: 'var(--accent-red)', fontSize: '12px', marginBottom: '10px', fontWeight: 600 }}>{error}</div>
+        <div className="text-accent-red text-xs mb-2.5 font-semibold">{error}</div>
       )}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div className="flex flex-col gap-2">
         {market.outcomes.map((o) => (
           <button
             key={o.id}
             onClick={() => handleResolve(o.id)}
             disabled={resolving}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '10px',
-              padding: '12px 14px', borderRadius: 'var(--radius-lg)',
-              background: 'var(--bg-card)', border: '1px solid var(--border)',
-              color: 'var(--text-primary)', fontSize: '14px', fontWeight: 500,
-              opacity: resolving ? 0.6 : 1, textAlign: 'left',
-            }}
+            className={`flex items-center gap-2.5 px-3.5 py-3 rounded-lg bg-paper border border-line text-ink text-sm font-medium text-left ${resolving ? 'opacity-60' : ''}`}
           >
-            <Trophy size={16} color="var(--accent-yellow)" />
+            <Trophy size={16} className="text-accent-yellow" />
             {o.label}
           </button>
         ))}
@@ -251,25 +200,19 @@ function SocialSection({ market }) {
   const [showChat, setShowChat] = useState(true);
 
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 style={{ fontSize: '16px', fontWeight: 600 }}>Commentary</h3>
+    <section className="flex flex-col gap-4">
+      <div className="flex justify-between items-center">
+        <h3 className="font-serif text-base font-semibold">Commentary</h3>
         <button
           onClick={() => setShowChat(!showChat)}
-          style={{
-            fontSize: '12px', fontWeight: 600, color: 'var(--primary)',
-            background: 'none', padding: '4px 8px',
-          }}
+          className="text-xs font-semibold text-emerald bg-transparent px-2 py-1"
         >
           {showChat ? 'Hide' : 'Show'}
         </button>
       </div>
 
       {showChat && (
-        <div style={{
-          background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
-          border: '1px solid var(--border)', overflow: 'hidden',
-        }}>
+        <div className="bg-paper rounded-2xl border border-line overflow-hidden">
           <PublicChat marketId={market.id} />
         </div>
       )}
@@ -306,14 +249,11 @@ export default function MarketDetail() {
 
   if (!market) {
     return (
-      <div style={{ padding: '60px 16px', textAlign: 'center' }}>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Market not found</p>
+      <div className="py-[60px] px-4 text-center">
+        <p className="text-ink-muted text-sm">Market not found</p>
         <button
           onClick={() => navigate('/')}
-          style={{
-            marginTop: '16px', padding: '10px 20px', borderRadius: 'var(--radius-lg)',
-            background: 'var(--primary)', color: '#fff', fontSize: '13px', fontWeight: 600,
-          }}
+          className="mt-4 px-5 py-2.5 rounded-lg bg-emerald text-white text-[13px] font-semibold"
         >
           Back to Markets
         </button>
@@ -420,107 +360,73 @@ export default function MarketDetail() {
   };
 
   return (
-    <div style={{ padding: '16px', maxWidth: '640px', margin: '0 auto' }}>
+    <div className="p-4 max-w-[640px] mx-auto">
       {/* Back button */}
       <button
         onClick={() => navigate('/')}
-        style={{
-          display: 'flex', alignItems: 'center', gap: '6px',
-          color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 500,
-          background: 'none', marginBottom: '16px', padding: '4px 0',
-        }}
+        className="flex items-center gap-1.5 text-ink-muted hover:text-ink text-[13px] font-medium bg-transparent mb-4 py-1"
       >
         <ArrowLeft size={18} /> Back
       </button>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div className="flex flex-col gap-5">
         {/* Market Identity */}
-        <section style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
             {market.category && (
-              <span style={{
-                fontSize: '11px', fontWeight: 600, letterSpacing: '0.5px',
-                padding: '4px 10px', borderRadius: 'var(--radius-full)',
-                background: 'var(--primary-bg)', color: 'var(--primary)',
-                border: '1px solid var(--primary-border)',
-                textTransform: 'uppercase',
-              }}>
+              <span className="text-[11px] font-semibold tracking-wide px-2.5 py-1 rounded-full bg-accent-green-bg text-emerald border border-emerald/30 uppercase">
                 {market.category}
               </span>
             )}
             {market.is_featured && (
-              <span style={{
-                fontSize: '11px', fontWeight: 600,
-                padding: '4px 10px', borderRadius: 'var(--radius-full)',
-                background: 'var(--accent-yellow-bg)', color: 'var(--accent-yellow)',
-                border: '1px solid var(--accent-yellow-border)',
-                display: 'flex', alignItems: 'center', gap: '4px',
-              }}>
+              <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-accent-yellow-bg text-accent-yellow border border-accent-yellow/30 flex items-center gap-1">
                 <Trophy size={11} /> Featured
               </span>
             )}
           </div>
 
-          <h2 style={{ fontSize: '22px', fontWeight: 700, lineHeight: 1.3, letterSpacing: '-0.02em' }}>
+          <h2 className="font-serif text-section font-bold leading-tight tracking-tight">
             {market.title}
           </h2>
 
           {market.creator_name && (
-            <span style={{
-              fontSize: '12px', fontWeight: 500, color: 'var(--text-tertiary)',
-              display: 'flex', alignItems: 'center', gap: '4px',
-            }}>
-              Created by <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{market.creator_name}</span>
+            <span className="text-xs font-medium text-ink-muted flex items-center gap-1">
+              Created by <span className="font-semibold text-ink-muted">{market.creator_name}</span>
             </span>
           )}
 
           {/* Probability summary */}
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-            <span style={{ fontSize: '32px', fontWeight: 800, color: 'var(--primary)' }}>
+          <div className="flex items-baseline gap-2">
+            <span className="font-mono text-mono-data font-extrabold text-emerald">
               {topPercent}%
             </span>
-            <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+            <span className="text-sm text-ink-muted">
               {topOutcome?.label}
             </span>
           </div>
 
           {/* Description */}
           {market.description && (
-            <div style={{
-              padding: '14px 16px', borderRadius: 'var(--radius-lg)',
-              background: 'var(--bg-surface-container)', border: '1px solid var(--border)',
-              fontSize: '13px', lineHeight: 1.6, color: 'var(--text-secondary)',
-              whiteSpace: 'pre-line',
-            }}>
+            <div className="p-3.5 rounded-lg bg-paper border border-line text-[13px] leading-relaxed text-ink-muted whitespace-pre-line">
               {market.description}
             </div>
           )}
 
           {/* Stats row */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', color: 'var(--text-tertiary)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div className="flex items-center gap-4 text-ink-muted">
+            <div className="flex items-center gap-1">
               <Users size={14} />
-              <span style={{ fontSize: '12px', fontWeight: 500 }}>{totalShares} predictions</span>
+              <span className="text-xs font-medium">{totalShares} predictions</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div className="flex items-center gap-1">
               <TrendingUp size={14} />
-              <span style={{ fontSize: '12px', fontWeight: 500 }}>{outcomes.length} outcomes</span>
+              <span className="text-xs font-medium">{outcomes.length} outcomes</span>
             </div>
-            <button onClick={handleShare} style={{
-              marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '4px',
-              padding: '6px 12px', borderRadius: 'var(--radius-full)',
-              background: 'var(--bg-surface-container)', border: '1px solid var(--border)',
-              color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 500,
-            }}>
+            <button onClick={handleShare} className="ml-auto flex items-center gap-1 px-3 py-1.5 rounded-full bg-paper border border-line text-ink-muted text-xs font-medium">
               <Share2 size={13} /> Share
             </button>
             {market.created_by && !isCreator && (
-              <button onClick={() => setShowReport(true)} style={{
-                display: 'flex', alignItems: 'center', gap: '4px',
-                padding: '6px 10px', borderRadius: 'var(--radius-full)',
-                background: 'var(--bg-surface-container)', border: '1px solid var(--border)',
-                color: 'var(--text-tertiary)', fontSize: '12px',
-              }}>
+              <button onClick={() => setShowReport(true)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-paper border border-line text-ink-muted text-xs">
                 <Flag size={12} />
               </button>
             )}
@@ -536,7 +442,7 @@ export default function MarketDetail() {
             <CreatorResolvePanel market={market} />
           ) : (
             <>
-              <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px' }}>
+              <h3 className="text-sm font-semibold text-ink-muted mb-3">
                 Make a prediction
               </h3>
               <OutcomeButtons market={market} outcomes={outcomes} />
@@ -549,44 +455,21 @@ export default function MarketDetail() {
       </div>
 
       {showReport && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 9999,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px',
-        }}>
-          <div onClick={() => setShowReport(false)} style={{
-            position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)',
-          }} />
-          <div style={{
-            position: 'relative', background: 'var(--bg-card)',
-            borderRadius: 'var(--radius-xl)', padding: '24px',
-            width: '100%', maxWidth: '340px',
-          }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', color: 'var(--text-primary)' }}>Report Market</h3>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <div onClick={() => setShowReport(false)} className="absolute inset-0 bg-black/40" />
+          <div className="relative bg-paper rounded-2xl p-6 w-full max-w-[340px]">
+            <h3 className="text-base font-bold mb-3 text-ink">Report Market</h3>
             <textarea
               value={reportReason}
               onChange={(e) => setReportReason(e.target.value)}
               placeholder="Why are you reporting this market?"
               maxLength={500}
               rows={3}
-              style={{
-                width: '100%', padding: '10px 12px', fontSize: '14px',
-                background: 'var(--bg-input)', border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)', color: 'var(--text-primary)',
-                resize: 'none',
-              }}
+              className="w-full px-3 py-2.5 text-sm bg-bone border border-line rounded-md text-ink resize-none"
             />
-            <div style={{ display: 'flex', gap: '8px', marginTop: '12px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setShowReport(false)} style={{
-                padding: '8px 16px', borderRadius: 'var(--radius)',
-                background: 'var(--bg-surface-container)', border: '1px solid var(--border)',
-                color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600,
-              }}>Cancel</button>
-              <button onClick={handleReport} disabled={reporting || reportReason.trim().length < 5} style={{
-                padding: '8px 16px', borderRadius: 'var(--radius)',
-                background: 'var(--accent-red)', color: '#fff',
-                fontSize: '13px', fontWeight: 600, border: 'none',
-                opacity: reporting ? 0.6 : 1,
-              }}>Report</button>
+            <div className="flex gap-2 mt-3 justify-end">
+              <button onClick={() => setShowReport(false)} className="px-4 py-2 rounded-md bg-paper border border-line text-ink-muted text-[13px] font-semibold">Cancel</button>
+              <button onClick={handleReport} disabled={reporting || reportReason.trim().length < 5} className={`px-4 py-2 rounded-md bg-accent-red text-white text-[13px] font-semibold border-none ${reporting ? 'opacity-60' : ''}`}>Report</button>
             </div>
           </div>
         </div>

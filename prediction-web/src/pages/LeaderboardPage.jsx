@@ -6,47 +6,36 @@ import RecentPayouts from '../components/RecentPayouts.jsx';
 
 function PodiumUser({ entry, rank, size }) {
   const initial = entry.name?.charAt(0)?.toUpperCase() || '?';
-  const borderColors = ['var(--accent-green-border)', 'var(--border)', 'var(--accent-yellow-border)'];
-  const bgColors = ['var(--accent-green-bg)', 'var(--bg-surface-container)', 'var(--accent-yellow-bg)'];
-  const badgeBg = ['var(--accent-green-bg)', 'var(--bg-surface-container)', 'var(--accent-yellow-bg)'];
-  const badgeColor = ['var(--accent-green)', 'var(--text-tertiary)', 'var(--accent-yellow)'];
 
-  const avatarSize = size === 'lg' ? '72px' : size === 'md' ? '60px' : '52px';
-  const fontSize = size === 'lg' ? '28px' : size === 'md' ? '22px' : '20px';
-  const badgeSize = size === 'lg' ? '26px' : '22px';
+  const avatarSize = size === 'lg' ? 'w-[72px] h-[72px]' : size === 'md' ? 'w-[60px] h-[60px]' : 'w-[52px] h-[52px]';
+  const fontSize = size === 'lg' ? 'text-[28px]' : size === 'md' ? 'text-[22px]' : 'text-[20px]';
+  const badgeSize = size === 'lg' ? 'w-[26px] h-[26px]' : 'w-[22px] h-[22px]';
+
+  const borderClass = rank === 1 ? 'border-accent-green/30' : rank === 2 ? 'border-line' : 'border-accent-yellow/30';
+  const bgClass = rank === 1 ? 'bg-accent-green-bg' : rank === 2 ? 'bg-paper' : 'bg-accent-yellow-bg';
+  const colorClass = rank === 1 ? 'text-accent-green' : rank === 2 ? 'text-ink-muted' : 'text-accent-yellow';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <div style={{ position: 'relative', marginBottom: '8px' }}>
+    <div className="flex flex-col items-center">
+      <div className="relative mb-2">
         {rank === 1 && (
-          <div style={{ position: 'absolute', top: '-20px', left: '50%', transform: 'translateX(-50%)' }}>
-            <Crown size={22} color="var(--accent-yellow)" fill="var(--accent-yellow)" />
+          <div className="absolute -top-5 left-1/2 -translate-x-1/2">
+            <Crown size={22} className="text-accent-yellow fill-accent-yellow" />
           </div>
         )}
-        <div style={{
-          width: avatarSize, height: avatarSize, borderRadius: '50%',
-          border: `3px solid ${borderColors[rank - 1]}`,
-          background: bgColors[rank - 1],
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <span style={{ fontSize, fontWeight: 800, color: badgeColor[rank - 1] }}>
+        <div className={`${avatarSize} rounded-full border-[3px] ${borderClass} ${bgClass} flex items-center justify-center`}>
+          <span className={`${fontSize} font-extrabold ${colorClass}`}>
             {initial}
           </span>
         </div>
-        <div style={{
-          position: 'absolute', bottom: '-4px', right: '-4px',
-          width: badgeSize, height: badgeSize, borderRadius: '50%',
-          background: badgeBg[rank - 1], border: '2px solid var(--bg-primary)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '10px', fontWeight: 800, color: badgeColor[rank - 1],
-        }}>
+        <div className={`absolute -bottom-1 -right-1 ${badgeSize} rounded-full ${bgClass} border-2 border-bone flex items-center justify-center text-[10px] font-extrabold ${colorClass}`}>
           {rank}
         </div>
       </div>
-      <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', textAlign: 'center', maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <p className="text-xs font-semibold text-ink text-center max-w-[80px] overflow-hidden text-ellipsis whitespace-nowrap">
         {entry.name}
       </p>
-      <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent-green)', marginTop: '2px' }}>
+      <p className="font-mono text-xs font-bold text-accent-green mt-0.5">
         +{entry.netProfit ?? entry.total_points ?? 0}
       </p>
     </div>
@@ -72,33 +61,22 @@ export default function LeaderboardPage() {
   const rest = leaderboard.slice(3);
 
   return (
-    <div style={{ padding: '16px', maxWidth: '700px', margin: '0 auto', paddingBottom: '100px' }}>
+    <div className="p-4 max-w-[700px] mx-auto pb-[100px]">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '16px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>Leaderboard</h2>
-        <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+      <div className="flex items-baseline justify-between mb-4">
+        <h2 className="font-serif text-section font-semibold text-ink">Leaderboard</h2>
+        <span className="text-[11px] text-ink-muted uppercase tracking-wide">
           Resets Monday
         </span>
       </div>
 
       {/* Tabs */}
-      <div style={{
-        display: 'flex', padding: '4px',
-        background: 'var(--bg-surface-container)', borderRadius: 'var(--radius-xl)',
-        marginBottom: '24px',
-      }}>
+      <div className="flex p-1 bg-paper rounded-2xl mb-6">
         {['weekly', 'monthly', 'all-time'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            style={{
-              flex: 1, padding: '8px 0', fontSize: '12px', fontWeight: 600,
-              borderRadius: 'var(--radius-lg)',
-              background: activeTab === tab ? 'var(--bg-card)' : 'transparent',
-              color: activeTab === tab ? 'var(--primary)' : 'var(--text-tertiary)',
-              boxShadow: activeTab === tab ? 'var(--shadow-sm)' : 'none',
-              border: 'none', textTransform: 'capitalize',
-            }}
+            className={`flex-1 py-2 text-xs font-semibold rounded-full border-none capitalize ${activeTab === tab ? 'bg-emerald text-bone' : 'bg-transparent text-ink-muted'}`}
           >
             {tab}
           </button>
@@ -106,40 +84,28 @@ export default function LeaderboardPage() {
       </div>
 
       {/* Prize Banner */}
-      <div style={{
-        background: 'linear-gradient(135deg, var(--accent-green-bg), var(--accent-yellow-bg))',
-        border: '1px solid var(--accent-green-border)',
-        borderRadius: 'var(--radius-xl)', padding: '16px 20px',
-        marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px',
-      }}>
-        <Trophy size={20} color="var(--accent-yellow)" />
-        <div style={{ flex: 1 }}>
-          <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>Cash Prize This Week</p>
-          <p style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+      <div className="bg-gradient-to-br from-accent-green-bg to-accent-yellow-bg border border-accent-green/30 rounded-2xl px-5 py-4 mb-6 flex items-center gap-3">
+        <Trophy size={20} className="text-accent-yellow" />
+        <div className="flex-1">
+          <p className="text-[13px] font-bold text-ink">Cash Prize This Week</p>
+          <p className="text-[11px] text-ink-muted mt-0.5">
             Top net profit wins real money every Monday
           </p>
         </div>
-        <div style={{
-          padding: '4px 12px', borderRadius: '9999px',
-          background: qualified ? 'var(--accent-green-bg)' : 'var(--bg-card)',
-          border: `1px solid ${qualified ? 'var(--accent-green-border)' : 'var(--border)'}`,
-        }}>
-          <span style={{
-            fontSize: '11px', fontWeight: 600,
-            color: qualified ? 'var(--accent-green)' : 'var(--text-tertiary)',
-          }}>
+        <div className={`px-3 py-1 rounded-full ${qualified ? 'bg-accent-green-bg border border-accent-green/30' : 'bg-paper border border-line'}`}>
+          <span className={`text-[11px] font-semibold ${qualified ? 'text-accent-green' : 'text-ink-muted'}`}>
             {qualified ? 'Qualified' : `${myEntry?.predictions || 0}/3`}
           </span>
         </div>
       </div>
 
       {leaderboard.length === 0 ? (
-        <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-          <TrendingUp size={28} color="var(--text-tertiary)" style={{ marginBottom: '12px' }} />
-          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '6px' }}>
+        <div className="py-10 px-5 text-center">
+          <TrendingUp size={28} className="text-ink-muted mb-3 mx-auto" />
+          <p className="text-ink-muted text-sm mb-1.5">
             Be the first on the leaderboard!
           </p>
-          <p style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>
+          <p className="text-ink-muted text-xs">
             Make 3+ predictions this week to qualify for the cash prize.
           </p>
         </div>
@@ -147,18 +113,14 @@ export default function LeaderboardPage() {
         <>
           {/* Podium Top 3 */}
           {top3.length >= 3 && (
-            <div style={{
-              display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
-              alignItems: 'end', gap: '8px', marginBottom: '24px',
-              padding: '20px 8px 0',
-            }}>
-              <div style={{ paddingTop: '24px' }}>
+            <div className="grid grid-cols-3 items-end gap-2 mb-6 pt-5 px-2">
+              <div className="pt-6">
                 <PodiumUser entry={top3[1]} rank={2} size="md" />
               </div>
               <div>
                 <PodiumUser entry={top3[0]} rank={1} size="lg" />
               </div>
-              <div style={{ paddingTop: '32px' }}>
+              <div className="pt-8">
                 <PodiumUser entry={top3[2]} rank={3} size="sm" />
               </div>
             </div>
@@ -166,20 +128,16 @@ export default function LeaderboardPage() {
 
           {/* List (4th onwards) */}
           {rest.length > 0 && (
-            <div style={{ marginBottom: '16px' }}>
+            <div className="mb-4">
               {/* Header row */}
-              <div style={{
-                display: 'flex', alignItems: 'center', padding: '8px 20px',
-                fontSize: '11px', fontWeight: 500, color: 'var(--text-tertiary)',
-                textTransform: 'uppercase', letterSpacing: '0.05em',
-              }}>
-                <span style={{ width: '28px' }}>#</span>
-                <span style={{ flex: 1, marginLeft: '12px' }}>User</span>
-                <span style={{ width: '60px', textAlign: 'right' }}>Accuracy</span>
-                <span style={{ width: '70px', textAlign: 'right' }}>Profit</span>
+              <div className="flex items-center px-5 py-2 text-[11px] font-medium text-ink-muted uppercase tracking-wide">
+                <span className="w-7">#</span>
+                <span className="flex-1 ml-3">User</span>
+                <span className="w-[60px] text-right">Accuracy</span>
+                <span className="w-[70px] text-right">Profit</span>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div className="flex flex-col gap-2">
                 {rest.map((entry, i) => {
                   const rank = i + 4;
                   const isMe = user && entry.id === user.id;
@@ -187,45 +145,33 @@ export default function LeaderboardPage() {
                   const accuracy = entry.accuracy ?? (entry.wins && entry.predictions ? Math.round((entry.wins / entry.predictions) * 100) : 0);
 
                   return (
-                    <div key={entry.id} style={{
-                      display: 'flex', alignItems: 'center', padding: '12px 20px',
-                      background: isMe ? 'var(--accent-blue-bg)' : 'var(--bg-card)',
-                      border: `1px solid ${isMe ? 'var(--accent-blue-border)' : 'var(--border)'}`,
-                      borderRadius: 'var(--radius-xl)',
-                    }}>
-                      <span style={{ width: '28px', fontSize: '12px', fontWeight: 600, color: 'var(--text-tertiary)' }}>
+                    <div key={entry.id} className={`flex items-center px-5 py-3 rounded-2xl border ${isMe ? 'bg-accent-green-bg border-emerald/30' : 'bg-paper border-line'}`}>
+                      <span className="w-7 text-xs font-semibold text-ink-muted">
                         {rank}
                       </span>
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px', marginLeft: '12px' }}>
-                        <div style={{
-                          width: '36px', height: '36px', borderRadius: '50%',
-                          background: 'var(--bg-surface-container)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>
-                          <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                      <div className="flex-1 flex items-center gap-2.5 ml-3">
+                        <div className="w-9 h-9 rounded-full bg-paper flex items-center justify-center">
+                          <span className="text-sm font-bold text-ink-muted">
                             {entry.name?.charAt(0)?.toUpperCase() || '?'}
                           </span>
                         </div>
                         <div>
-                          <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          <p className="text-[13px] font-semibold text-ink">
                             {entry.name}
-                            {isMe && <span style={{ color: 'var(--accent-blue)', marginLeft: '6px', fontSize: '10px', fontWeight: 600 }}>you</span>}
+                            {isMe && <span className="text-emerald ml-1.5 text-[10px] font-semibold">you</span>}
                           </p>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                            <Star size={10} color="var(--primary)" fill="var(--primary)" />
-                            <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <Star size={10} className="text-emerald fill-emerald" />
+                            <span className="text-[10px] text-ink-muted">
                               {entry.predictions || 0} predictions
                             </span>
                           </div>
                         </div>
                       </div>
-                      <span style={{ width: '60px', textAlign: 'right', fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      <span className="font-mono w-[60px] text-right text-xs font-semibold text-ink">
                         {accuracy}%
                       </span>
-                      <span style={{
-                        width: '70px', textAlign: 'right', fontSize: '12px', fontWeight: 700,
-                        color: profit > 0 ? 'var(--accent-green)' : profit < 0 ? 'var(--accent-red)' : 'var(--text-secondary)',
-                      }}>
+                      <span className={`font-mono w-[70px] text-right text-xs font-bold ${profit > 0 ? 'text-accent-green' : profit < 0 ? 'text-accent-red' : 'text-ink-muted'}`}>
                         {profit > 0 ? '+' : ''}{profit}
                       </span>
                     </div>
@@ -237,50 +183,36 @@ export default function LeaderboardPage() {
 
           {/* Your Ranking */}
           {user && (
-            <div style={{
-              marginTop: '24px', paddingTop: '24px',
-              borderTop: '1px solid var(--border)',
-            }}>
-              <p style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'center', marginBottom: '12px' }}>
+            <div className="mt-6 pt-6 border-t border-line">
+              <p className="text-[11px] font-medium text-ink-muted uppercase tracking-widest text-center mb-3">
                 Your Ranking
               </p>
-              <div style={{
-                display: 'flex', alignItems: 'center', padding: '16px 20px',
-                background: 'var(--primary-bg)', border: '1px solid var(--primary-border)',
-                borderRadius: 'var(--radius-xl)',
-              }}>
-                <span style={{ width: '28px', fontSize: '12px', fontWeight: 700, color: 'var(--primary)' }}>
+              <div className="flex items-center px-5 py-4 bg-accent-green-bg border border-emerald/30 rounded-2xl">
+                <span className="w-7 text-xs font-bold text-emerald">
                   {myEntry ? (leaderboard.indexOf(myEntry) + 1) : '—'}
                 </span>
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px', marginLeft: '12px' }}>
-                  <div style={{
-                    width: '36px', height: '36px', borderRadius: '50%',
-                    background: 'var(--primary-bg)', border: '2px solid var(--primary-border)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--primary)' }}>
+                <div className="flex-1 flex items-center gap-2.5 ml-3">
+                  <div className="w-9 h-9 rounded-full bg-accent-green-bg border-2 border-emerald/30 flex items-center justify-center">
+                    <span className="text-sm font-extrabold text-emerald">
                       {user.name?.charAt(0)?.toUpperCase() || '?'}
                     </span>
                   </div>
                   <div>
-                    <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--primary)' }}>
+                    <p className="text-[13px] font-semibold text-emerald">
                       {user.name} (You)
                     </p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                      <Star size={10} color="var(--primary)" fill="var(--primary)" />
-                      <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <Star size={10} className="text-emerald fill-emerald" />
+                      <span className="text-[10px] text-ink-muted">
                         {myEntry?.predictions || 0} predictions
                       </span>
                     </div>
                   </div>
                 </div>
-                <span style={{ width: '60px', textAlign: 'right', fontSize: '12px', fontWeight: 600, color: 'var(--primary)' }}>
+                <span className="font-mono w-[60px] text-right text-xs font-semibold text-emerald">
                   {myEntry?.accuracy ?? (myEntry?.wins && myEntry?.predictions ? Math.round((myEntry.wins / myEntry.predictions) * 100) : 0)}%
                 </span>
-                <span style={{
-                  width: '70px', textAlign: 'right', fontSize: '12px', fontWeight: 700,
-                  color: (myEntry?.netProfit ?? myEntry?.total_points ?? 0) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)',
-                }}>
+                <span className={`font-mono w-[70px] text-right text-xs font-bold ${(myEntry?.netProfit ?? myEntry?.total_points ?? 0) >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
                   {(myEntry?.netProfit ?? myEntry?.total_points ?? 0) > 0 ? '+' : ''}
                   {myEntry?.netProfit ?? myEntry?.total_points ?? 0}
                 </span>
@@ -292,36 +224,28 @@ export default function LeaderboardPage() {
 
       {/* Past Winners */}
       {pastWeeks.length > 0 && (
-        <div style={{ marginTop: '24px' }}>
+        <div className="mt-6">
           <button
             onClick={() => setShowHistory(!showHistory)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)',
-              background: 'transparent', padding: '8px 0',
-            }}
+            className="flex items-center gap-1.5 text-xs font-semibold text-ink-muted bg-transparent py-2"
           >
-            <ChevronDown size={14} style={{ transform: showHistory ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+            <ChevronDown size={14} className={`transition-transform duration-200 ${showHistory ? 'rotate-180' : ''}`} />
             Past weeks
           </button>
           {showHistory && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+            <div className="flex flex-col gap-2 mt-2">
               {pastWeeks.map((week) => (
-                <div key={week.id} style={{
-                  background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)',
-                  border: '1px solid var(--border)', padding: '12px 16px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                }}>
+                <div key={week.id} className="bg-paper rounded-lg border border-line px-4 py-3 flex items-center justify-between">
                   <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>
+                    <div className="text-[11px] text-ink-muted">
                       {new Date(week.week_start).toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })} — {new Date(week.week_end).toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })}
                     </div>
-                    <div style={{ fontSize: '13px', fontWeight: 600, marginTop: '2px' }}>
+                    <div className="text-[13px] font-semibold mt-0.5">
                       {week.winner_name || 'No winner'}
                     </div>
                   </div>
                   {week.winner_profit > 0 && (
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent-green)' }}>
+                    <span className="font-mono text-[13px] font-bold text-accent-green">
                       +{week.winner_profit}
                     </span>
                   )}
