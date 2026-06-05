@@ -1,5 +1,6 @@
 const { getBotSocket } = require('../../bot/botSocket');
 const db = require('../../config/database');
+const { generateWinImage } = require('../../utils/generateWinImage');
 
 async function sendWhatsApp(phoneNumber, text) {
   const sock = getBotSocket();
@@ -18,20 +19,71 @@ async function sendWhatsApp(phoneNumber, text) {
   }
 }
 
+async function sendWhatsAppImage(phoneNumber, imageBuffer, caption) {
+  const sock = getBotSocket();
+  if (!sock) {
+    console.log(`[NOTIFY] Bot offline. Image for ${phoneNumber}`);
+    return false;
+  }
+
+  try {
+    const jid = `${phoneNumber}@s.whatsapp.net`;
+    await sock.sendMessage(jid, { image: imageBuffer, caption });
+    return true;
+  } catch (err) {
+    console.log(`[NOTIFY] Image send failed for ${phoneNumber}:`, err.message);
+    return false;
+  }
+}
+
 async function notifyMarketResolution(marketId, winnerLabel) {
+  const appUrl = process.env.APP_URL || 'https://iroyinayo-production.up.railway.app';
+
   const positions = await db('multi_market_positions')
     .join('students', 'multi_market_positions.student_id', 'students.id')
     .join('multi_markets', 'multi_market_positions.market_id', 'multi_markets.id')
+    .join('multi_market_outcomes', 'multi_market_positions.outcome_id', 'multi_market_outcomes.id')
     .where('multi_market_positions.market_id', marketId)
-    .select('students.phone_number', 'students.name', 'multi_market_positions.payout', 'multi_markets.title');
+    .where('students.is_system', false)
+    .select(
+      'students.phone_number',
+      'students.name',
+      'students.referral_code',
+      'multi_market_positions.payout',
+      'multi_market_positions.amount',
+      'multi_market_positions.entry_price',
+      'multi_markets.title',
+      'multi_market_outcomes.label as outcome_label'
+    );
 
   for (const pos of positions) {
     const won = pos.payout > 0;
-    const text = won
-      ? `🏆 *${winnerLabel}* won "${pos.title}"!\n\nYou earned *+${pos.payout} pts*. Nice call! 🎯`
-      : `"${pos.title}" resolved → *${winnerLabel}* won.\n\nBetter luck next time! Check new markets: ${process.env.APP_URL || 'https://iroyinayo-production.up.railway.app'}`;
 
-    await sendWhatsApp(pos.phone_number, text);
+    if (won) {
+      const multiplier = pos.amount > 0 ? (pos.payout / pos.amount).toFixed(1) : '0.0';
+      const refCode = pos.referral_code || '';
+
+      try {
+        const imageBuffer = generateWinImage({
+          marketTitle: pos.title,
+          outcomeLabel: pos.outcome_label,
+          payout: pos.payout,
+          amountSpent: pos.amount,
+          entryPrice: pos.entry_price,
+          referralCode: refCode,
+        });
+
+        const caption = `You won on IroyinMarket!\n\n"${pos.title}"\nYour pick: ${pos.outcome_label}\nPayout: +${pos.payout} pts (${multiplier}x return)\n\nOpen app: ${appUrl}/?ref=${refCode}`;
+        await sendWhatsAppImage(pos.phone_number, imageBuffer, caption);
+      } catch (err) {
+        console.log(`[NOTIFY] Image generation failed for ${pos.phone_number}:`, err.message);
+        const fallbackText = `You won on IroyinMarket!\n\n"${pos.title}"\nYour pick: ${pos.outcome_label}\nPayout: +${pos.payout} pts (${multiplier}x return)\n\nOpen app: ${appUrl}/?ref=${refCode}`;
+        await sendWhatsApp(pos.phone_number, fallbackText);
+      }
+    } else {
+      const text = `"${pos.title}" has been resolved.\nYour pick (${pos.outcome_label}) didn't win this time.\n\nNew markets are live — predict again: ${appUrl}`;
+      await sendWhatsApp(pos.phone_number, text);
+    }
   }
 }
 
@@ -39,18 +91,19 @@ async function notifyWeeklyWinner(winnerId, weekStart) {
   const winner = await db('students').where({ id: winnerId }).first();
   if (!winner) return;
 
-  const text = `🥇 Congratulations *${winner.name}*!\n\nYou're the #1 predictor this week on IroyinMarket! 🎉\n\nKeep your streak going → ${process.env.APP_URL || 'https://iroyinayo-production.up.railway.app'}`;
+  const text = `Congratulations *${winner.name}*!\n\nYou're the #1 predictor this week on IroyinMarket!\n\nKeep your streak going → ${process.env.APP_URL || 'https://iroyinayo-production.up.railway.app'}`;
   await sendWhatsApp(winner.phone_number, text);
 
   const topPredictors = await db('students')
     .where('points_balance', '>', 0)
     .whereNot({ id: winnerId })
+    .where('is_system', false)
     .orderBy('points_balance', 'desc')
     .limit(20)
     .select('phone_number', 'name');
 
   for (const student of topPredictors) {
-    const announcement = `📊 Weekly leaderboard reset!\n\n🥇 *${winner.name}* won this week.\n\nNew week, new chance. Make your predictions now → ${process.env.APP_URL || 'https://iroyinayo-production.up.railway.app'}`;
+    const announcement = `Weekly leaderboard reset!\n\n*${winner.name}* won this week.\n\nNew week, new chance. Make your predictions now → ${process.env.APP_URL || 'https://iroyinayo-production.up.railway.app'}`;
     await sendWhatsApp(student.phone_number, announcement);
   }
 }
@@ -65,13 +118,14 @@ async function notifyNewMarket(marketId) {
 
   const students = await db('students')
     .where({ is_verified: true })
+    .where('is_system', false)
     .select('phone_number');
 
-  const text = `🔥 *New Market*\n\n"${market.title}"\n\n${optionsList}${moreText}\n\nPredict now → ${process.env.APP_URL || 'https://iroyinayo-production.up.railway.app'}`;
+  const text = `*New Market*\n\n"${market.title}"\n\n${optionsList}${moreText}\n\nPredict now → ${process.env.APP_URL || 'https://iroyinayo-production.up.railway.app'}`;
 
   for (const student of students) {
     await sendWhatsApp(student.phone_number, text);
   }
 }
 
-module.exports = { sendWhatsApp, notifyMarketResolution, notifyWeeklyWinner, notifyNewMarket };
+module.exports = { sendWhatsApp, sendWhatsAppImage, notifyMarketResolution, notifyWeeklyWinner, notifyNewMarket };

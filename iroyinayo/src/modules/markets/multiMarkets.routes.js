@@ -153,10 +153,13 @@ router.get('/me/wins', authenticateStudent, async (req, res, next) => {
         'multi_market_positions.id',
         'multi_market_positions.payout',
         'multi_market_positions.amount',
+        'multi_market_positions.entry_price',
         'multi_markets.title as market_title',
         'multi_market_outcomes.label as outcome_label'
       );
-    res.json(wins);
+
+    const student = await db('students').where({ id: req.student.id }).select('referral_code').first();
+    res.json(wins.map(w => ({ ...w, referral_code: student?.referral_code || '' })));
   } catch (err) { next(err); }
 });
 
