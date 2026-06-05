@@ -1,4 +1,8 @@
-const { createCanvas } = require('canvas');
+const { createCanvas, registerFont } = require('canvas');
+const path = require('path');
+
+registerFont(path.join(__dirname, 'fonts', 'Inter-Regular.ttf'), { family: 'Inter' });
+registerFont(path.join(__dirname, 'fonts', 'Inter-Bold.ttf'), { family: 'Inter', weight: 'bold' });
 
 function generateWinImage({ marketTitle, outcomeLabel, payout, amountSpent, entryPrice, referralCode }) {
   const size = 1080;
@@ -28,46 +32,47 @@ function generateWinImage({ marketTitle, outcomeLabel, payout, amountSpent, entr
   ctx.lineWidth = 3;
   ctx.stroke();
 
-  // Trophy emoji
-  ctx.font = '72px serif';
+  // Trophy text (since emoji rendering is unreliable in node-canvas)
+  ctx.font = 'bold 48px "Inter"';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('\u{1F3C6}', size / 2, 240);
+  ctx.fillStyle = '#10B981';
+  ctx.fillText('W', size / 2, 240);
 
   // "I Won on IroyinMarket!" headline
-  ctx.font = 'bold 52px sans-serif';
+  ctx.font = 'bold 52px "Inter"';
   ctx.fillStyle = '#F0F4F8';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.fillText('I Won on IroyinMarket!', size / 2, 400);
 
   // Payout amount
-  ctx.font = 'bold 80px sans-serif';
+  ctx.font = 'bold 80px "Inter"';
   ctx.fillStyle = '#10B981';
   ctx.fillText(`+${payout} pts`, size / 2, 520);
 
   // Multiplier badge
   const multiplier = amountSpent > 0 ? (payout / amountSpent).toFixed(1) : '0.0';
-  ctx.font = 'bold 36px sans-serif';
+  ctx.font = 'bold 36px "Inter"';
   ctx.fillStyle = '#F59E0B';
   ctx.fillText(`${multiplier}x return`, size / 2, 590);
 
   // Market title (truncated)
-  ctx.font = '32px sans-serif';
+  ctx.font = '32px "Inter"';
   ctx.fillStyle = '#7B8BA3';
   let title = marketTitle;
   if (title.length > 45) title = title.slice(0, 42) + '...';
   ctx.fillText(`"${title}"`, size / 2, 680);
 
   // Outcome picked
-  ctx.font = 'bold 36px sans-serif';
+  ctx.font = 'bold 36px "Inter"';
   ctx.fillStyle = '#F0F4F8';
   ctx.fillText(`Picked: ${outcomeLabel}`, size / 2, 740);
 
   // Entry price
   if (entryPrice != null) {
     const entryPercent = Math.round(entryPrice * 100);
-    ctx.font = '28px sans-serif';
+    ctx.font = '28px "Inter"';
     ctx.fillStyle = '#6366F1';
     ctx.fillText(`Bought at ${entryPercent}%`, size / 2, 800);
   }
@@ -82,15 +87,15 @@ function generateWinImage({ marketTitle, outcomeLabel, payout, amountSpent, entr
 
   // Referral link
   if (referralCode) {
-    ctx.font = '28px sans-serif';
+    ctx.font = '28px "Inter"';
     ctx.fillStyle = '#10B981';
     ctx.fillText(`Join me: iroyinmarket.com/?ref=${referralCode}`, size / 2, 920);
   }
 
   // Brand footer
-  ctx.font = 'bold 24px sans-serif';
+  ctx.font = 'bold 24px "Inter"';
   ctx.fillStyle = '#4A5568';
-  ctx.fillText('IroyinMarket — Predict & compete for cash', size / 2, 1000);
+  ctx.fillText('IroyinMarket - Predict & compete for cash', size / 2, 1000);
 
   return canvas.toBuffer('image/png');
 }
