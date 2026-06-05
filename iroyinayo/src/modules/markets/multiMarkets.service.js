@@ -454,8 +454,6 @@ async function resolveUserMarket(marketId, outcomeId, studentId) {
   return { ...resolved, creatorFee };
 }
 
-const HOUSE_SEED_AMOUNT = 30;
-
 async function getHouseAccountId() {
   const house = await db('students').where({ is_system: true }).first();
   if (!house) throw new Error('House account not found. Run migrations.');
@@ -463,13 +461,15 @@ async function getHouseAccountId() {
 }
 
 async function seedMarketLiquidity(marketId) {
+  const market = await db('multi_markets').where({ id: marketId }).first();
+  const seedAmount = Math.max(3, Math.round(market.liquidity_b * 0.1));
   const houseId = await getHouseAccountId();
   const outcomes = await db('multi_market_outcomes')
     .where({ market_id: marketId })
     .orderBy('created_at', 'asc');
 
   for (const outcome of outcomes) {
-    await buyPosition(marketId, outcome.id, houseId, HOUSE_SEED_AMOUNT);
+    await buyPosition(marketId, outcome.id, houseId, seedAmount);
   }
 }
 
