@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Crown, Trophy, Target, TrendingUp, Star, ChevronDown } from 'lucide-react';
 import { apiFetch } from '../api.js';
 import useStore from '../store.js';
+import RecentPayouts from '../components/RecentPayouts.jsx';
 
 function PodiumUser({ entry, rank, size }) {
   const initial = entry.name?.charAt(0)?.toUpperCase() || '?';
@@ -330,6 +331,8 @@ export default function LeaderboardPage() {
           )}
         </div>
       )}
+
+      <RecentPayouts />
     </div>
   );
 }

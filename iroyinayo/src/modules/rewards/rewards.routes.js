@@ -5,6 +5,10 @@ const { validateCreateRewardOption, validateRedeem } = require('./rewards.valida
 const { authenticate } = require('../../middleware/auth');
 const { ValidationError } = require('../../utils/errors');
 
+router.get('/recent-payouts', async (req, res, next) => {
+  try { res.json(await service.getRecentPayouts()); } catch (err) { next(err); }
+});
+
 router.get('/options', async (req, res, next) => {
   try { res.json(await service.listActiveOptions()); } catch (err) { next(err); }
 });

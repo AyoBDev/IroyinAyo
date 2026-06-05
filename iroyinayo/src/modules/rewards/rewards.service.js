@@ -182,8 +182,31 @@ async function getRewardStatus(studentId) {
   };
 }
 
+async function getRecentPayouts(limit = 10) {
+  const payouts = await db('redemptions')
+    .join('reward_options', 'redemptions.reward_option_id', 'reward_options.id')
+    .join('students', 'redemptions.student_id', 'students.id')
+    .where('redemptions.status', 'fulfilled')
+    .orderBy('redemptions.fulfilled_at', 'desc')
+    .limit(limit)
+    .select(
+      'students.name',
+      'reward_options.name as reward_name',
+      'reward_options.value as reward_value',
+      'redemptions.fulfilled_at'
+    );
+
+  return payouts.map(p => ({
+    name: p.name.length > 8 ? p.name.slice(0, 8) + '...' : p.name,
+    reward_name: p.reward_name,
+    reward_value: p.reward_value,
+    fulfilled_at: p.fulfilled_at,
+  }));
+}
+
 module.exports = {
   createRewardOption, listActiveOptions, redeem, fulfillRedemption,
   getStudentRedemptions, listPendingRedemptions, getRewardStatus, getWeeklyBudgetRemaining,
+  getRecentPayouts,
   MINIMUM_REDEMPTION_POINTS, WEEKLY_BUDGET_NGN, MAX_REDEMPTIONS_PER_WEEK,
 };
