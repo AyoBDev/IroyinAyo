@@ -115,6 +115,13 @@ router.get('/me/positions', authenticateStudent, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.get('/me/portfolio', authenticateStudent, async (req, res, next) => {
+  try {
+    const portfolio = await multiMarkets.getPortfolio(req.student.id);
+    res.json(portfolio);
+  } catch (err) { next(err); }
+});
+
 router.get('/me/created', authenticateStudent, async (req, res, next) => {
   try {
     const markets = await db('multi_markets')

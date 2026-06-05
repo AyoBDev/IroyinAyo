@@ -473,6 +473,75 @@ async function seedMarketLiquidity(marketId) {
   }
 }
 
+async function getPortfolio(studentId) {
+  const positions = await db('multi_market_positions')
+    .join('multi_markets', 'multi_market_positions.market_id', 'multi_markets.id')
+    .join('multi_market_outcomes', 'multi_market_positions.outcome_id', 'multi_market_outcomes.id')
+    .where({ 'multi_market_positions.student_id': studentId })
+    .select(
+      'multi_market_positions.id',
+      'multi_market_positions.market_id',
+      'multi_market_positions.outcome_id',
+      'multi_market_positions.amount',
+      'multi_market_positions.shares',
+      'multi_market_positions.payout',
+      'multi_market_positions.entry_price',
+      'multi_market_positions.created_at',
+      'multi_markets.title as market_title',
+      'multi_markets.status as market_status',
+      'multi_markets.liquidity_b',
+      'multi_markets.winning_outcome_id',
+      'multi_market_outcomes.label as outcome_label'
+    )
+    .orderBy('multi_market_positions.created_at', 'desc');
+
+  const openPositions = [];
+  const resolvedPositions = [];
+
+  for (const pos of positions) {
+    if (pos.market_status === 'open') {
+      const outcomes = await db('multi_market_outcomes')
+        .where({ market_id: pos.market_id })
+        .orderBy('created_at', 'asc');
+      const sharesSold = outcomes.map(o => o.shares_sold);
+      const prices = calculatePrices(sharesSold, pos.liquidity_b);
+      const outcomeIndex = outcomes.findIndex(o => o.id === pos.outcome_id);
+      const currentPrice = outcomeIndex >= 0 ? prices[outcomeIndex] : 0;
+      const unrealizedPnl = (currentPrice * pos.shares) - pos.amount;
+
+      openPositions.push({
+        id: pos.id,
+        market_id: pos.market_id,
+        market_title: pos.market_title,
+        outcome_id: pos.outcome_id,
+        outcome_label: pos.outcome_label,
+        entry_price: pos.entry_price,
+        current_price: currentPrice,
+        shares: pos.shares,
+        amount: pos.amount,
+        unrealized_pnl: Math.round(unrealizedPnl * 100) / 100,
+        created_at: pos.created_at,
+      });
+    } else {
+      const won = pos.winning_outcome_id === pos.outcome_id;
+      resolvedPositions.push({
+        id: pos.id,
+        market_id: pos.market_id,
+        market_title: pos.market_title,
+        outcome_label: pos.outcome_label,
+        entry_price: pos.entry_price,
+        amount: pos.amount,
+        payout: pos.payout,
+        won,
+        profit: won ? pos.payout - pos.amount : -pos.amount,
+        created_at: pos.created_at,
+      });
+    }
+  }
+
+  return { open: openPositions, resolved: resolvedPositions };
+}
+
 module.exports = {
   logSumExp,
   calculatePrices,
@@ -488,6 +557,7 @@ module.exports = {
   resolveMarket,
   resolveUserMarket,
   getStudentPositions,
+  getPortfolio,
   getAutoLiquidityB,
   seedMarketLiquidity,
   getHouseAccountId,
