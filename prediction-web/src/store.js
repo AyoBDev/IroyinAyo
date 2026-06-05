@@ -51,8 +51,8 @@ const useStore = create((set, get) => ({
 
   fetchLeaderboard: async () => {
     try {
-      const leaderboard = await apiFetch('/api/multi-markets/leaderboard');
-      set({ leaderboard });
+      const data = await apiFetch('/api/multi-markets/leaderboard');
+      set({ leaderboard: data?.standings ?? data ?? [] });
     } catch (err) {
       console.error('Failed to fetch leaderboard:', err);
     }
