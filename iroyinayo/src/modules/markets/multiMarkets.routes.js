@@ -246,6 +246,84 @@ router.get('/admin/liquidity-info', authenticate, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.get('/admin/:id/analytics', authenticate, async (req, res, next) => {
+  try {
+    const marketId = req.params.id;
+    const market = await multiMarkets.getMarketWithOdds(marketId);
+    if (!market) throw new ValidationError('Market not found');
+
+    const positions = await db('multi_market_positions')
+      .join('students', 'multi_market_positions.student_id', 'students.id')
+      .join('multi_market_outcomes', 'multi_market_positions.outcome_id', 'multi_market_outcomes.id')
+      .where('multi_market_positions.market_id', marketId)
+      .where('students.is_system', false)
+      .select(
+        'multi_market_positions.id',
+        'multi_market_positions.amount',
+        'multi_market_positions.shares',
+        'multi_market_positions.payout',
+        'multi_market_positions.entry_price',
+        'multi_market_positions.created_at',
+        'students.name as student_name',
+        'students.id as student_id',
+        'multi_market_outcomes.label as outcome_label',
+        'multi_market_outcomes.id as outcome_id'
+      )
+      .orderBy('multi_market_positions.created_at', 'desc');
+
+    const totalVolume = positions.reduce((sum, p) => sum + p.amount, 0);
+    const uniqueTraders = [...new Set(positions.map(p => p.student_id))].length;
+    const totalPositions = positions.length;
+    const totalPayout = positions.reduce((sum, p) => sum + (p.payout || 0), 0);
+
+    const outcomeBreakdown = market.outcomes.map(o => {
+      const outPositions = positions.filter(p => p.outcome_id === o.id);
+      return {
+        id: o.id,
+        label: o.label,
+        price: o.price,
+        volume: outPositions.reduce((sum, p) => sum + p.amount, 0),
+        positions: outPositions.length,
+        traders: [...new Set(outPositions.map(p => p.student_id))].length,
+      };
+    });
+
+    const recentPositions = positions.slice(0, 20).map(p => ({
+      student_name: p.student_name,
+      outcome_label: p.outcome_label,
+      amount: p.amount,
+      shares: p.shares,
+      entry_price: p.entry_price,
+      payout: p.payout,
+      created_at: p.created_at,
+    }));
+
+    res.json({
+      market: {
+        id: market.id,
+        title: market.title,
+        status: market.status,
+        category: market.category,
+        liquidity_b: market.liquidity_b,
+        created_at: market.created_at,
+        resolved_at: market.resolved_at,
+        closes_at: market.closes_at,
+        participant_count: market.participant_count,
+        winning_outcome_id: market.winning_outcome_id,
+      },
+      summary: {
+        total_volume: totalVolume,
+        unique_traders: uniqueTraders,
+        total_positions: totalPositions,
+        total_payout: totalPayout,
+        avg_position_size: totalPositions > 0 ? Math.round(totalVolume / totalPositions) : 0,
+      },
+      outcomes: outcomeBreakdown,
+      recent_positions: recentPositions,
+    });
+  } catch (err) { next(err); }
+});
+
 router.post('/:id/report', authenticateStudent, async (req, res, next) => {
   try {
     const { reason } = req.body;

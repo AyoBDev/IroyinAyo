@@ -12,9 +12,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Trophy, Plus, X } from 'lucide-react';
+import { Trophy, Plus, X, BarChart3 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function MarketsPage() {
+  const router = useRouter();
   const [markets, setMarkets] = useState([]);
   const [resolveModal, setResolveModal] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -136,6 +138,10 @@ export default function MarketsPage() {
                 ) : (
                   <Badge className="bg-green-600">Open</Badge>
                 )}
+                <Button size="sm" variant="outline" onClick={() => router.push(`/markets/${market.id}`)}>
+                  <BarChart3 className="h-3 w-3 mr-1" />
+                  Analytics
+                </Button>
                 {market.status === 'open' && (
                   <Button size="sm" variant="outline" onClick={() => setResolveModal(market)}>
                     <Trophy className="h-3 w-3 mr-1" />
