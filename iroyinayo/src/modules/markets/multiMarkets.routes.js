@@ -214,6 +214,8 @@ router.post('/admin/create', authenticate, async (req, res, next) => {
       }
     }
 
+    await multiMarkets.seedMarketLiquidity(market.id);
+
     const fullMarket = await multiMarkets.getMarketWithOdds(market.id);
     res.json(fullMarket);
   } catch (err) { next(err); }

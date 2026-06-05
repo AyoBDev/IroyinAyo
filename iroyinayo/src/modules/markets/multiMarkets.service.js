@@ -195,9 +195,16 @@ async function getMarketWithOdds(marketId) {
     price: prices[index],
   }));
 
+  const participantResult = await db('multi_market_positions')
+    .where({ market_id: marketId })
+    .countDistinct('student_id as count')
+    .first();
+  const participantCount = parseInt(participantResult?.count || 0, 10);
+
   return {
     ...market,
     creator_name: creatorName,
+    participant_count: participantCount,
     outcomes: outcomesWithPrices,
   };
 }
@@ -263,6 +270,10 @@ async function buyPosition(marketId, outcomeId, studentId, amount) {
       .where({ id: outcomeId })
       .increment('shares_sold', shares);
 
+    const prices = calculatePrices(sharesSold, market.liquidity_b);
+    const outcomeIdx = outcomes.findIndex((o) => o.id === outcomeId);
+    const entryPrice = prices[outcomeIdx];
+
     const [position] = await trx('multi_market_positions')
       .insert({
         market_id: marketId,
@@ -270,6 +281,7 @@ async function buyPosition(marketId, outcomeId, studentId, amount) {
         student_id: studentId,
         amount,
         shares,
+        entry_price: entryPrice,
         payout: 0,
       })
       .returning('*');
@@ -406,6 +418,8 @@ async function createUserMarket(studentId, { title, outcomes, category, closesAt
       .insert({ market_id: market.id, label, shares_sold: 0 });
   }
 
+  await seedMarketLiquidity(market.id);
+
   return getMarketWithOdds(market.id);
 }
 
@@ -440,6 +454,25 @@ async function resolveUserMarket(marketId, outcomeId, studentId) {
   return { ...resolved, creatorFee };
 }
 
+const HOUSE_SEED_AMOUNT = 30;
+
+async function getHouseAccountId() {
+  const house = await db('students').where({ is_system: true }).first();
+  if (!house) throw new Error('House account not found. Run migrations.');
+  return house.id;
+}
+
+async function seedMarketLiquidity(marketId) {
+  const houseId = await getHouseAccountId();
+  const outcomes = await db('multi_market_outcomes')
+    .where({ market_id: marketId })
+    .orderBy('created_at', 'asc');
+
+  for (const outcome of outcomes) {
+    await buyPosition(marketId, outcome.id, houseId, HOUSE_SEED_AMOUNT);
+  }
+}
+
 module.exports = {
   logSumExp,
   calculatePrices,
@@ -456,4 +489,6 @@ module.exports = {
   resolveUserMarket,
   getStudentPositions,
   getAutoLiquidityB,
+  seedMarketLiquidity,
+  getHouseAccountId,
 };

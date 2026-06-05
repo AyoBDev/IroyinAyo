@@ -21,6 +21,14 @@ async function deductPoints(studentId, amount, type, description, referenceId) {
     const student = await trx('students').where({ id: studentId }).forUpdate().first();
     if (!student) throw new NotFoundError('Student not found');
 
+    if (student.is_system) {
+      await trx('point_transactions').insert({
+        student_id: studentId, amount: -amount, type, description, reference_id: referenceId,
+      });
+      await trx('students').where({ id: studentId }).decrement('points_balance', amount);
+      return;
+    }
+
     if (student.points_balance < amount) {
       const todayRefills = await trx('point_transactions')
         .where({ student_id: studentId, type: 'auto_refill' })
