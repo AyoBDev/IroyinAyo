@@ -1,5 +1,100 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Fraunces', ui-serif, Georgia, serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --color-bone: var(--bone);
+  --color-paper: var(--paper);
+  --color-paper-hover: var(--paper-hover);
+  --color-emerald: var(--emerald);
+  --color-emerald-deep: var(--emerald-deep);
+  --color-gold: var(--gold);
+  --color-ochre: var(--ochre);
+  --color-ink: var(--ink);
+  --color-ink-deep: var(--ink-deep);
+  --color-ink-muted: var(--ink-muted);
+  --color-line: var(--line);
+
+  --color-accent-green: var(--accent-green);
+  --color-accent-green-bg: var(--accent-green-bg);
+  --color-accent-green-border: var(--accent-green-border);
+  --color-accent-red: var(--accent-red);
+  --color-accent-red-bg: var(--accent-red-bg);
+  --color-accent-red-border: var(--accent-red-border);
+  --color-accent-yellow: var(--accent-yellow);
+  --color-accent-yellow-bg: var(--accent-yellow-bg);
+  --color-accent-yellow-border: var(--accent-yellow-border);
+  --color-accent-violet: var(--accent-violet);
+  --color-accent-violet-bg: var(--accent-violet-bg);
+  --color-accent-violet-border: var(--accent-violet-border);
+
+  --shadow-float: var(--shadow-float);
+  --shadow-float-lg: var(--shadow-float-lg);
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 24px;
+
+  --text-hero: 80px;
+  --text-hero--line-height: 76px;
+  --text-hero--letter-spacing: -2px;
+  --text-section: 26px;
+  --text-section--line-height: 26px;
+  --text-section--letter-spacing: -0.65px;
+  --text-body: 16px;
+  --text-body--line-height: 24.8px;
+  --text-body--letter-spacing: -0.08px;
+  --text-body-sm: 14px;
+  --text-body-sm--line-height: 21.7px;
+  --text-body-sm--letter-spacing: -0.08px;
+  --text-label: 15px;
+  --text-label--line-height: 23.25px;
+  --text-label--letter-spacing: -0.08px;
+  --text-label-sm: 13.5px;
+  --text-label-sm--line-height: 20.925px;
+  --text-label-sm--letter-spacing: -0.08px;
+  --text-mono-label: 11px;
+  --text-mono-label--line-height: 17.05px;
+  --text-mono-label--letter-spacing: 1.76px;
+  --text-mono-data: 11.5px;
+  --text-mono-data--line-height: 17.825px;
+  --text-mono-data--letter-spacing: 2.53px;
+
+  --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-slide-up: slide-up 0.3s ease-out;
+  --animate-tick-up: tick-up 0.4s ease-out;
+  --animate-tick-down: tick-down 0.4s ease-out;
+  --animate-pop-in: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(100%); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes tick-up {
+    0% { color: var(--accent-green); transform: scale(1); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+  @keyframes tick-down {
+    0% { color: var(--accent-red); transform: scale(1); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+}
+
 @font-face {
   font-family: 'Fraunces';
   src: url('/fonts/fraunces-regular.woff2') format('woff2');
