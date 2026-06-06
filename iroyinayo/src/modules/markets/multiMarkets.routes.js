@@ -497,4 +497,24 @@ router.post('/:id/resolve', authenticate, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.post('/admin/test-win-image', authenticate, async (req, res, next) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) throw new ValidationError('phone is required');
+    const { generateWinImage } = require('../../utils/generateWinImage');
+    const { sendWhatsAppImage } = require('../notifications/whatsapp');
+    const imageBuffer = generateWinImage({
+      marketTitle: 'Who will win the Engineering vs Science match?',
+      outcomeLabel: 'Engineering',
+      payout: 150,
+      amountSpent: 50,
+      entryPrice: 0.33,
+      referralCode: 'TEST1234',
+    });
+    const caption = 'You won on IroyinMarket!\n\n"Who will win the Engineering vs Science match?"\nYour pick: Engineering\nPayout: +150 pts (3.0x return)\n\nOpen app: https://iroyinayo-production.up.railway.app/?ref=TEST1234';
+    const sent = await sendWhatsAppImage(phone, imageBuffer, caption);
+    res.json({ sent });
+  } catch (err) { next(err); }
+});
+
 module.exports = router;
