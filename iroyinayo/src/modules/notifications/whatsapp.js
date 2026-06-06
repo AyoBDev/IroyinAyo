@@ -37,7 +37,7 @@ async function sendWhatsAppImage(phoneNumber, imageBuffer, caption) {
 }
 
 async function notifyMarketResolution(marketId, winnerLabel) {
-  const appUrl = process.env.APP_URL || 'https://iroyinayo-production.up.railway.app';
+  const appUrl = process.env.APP_URL || 'https://iroyinmarket.com';
 
   const positions = await db('multi_market_positions')
     .join('students', 'multi_market_positions.student_id', 'students.id')
@@ -91,7 +91,7 @@ async function notifyWeeklyWinner(winnerId, weekStart) {
   const winner = await db('students').where({ id: winnerId }).first();
   if (!winner) return;
 
-  const text = `Congratulations *${winner.name}*!\n\nYou're the #1 predictor this week on IroyinMarket!\n\nKeep your streak going → ${process.env.APP_URL || 'https://iroyinayo-production.up.railway.app'}`;
+  const text = `Congratulations *${winner.name}*!\n\nYou're the #1 predictor this week on IroyinMarket!\n\nKeep your streak going → ${process.env.APP_URL || 'https://iroyinmarket.com'}`;
   await sendWhatsApp(winner.phone_number, text);
 
   const topPredictors = await db('students')
@@ -103,7 +103,7 @@ async function notifyWeeklyWinner(winnerId, weekStart) {
     .select('phone_number', 'name');
 
   for (const student of topPredictors) {
-    const announcement = `Weekly leaderboard reset!\n\n*${winner.name}* won this week.\n\nNew week, new chance. Make your predictions now → ${process.env.APP_URL || 'https://iroyinayo-production.up.railway.app'}`;
+    const announcement = `Weekly leaderboard reset!\n\n*${winner.name}* won this week.\n\nNew week, new chance. Make your predictions now → ${process.env.APP_URL || 'https://iroyinmarket.com'}`;
     await sendWhatsApp(student.phone_number, announcement);
   }
 }
@@ -121,7 +121,7 @@ async function notifyNewMarket(marketId) {
     .where('is_system', false)
     .select('phone_number');
 
-  const text = `*New Market*\n\n"${market.title}"\n\n${optionsList}${moreText}\n\nPredict now → ${process.env.APP_URL || 'https://iroyinayo-production.up.railway.app'}`;
+  const text = `*New Market*\n\n"${market.title}"\n\n${optionsList}${moreText}\n\nPredict now → ${process.env.APP_URL || 'https://iroyinmarket.com'}`;
 
   for (const student of students) {
     await sendWhatsApp(student.phone_number, text);
@@ -129,7 +129,7 @@ async function notifyNewMarket(marketId) {
 }
 
 async function notifyReferralWins(marketId) {
-  const appUrl = process.env.APP_URL || 'https://iroyinayo-production.up.railway.app';
+  const appUrl = process.env.APP_URL || 'https://iroyinmarket.com';
 
   const wins = await db('multi_market_positions')
     .join('students', 'multi_market_positions.student_id', 'students.id')
