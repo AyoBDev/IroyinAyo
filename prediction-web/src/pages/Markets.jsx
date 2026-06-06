@@ -10,6 +10,7 @@ import Leaderboard from '../components/Leaderboard.jsx';
 import SharpMoney from '../components/SharpMoney.jsx';
 import CreateMarketFAB from '../components/CreateMarketFAB.jsx';
 import CreateMarketForm from '../components/CreateMarketForm.jsx';
+import Tutorial from '../components/Tutorial.jsx';
 
 function SocialProofBanner({ socialProof }) {
   if (!socialProof) return null;
@@ -401,6 +402,7 @@ export default function Markets() {
 
   return (
     <>
+      <Tutorial />
       <LivePredictorCount />
 
       {/* Category Chips */}
