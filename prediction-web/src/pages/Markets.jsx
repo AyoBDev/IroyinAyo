@@ -366,7 +366,7 @@ function LivePredictorCount() {
   if (!count || count < 3) return null;
 
   return (
-    <div style={{
+    <div data-tutorial="incentives" style={{
       display: 'flex', alignItems: 'center', gap: '6px',
       padding: '6px 12px', margin: '0 16px 8px',
       borderRadius: 'var(--radius-lg)',
@@ -461,8 +461,8 @@ export default function Markets() {
               gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
               gap: '16px',
             }}>
-              {activeMarkets.map((market) => (
-                <MarketCard key={market.id} market={market} />
+              {activeMarkets.map((market, index) => (
+                <MarketCard key={market.id} market={market} dataTutorial={index === 0 ? 'market-card' : undefined} />
               ))}
               {resolvedMarkets.map((market) => (
                 <MarketCard key={market.id} market={market} />

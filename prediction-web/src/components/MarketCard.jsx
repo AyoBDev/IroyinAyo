@@ -116,7 +116,7 @@ function OutcomeItem({ outcome, isTop, isSelected, onSelect }) {
   );
 }
 
-function BinaryOutcomes({ market, outcomes }) {
+function BinaryOutcomes({ market, outcomes, isFirstCard }) {
   const [selectedOutcome, setSelectedOutcome] = useState(null);
   const yesOutcome = outcomes.find(o => o.label.toLowerCase().startsWith('yes')) || outcomes[0];
   const noOutcome = outcomes.find(o => o.label.toLowerCase().startsWith('no')) || outcomes[1];
@@ -130,6 +130,7 @@ function BinaryOutcomes({ market, outcomes }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       <div style={{ display: 'flex', gap: '8px' }}>
         <button
+          data-tutorial={isFirstCard ? 'odds' : undefined}
           onClick={() => setSelectedOutcome(selectedOutcome === yesOutcome.id ? null : yesOutcome.id)}
           style={{
             flex: 1, padding: '12px',
@@ -169,14 +170,14 @@ function BinaryOutcomes({ market, outcomes }) {
   );
 }
 
-function MultiOutcomes({ market, outcomes }) {
+function MultiOutcomes({ market, outcomes, isFirstCard }) {
   const [selectedOutcome, setSelectedOutcome] = useState(null);
   const sorted = [...outcomes].sort((a, b) => b.price - a.price);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
       {sorted.map((outcome, index) => (
-        <div key={outcome.id}>
+        <div key={outcome.id} data-tutorial={isFirstCard && index === 0 ? 'odds' : undefined}>
           <OutcomeItem
             outcome={outcome}
             isTop={index === 0}
@@ -330,7 +331,7 @@ function LargeMarketCard({ market }) {
   );
 }
 
-function SmallMarketCard({ market }) {
+function SmallMarketCard({ market, dataTutorial }) {
   const navigate = useNavigate();
   const outcomes = market.outcomes || [];
   const sortedOutcomes = [...outcomes].sort((a, b) => b.price - a.price);
@@ -341,8 +342,10 @@ function SmallMarketCard({ market }) {
     outcomes.some(o => o.label.toLowerCase().startsWith('yes')) &&
     outcomes.some(o => o.label.toLowerCase().startsWith('no'));
 
+  const isFirstCard = !!dataTutorial;
+
   return (
-    <div style={{
+    <div data-tutorial={dataTutorial || undefined} style={{
       background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)',
       border: market.is_featured ? '2px solid var(--accent-yellow)' : '1px solid var(--border)',
       overflow: 'hidden', display: 'flex', flexDirection: 'column',
@@ -365,11 +368,13 @@ function SmallMarketCard({ market }) {
         </h3>
 
         {/* Outcomes */}
-        {isBinary ? (
-          <BinaryOutcomes market={market} outcomes={outcomes} />
-        ) : (
-          <MultiOutcomes market={market} outcomes={outcomes} />
-        )}
+        <div data-tutorial={dataTutorial ? 'predict-btn' : undefined}>
+          {isBinary ? (
+            <BinaryOutcomes market={market} outcomes={outcomes} isFirstCard={isFirstCard} />
+          ) : (
+            <MultiOutcomes market={market} outcomes={outcomes} isFirstCard={isFirstCard} />
+          )}
+        </div>
 
         {/* Footer */}
         <CardFooter market={market} />
@@ -450,11 +455,11 @@ function ResolvedMarketCard({ market }) {
   );
 }
 
-export default function MarketCard({ market }) {
+export default function MarketCard({ market, dataTutorial }) {
   if (market.status === 'resolved') {
     return <ResolvedMarketCard market={market} />;
   }
 
   const hasMany = (market.outcomes || []).length > 5;
-  return hasMany ? <LargeMarketCard market={market} /> : <SmallMarketCard market={market} />;
+  return hasMany ? <LargeMarketCard market={market} /> : <SmallMarketCard market={market} dataTutorial={dataTutorial} />;
 }

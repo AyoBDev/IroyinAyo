@@ -24,7 +24,7 @@ export default function TopBar({ onPositionsClick }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         {user ? (
           <>
-            <div style={{
+            <div data-tutorial="points-balance" style={{
               display: 'flex', alignItems: 'center', gap: '6px',
               padding: '6px 14px', borderRadius: 'var(--radius-full)',
               background: 'var(--bg-surface-container)', border: '1px solid var(--border)',

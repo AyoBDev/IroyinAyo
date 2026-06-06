@@ -31,6 +31,7 @@ export default function BottomNav() {
         return (
           <button
             key={tab.path}
+            data-tutorial={tab.path === '/leaderboard' ? 'leaderboard-tab' : undefined}
             onClick={() => {
               if (tab.requiresAuth && !getToken()) {
                 openAuthModal();
