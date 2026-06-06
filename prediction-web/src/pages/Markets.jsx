@@ -10,6 +10,7 @@ import Leaderboard from '../components/Leaderboard.jsx';
 import SharpMoney from '../components/SharpMoney.jsx';
 import CreateMarketFAB from '../components/CreateMarketFAB.jsx';
 import CreateMarketForm from '../components/CreateMarketForm.jsx';
+import Tutorial from '../components/Tutorial.jsx';
 
 function SocialProofBanner({ socialProof }) {
   if (!socialProof) return null;
@@ -313,7 +314,7 @@ function LivePredictorCount() {
   if (!count || count < 3) return null;
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 mx-4 mt-3 mb-2 rounded-lg bg-accent-green-bg border border-accent-green-border">
+    <div data-tutorial="incentives" className="flex items-center gap-2 px-3 py-2 mx-4 mt-3 mb-2 rounded-lg bg-accent-green-bg border border-accent-green-border">
       <div className="w-1.5 h-1.5 rounded-full bg-accent-green shadow-[0_0_6px_var(--accent-green)]" />
       <span className="text-xs text-ink-muted">
         <strong className="text-accent-green">{count}</strong> predictors active this week
@@ -342,6 +343,7 @@ export default function Markets() {
 
   return (
     <>
+      <Tutorial />
       <LivePredictorCount />
 
       {/* Category Chips */}
@@ -378,8 +380,8 @@ export default function Markets() {
             </div>
           ) : (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
-              {activeMarkets.map((market) => (
-                <MarketCard key={market.id} market={market} />
+              {activeMarkets.map((market, index) => (
+                <MarketCard key={market.id} market={market} dataTutorial={index === 0 ? 'market-card' : undefined} />
               ))}
               {resolvedMarkets.map((market) => (
                 <MarketCard key={market.id} market={market} />

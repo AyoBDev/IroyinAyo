@@ -17,7 +17,7 @@ export default function TopBar({ onPositionsClick }) {
       <div className="flex items-center gap-2">
         {user ? (
           <>
-            <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-paper border border-line">
+            <div data-tutorial="points-balance" className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-paper border border-line">
               <Wallet size={14} className="text-ink-muted" />
               <span className="font-mono text-mono-data font-normal text-emerald">
                 {user.points_balance}
