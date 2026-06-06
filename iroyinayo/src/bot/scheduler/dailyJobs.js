@@ -168,7 +168,7 @@ function startScheduler(sock) {
             const oldPercent = Math.round(oldEntry.price * 100);
             const newPercent = Math.round(currentPrices[i] * 100);
             const entryPercent = holder.entry_price ? Math.round(holder.entry_price * 100) : null;
-            const appUrl = process.env.APP_URL || 'https://iroyinayo-production.up.railway.app';
+            const appUrl = process.env.APP_URL || 'https://iroyinmarket.com';
 
             let text = `Odds moving on your prediction!\n\n"${market.title}"\n${outcomes[i].label}: ${oldPercent}% -> ${newPercent}%`;
             if (entryPercent != null) {
@@ -217,7 +217,7 @@ function startScheduler(sock) {
         .where('closes_at', '>', now)
         .where('closes_at', '<=', twoHoursFromNow);
 
-      const appUrl = process.env.APP_URL || 'https://iroyinayo-production.up.railway.app';
+      const appUrl = process.env.APP_URL || 'https://iroyinmarket.com';
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
