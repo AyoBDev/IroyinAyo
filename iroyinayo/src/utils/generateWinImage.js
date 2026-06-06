@@ -6,147 +6,198 @@ registerFont(path.join(__dirname, 'fonts', 'Satoshi-Black.ttf'), { family: 'Sato
 registerFont(path.join(__dirname, 'fonts', 'DMSans-Regular.ttf'), { family: 'DM Sans' });
 registerFont(path.join(__dirname, 'fonts', 'DMSans-Bold.ttf'), { family: 'DM Sans', weight: 'bold' });
 
-const COLORS = {
-  bg: '#0A0E17',
-  surface: '#141B2D',
+const C = {
+  bgPrimary: '#0A0E17',
+  bgCard: '#141B2D',
+  bgSurface: '#1A2338',
+  bgSurfaceHigh: '#1E2940',
   border: '#1E2940',
+  borderLight: '#283550',
   textPrimary: '#F0F4F8',
-  textMuted: '#7B8BA3',
-  textDim: '#4A5568',
+  textSecondary: '#7B8BA3',
+  textTertiary: '#4A5568',
   green: '#10B981',
-  greenBg: 'rgba(16, 185, 129, 0.12)',
+  greenBg: 'rgba(16, 185, 129, 0.10)',
+  greenBorder: 'rgba(16, 185, 129, 0.25)',
   yellow: '#F59E0B',
+  yellowBg: 'rgba(245, 158, 11, 0.08)',
   indigo: '#6366F1',
+  indigoBg: 'rgba(99, 102, 241, 0.08)',
   violet: '#A78BFA',
 };
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
 
 function generateWinImage({ marketTitle, outcomeLabel, payout, amountSpent, entryPrice, referralCode }) {
   const size = 1080;
   const canvas = createCanvas(size, size);
   const ctx = canvas.getContext('2d');
 
-  // Background
-  ctx.fillStyle = COLORS.bg;
+  // Full background
+  ctx.fillStyle = C.bgPrimary;
   ctx.fillRect(0, 0, size, size);
 
-  // Top accent gradient bar
-  const topGrad = ctx.createLinearGradient(0, 0, size, 0);
-  topGrad.addColorStop(0, COLORS.green);
-  topGrad.addColorStop(0.5, COLORS.indigo);
-  topGrad.addColorStop(1, COLORS.yellow);
-  ctx.fillStyle = topGrad;
-  ctx.fillRect(0, 0, size, 8);
-
-  // Trophy circle with green glow
-  ctx.beginPath();
-  ctx.arc(size / 2, 210, 70, 0, Math.PI * 2);
-  ctx.fillStyle = COLORS.greenBg;
+  // Main card — mimics the app modal
+  const cardX = 60, cardY = 50, cardW = size - 120, cardH = size - 100;
+  roundRect(ctx, cardX, cardY, cardW, cardH, 48);
+  ctx.fillStyle = C.bgCard;
   ctx.fill();
-  ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
-  ctx.lineWidth = 3;
-  ctx.stroke();
-
-  // "W" in circle
-  ctx.font = '900 56px "Satoshi"';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = COLORS.green;
-  ctx.fillText('W', size / 2, 210);
-
-  // "I WON" headline - Satoshi Black
-  ctx.font = '900 58px "Satoshi"';
-  ctx.fillStyle = COLORS.textPrimary;
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillText('I Won on IroyinMarket!', size / 2, 370);
-
-  // Payout pill background
-  const payoutText = `+${payout} pts`;
-  ctx.font = '900 72px "Satoshi"';
-  const payoutWidth = ctx.measureText(payoutText).width;
-  const pillX = (size - payoutWidth) / 2 - 32;
-  const pillY = 420;
-  const pillW = payoutWidth + 64;
-  const pillH = 100;
-  ctx.beginPath();
-  ctx.roundRect(pillX, pillY, pillW, pillH, 20);
-  ctx.fillStyle = COLORS.greenBg;
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(16, 185, 129, 0.25)';
+  ctx.strokeStyle = C.border;
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Payout amount
-  ctx.font = '900 72px "Satoshi"';
-  ctx.fillStyle = COLORS.green;
-  ctx.textBaseline = 'middle';
-  ctx.fillText(payoutText, size / 2, pillY + pillH / 2);
-
-  // Multiplier
-  const multiplier = amountSpent > 0 ? (payout / amountSpent).toFixed(1) : '0.0';
-  ctx.font = 'bold 32px "DM Sans"';
-  ctx.fillStyle = COLORS.yellow;
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillText(`${multiplier}x return`, size / 2, 580);
-
-  // Divider
-  ctx.strokeStyle = COLORS.border;
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(size * 0.15, 620);
-  ctx.lineTo(size * 0.85, 620);
-  ctx.stroke();
-
-  // Market question card
-  ctx.beginPath();
-  ctx.roundRect(size * 0.1, 650, size * 0.8, 140, 16);
-  ctx.fillStyle = COLORS.surface;
+  // Gradient glow at top of card
+  const glowGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + 160);
+  glowGrad.addColorStop(0, 'rgba(16, 185, 129, 0.06)');
+  glowGrad.addColorStop(0.5, 'rgba(99, 102, 241, 0.04)');
+  glowGrad.addColorStop(1, 'rgba(16, 185, 129, 0)');
+  roundRect(ctx, cardX, cardY, cardW, 160, 48);
+  ctx.fillStyle = glowGrad;
   ctx.fill();
-  ctx.strokeStyle = COLORS.border;
-  ctx.lineWidth = 1;
+
+  // Trophy circle with double ring
+  const cx = size / 2, cy = 220;
+  // Outer glow ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, 72, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(16, 185, 129, 0.06)';
+  ctx.fill();
+  // Inner ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, 58, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(16, 185, 129, 0.12)';
+  ctx.fill();
+  ctx.strokeStyle = C.greenBorder;
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+  // Trophy symbol
+  ctx.font = '900 38px "Satoshi"';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = C.yellow;
+  ctx.fillText('WINNER', cx, cy);
+
+  // "You Won!" headline
+  ctx.font = '900 54px "Satoshi"';
+  ctx.fillStyle = C.textPrimary;
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('You Won!', cx, 360);
+
+  // Market title as context text
+  ctx.font = '26px "DM Sans"';
+  ctx.fillStyle = C.textSecondary;
+  let title = marketTitle;
+  if (title.length > 48) title = title.slice(0, 45) + '...';
+  ctx.fillText(`"${title}"`, cx, 410);
+
+  // Payout card — nested surface container
+  const payCardX = cardX + 60, payCardY = 450, payCardW = cardW - 120, payCardH = 180;
+  roundRect(ctx, payCardX, payCardY, payCardW, payCardH, 24);
+  ctx.fillStyle = C.bgSurface;
+  ctx.fill();
+  ctx.strokeStyle = C.border;
+  ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // Market title (inside card)
-  ctx.font = '28px "DM Sans"';
-  ctx.fillStyle = COLORS.textMuted;
-  let title = marketTitle;
-  if (title.length > 50) title = title.slice(0, 47) + '...';
-  ctx.fillText(`"${title}"`, size / 2, 700);
+  // "TOTAL PAYOUT" label
+  ctx.font = 'bold 16px "DM Sans"';
+  ctx.fillStyle = C.textTertiary;
+  ctx.fillText('TOTAL PAYOUT', cx, payCardY + 40);
 
-  // Outcome picked (inside card)
-  ctx.font = 'bold 34px "DM Sans"';
-  ctx.fillStyle = COLORS.textPrimary;
-  ctx.fillText(`Picked: ${outcomeLabel}`, size / 2, 755);
+  // Payout amount
+  ctx.font = '900 64px "Satoshi"';
+  ctx.fillStyle = C.green;
+  ctx.fillText(`+${payout} pts`, cx, payCardY + 110);
 
-  // Entry price below card
-  if (entryPrice != null) {
-    const entryPercent = Math.round(entryPrice * 100);
-    ctx.font = '26px "DM Sans"';
-    ctx.fillStyle = COLORS.indigo;
-    ctx.fillText(`Entry odds: ${entryPercent}%`, size / 2, 835);
+  // Profit line
+  const profit = payout - amountSpent;
+  if (profit > 0) {
+    ctx.font = '22px "DM Sans"';
+    ctx.fillStyle = C.textSecondary;
+    ctx.fillText(`${amountSpent} invested → ${profit} profit`, cx, payCardY + 155);
   }
 
-  // Referral CTA section
-  if (referralCode) {
-    ctx.beginPath();
-    ctx.roundRect(size * 0.15, 880, size * 0.7, 60, 30);
-    ctx.fillStyle = 'rgba(99, 102, 241, 0.1)';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(99, 102, 241, 0.3)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+  // Stats row — outcome + entry price + multiplier
+  const statsY = 680;
+  const multiplier = amountSpent > 0 ? (payout / amountSpent).toFixed(1) : '0.0';
 
-    ctx.font = 'bold 24px "DM Sans"';
-    ctx.fillStyle = COLORS.indigo;
-    ctx.fillText(`Join me: iroyinmarket.com/?ref=${referralCode}`, size / 2, 917);
+  // Outcome pill
+  const outcomeText = outcomeLabel;
+  ctx.font = 'bold 22px "DM Sans"';
+  const outcomeW = ctx.measureText(outcomeText).width + 40;
+  roundRect(ctx, cx - outcomeW / 2 - 100, statsY, outcomeW, 44, 22);
+  ctx.fillStyle = C.greenBg;
+  ctx.fill();
+  ctx.strokeStyle = C.greenBorder;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.fillStyle = C.green;
+  ctx.textBaseline = 'middle';
+  ctx.fillText(outcomeText, cx - 100, statsY + 22);
+
+  // Multiplier pill
+  const multText = `${multiplier}x`;
+  ctx.font = 'bold 22px "DM Sans"';
+  const multW = ctx.measureText(multText).width + 40;
+  roundRect(ctx, cx + 60, statsY, multW, 44, 22);
+  ctx.fillStyle = C.yellowBg;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(245, 158, 11, 0.25)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.fillStyle = C.yellow;
+  ctx.fillText(multText, cx + 60 + multW / 2, statsY + 22);
+
+  // Entry price
+  if (entryPrice != null) {
+    const entryPercent = Math.round(entryPrice * 100);
+    ctx.font = '22px "DM Sans"';
+    ctx.fillStyle = C.textTertiary;
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(`Entry: ${entryPercent}%`, cx, statsY + 80);
+  }
+
+  // Divider
+  ctx.strokeStyle = C.border;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(cardX + 80, 810);
+  ctx.lineTo(cardX + cardW - 80, 810);
+  ctx.stroke();
+
+  // Referral CTA button
+  if (referralCode) {
+    const btnY = 840, btnH = 56;
+    roundRect(ctx, cardX + 80, btnY, cardW - 160, btnH, 28);
+    ctx.fillStyle = C.green;
+    ctx.fill();
+
+    ctx.font = 'bold 22px "DM Sans"';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`Predict & Win → iroyinmarket.com/?ref=${referralCode}`, cx, btnY + btnH / 2);
   }
 
   // Brand footer
-  ctx.font = 'bold 22px "Satoshi"';
-  ctx.fillStyle = COLORS.textDim;
-  ctx.fillText('IroyinMarket', size / 2, 1010);
-  ctx.font = '18px "DM Sans"';
-  ctx.fillStyle = COLORS.textDim;
-  ctx.fillText('Campus predictions. Real cash prizes.', size / 2, 1045);
+  ctx.font = 'bold 20px "Satoshi"';
+  ctx.fillStyle = C.textTertiary;
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('IroyinMarket', cx, 960);
+  ctx.font = '16px "DM Sans"';
+  ctx.fillStyle = C.textTertiary;
+  ctx.fillText('Campus predictions • Real cash prizes', cx, 990);
 
   return canvas.toBuffer('image/png');
 }
