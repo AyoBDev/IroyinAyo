@@ -160,15 +160,14 @@ export default function Tutorial() {
           const rect = el.getBoundingClientRect();
           const tooltipHeight = 180;
           const gap = 8;
-          const marginTop = 20;
           const isTop = step.placement === 'top';
           const groupHeight = rect.height + gap + tooltipHeight;
           const groupTopOffset = isTop ? -tooltipHeight - gap : 0;
-          const groupTop = rect.top + groupTopOffset - marginTop;
-          const groupCenter = groupTop + (groupHeight + marginTop) / 2;
+          const groupTop = rect.top + groupTopOffset;
+          const groupCenter = groupTop + groupHeight / 2;
           const viewportCenter = window.innerHeight / 2;
           const scrollBy = groupCenter - viewportCenter;
-          window.scrollTo({ top: Math.max(0, window.scrollY + scrollBy), behavior: 'smooth' });
+          window.scrollTo({ top: Math.max(0, window.scrollY + scrollBy - 20), behavior: 'smooth' });
         }
       }
     }
