@@ -157,9 +157,10 @@ export default function Tutorial() {
       if (el) {
         const isFixed = step.target.includes('points-balance') || step.target.includes('leaderboard-tab');
         if (!isFixed) {
-          const rect = el.getBoundingClientRect();
+          const card = el.closest('[data-tutorial="market-card"]') || el;
+          const rect = card.getBoundingClientRect();
           const headerHeight = 70;
-          const padding = 20;
+          const padding = 16;
           const desiredTop = headerHeight + padding;
           const scrollBy = rect.top - desiredTop;
           window.scrollTo({ top: Math.max(0, window.scrollY + scrollBy), behavior: 'smooth' });
