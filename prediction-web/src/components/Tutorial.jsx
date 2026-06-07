@@ -163,7 +163,7 @@ export default function Tutorial() {
           const padding = 16;
           const desiredTop = headerHeight + padding;
           const scrollBy = rect.top - desiredTop;
-          window.scrollTo({ top: Math.max(0, window.scrollY + scrollBy), behavior: 'smooth' });
+          window.scrollTo({ top: Math.max(0, window.scrollY + scrollBy), behavior: 'instant' });
         }
       }
     }
@@ -183,11 +183,10 @@ export default function Tutorial() {
       run={run}
       continuous
       showSkipButton
-      disableScrolling={false}
+      disableScrolling
       spotlightClicks={false}
       tooltipComponent={CustomTooltip}
       callback={handleCallback}
-      scrollOffset={120}
       floaterProps={{
         disableAnimation: true,
         offset: 8,
