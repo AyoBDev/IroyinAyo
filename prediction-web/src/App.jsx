@@ -94,7 +94,7 @@ function MainApp() {
   return (
     <div className="pt-14">
       <ResolutionToast />
-      <TopBar onPositionsClick={() => setShowPositions(!showPositions)} />
+      <TopBar />
       {showPositions && <MyPositions onClose={() => setShowPositions(false)} />}
 
       <Routes>

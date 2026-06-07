@@ -13,6 +13,9 @@ const useStore = create((set, get) => ({
   showAuthModal: false,
   openAuthModal: () => set({ showAuthModal: true }),
   closeAuthModal: () => set({ showAuthModal: false }),
+  tutorialRunRequested: false,
+  requestTutorialReplay: () => set({ tutorialRunRequested: true }),
+  clearTutorialReplay: () => set({ tutorialRunRequested: false }),
 
   fetchMarkets: async () => {
     try {

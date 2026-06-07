@@ -1,9 +1,10 @@
-import { TrendingUp, Wallet } from 'lucide-react';
+import { TrendingUp, Wallet, HelpCircle } from 'lucide-react';
 import useStore from '../store.js';
 
-export default function TopBar({ onPositionsClick }) {
+export default function TopBar() {
   const user = useStore((s) => s.user);
   const openAuthModal = useStore((s) => s.openAuthModal);
+  const requestTutorialReplay = useStore((s) => s.requestTutorialReplay);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-[100] h-14 flex justify-between items-center px-4 bg-bone border-b border-line">
@@ -25,10 +26,11 @@ export default function TopBar({ onPositionsClick }) {
               <span className="text-[11px] text-ink-muted">pts</span>
             </div>
             <button
-              onClick={onPositionsClick}
-              className="bg-emerald text-bone px-4 py-1.5 rounded-xl text-label-sm font-medium hover:bg-emerald-deep transition-colors"
+              onClick={requestTutorialReplay}
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-paper border border-line text-ink-muted hover:text-emerald transition-colors"
+              aria-label="How it works"
             >
-              Portfolio
+              <HelpCircle size={18} />
             </button>
           </>
         ) : (

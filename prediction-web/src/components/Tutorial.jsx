@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Joyride, STATUS } from 'react-joyride';
-import { HelpCircle } from 'lucide-react';
 import useStore from '../store.js';
 
 const steps = [
@@ -9,35 +8,41 @@ const steps = [
     title: 'This is a market',
     content: 'A question people are predicting on. Pick the outcome you think is right.',
     disableBeacon: true,
+    placement: 'bottom',
   },
   {
     target: '[data-tutorial="odds"]',
     title: 'These are the odds',
     content: "The percentage shows what the crowd thinks. Lower odds = bigger payout if you're right.",
+    placement: 'bottom',
   },
   {
     target: '[data-tutorial="predict-btn"]',
     title: 'Make your prediction',
     content: "Tap an outcome and choose how many points to wager. That's it.",
+    placement: 'bottom',
   },
   {
     target: '[data-tutorial="points-balance"]',
     title: 'Your points',
     content: "You start with free points. Spend them on predictions, win more when you're right.",
+    placement: 'bottom',
   },
   {
     target: '[data-tutorial="incentives"]',
     title: 'Win real prizes',
     content: 'Top predictors win cash prizes every week. The better your calls, the more you earn.',
+    placement: 'bottom',
   },
   {
     target: '[data-tutorial="leaderboard-tab"]',
     title: 'Compete with friends',
     content: 'See how you rank against others. Accuracy is everything.',
+    placement: 'top',
   },
 ];
 
-function CustomTooltip({ continuous, index, step, backProps, primaryProps, skipProps, tooltipProps }) {
+function CustomTooltip({ continuous, index, step, primaryProps, skipProps, tooltipProps }) {
   return (
     <div
       {...tooltipProps}
@@ -46,8 +51,10 @@ function CustomTooltip({ continuous, index, step, backProps, primaryProps, skipP
         border: '1px solid #d6cdb8',
         borderRadius: '16px',
         padding: '20px',
-        maxWidth: '300px',
+        maxWidth: '280px',
+        width: 'calc(100vw - 32px)',
         fontFamily: "'Instrument Sans', ui-sans-serif, system-ui, sans-serif",
+        boxSizing: 'border-box',
       }}
     >
       {step.title && (
@@ -70,7 +77,6 @@ function CustomTooltip({ continuous, index, step, backProps, primaryProps, skipP
         {step.content}
       </p>
 
-      {/* Progress dots */}
       <div style={{ display: 'flex', gap: '4px', marginBottom: '12px' }}>
         {steps.map((_, i) => (
           <div
@@ -83,7 +89,6 @@ function CustomTooltip({ continuous, index, step, backProps, primaryProps, skipP
         ))}
       </div>
 
-      {/* Actions */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <button
           {...skipProps}
@@ -116,8 +121,9 @@ function getStorageKey(userId) {
 export default function Tutorial() {
   const user = useStore((s) => s.user);
   const markets = useStore((s) => s.markets);
+  const tutorialRunRequested = useStore((s) => s.tutorialRunRequested);
+  const clearTutorialReplay = useStore((s) => s.clearTutorialReplay);
   const [run, setRun] = useState(false);
-  const [showButton, setShowButton] = useState(false);
 
   useEffect(() => {
     if (!user || markets.length === 0) return;
@@ -126,66 +132,47 @@ export default function Tutorial() {
       const timer = setTimeout(() => setRun(true), 800);
       return () => clearTimeout(timer);
     }
-    setShowButton(true);
   }, [user, markets.length]);
+
+  useEffect(() => {
+    if (tutorialRunRequested) {
+      setRun(true);
+      clearTutorialReplay();
+    }
+  }, [tutorialRunRequested, clearTutorialReplay]);
 
   const handleCallback = (data) => {
     const { status } = data;
     if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
       setRun(false);
-      setShowButton(true);
       if (user) {
         localStorage.setItem(getStorageKey(user.id), 'true');
       }
     }
   };
 
-  const handleReplay = () => {
-    setRun(true);
-  };
-
   return (
-    <>
-      <Joyride
-        steps={steps}
-        run={run}
-        continuous
-        showSkipButton
-        disableScrolling={false}
-        spotlightClicks={false}
-        tooltipComponent={CustomTooltip}
-        callback={handleCallback}
-        styles={{
-          options: {
-            overlayColor: 'rgba(20, 17, 15, 0.6)',
-            zIndex: 1000,
-          },
-        }}
-      />
-      {showButton && (
-        <button
-          onClick={handleReplay}
-          aria-label="Replay tutorial"
-          style={{
-            position: 'fixed',
-            bottom: '80px',
-            right: '16px',
-            width: '44px',
-            height: '44px',
-            borderRadius: '50%',
-            background: '#0f3d2e',
-            color: '#fbf7ef',
-            border: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 300,
-            cursor: 'pointer',
-          }}
-        >
-          <HelpCircle size={20} />
-        </button>
-      )}
-    </>
+    <Joyride
+      steps={steps}
+      run={run}
+      continuous
+      showSkipButton
+      scrollToFirstStep
+      disableScrolling={false}
+      spotlightClicks={false}
+      tooltipComponent={CustomTooltip}
+      callback={handleCallback}
+      scrollOffset={100}
+      floaterProps={{
+        disableAnimation: true,
+        offset: 12,
+      }}
+      styles={{
+        options: {
+          overlayColor: 'rgba(20, 17, 15, 0.6)',
+          zIndex: 1000,
+        },
+      }}
+    />
   );
 }
