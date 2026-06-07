@@ -167,7 +167,7 @@ export default function Tutorial() {
           const groupCenter = groupTop + groupHeight / 2;
           const viewportCenter = window.innerHeight / 2;
           const scrollBy = groupCenter - viewportCenter;
-          window.scrollTo({ top: Math.max(0, window.scrollY + scrollBy - 20), behavior: 'smooth' });
+          window.scrollTo({ top: Math.max(0, window.scrollY + scrollBy + 20), behavior: 'smooth' });
         }
       }
     }
