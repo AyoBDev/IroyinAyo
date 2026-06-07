@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Joyride, STATUS } from 'react-joyride';
+import { Joyride, STATUS, EVENTS, ACTIONS } from 'react-joyride';
 import useStore from '../store.js';
 
 const steps = [
@@ -14,30 +14,35 @@ const steps = [
     target: '[data-tutorial="odds"]',
     title: 'These are the odds',
     content: "The percentage shows what the crowd thinks. Lower odds = bigger payout if you're right.",
+    disableBeacon: true,
     placement: 'bottom',
   },
   {
     target: '[data-tutorial="predict-btn"]',
     title: 'Make your prediction',
     content: "Tap an outcome and choose how many points to wager. That's it.",
+    disableBeacon: true,
     placement: 'bottom',
   },
   {
     target: '[data-tutorial="points-balance"]',
     title: 'Your points',
     content: "You start with free points. Spend them on predictions, win more when you're right.",
+    disableBeacon: true,
     placement: 'bottom',
   },
   {
     target: '[data-tutorial="incentives"]',
     title: 'Win real prizes',
     content: 'Top predictors win cash prizes every week. The better your calls, the more you earn.',
+    disableBeacon: true,
     placement: 'bottom',
   },
   {
     target: '[data-tutorial="leaderboard-tab"]',
     title: 'Compete with friends',
     content: 'See how you rank against others. Accuracy is everything.',
+    disableBeacon: true,
     placement: 'top',
   },
 ];
@@ -114,6 +119,22 @@ function CustomTooltip({ continuous, index, step, primaryProps, skipProps, toolt
   );
 }
 
+function scrollTargetIntoView(target) {
+  const el = document.querySelector(target);
+  if (!el) return;
+  const rect = el.getBoundingClientRect();
+  const viewportHeight = window.innerHeight;
+  const topBarHeight = 70;
+  const bottomNavHeight = 80;
+  const safeTop = topBarHeight + 20;
+  const safeBottom = viewportHeight - bottomNavHeight - 200;
+
+  if (rect.top < safeTop || rect.bottom > safeBottom) {
+    const scrollTo = window.scrollY + rect.top - topBarHeight - 40;
+    window.scrollTo({ top: Math.max(0, scrollTo), behavior: 'smooth' });
+  }
+}
+
 function getStorageKey(userId) {
   return `iroyinmarket_tutorial_seen_${userId}`;
 }
@@ -124,27 +145,46 @@ export default function Tutorial() {
   const tutorialRunRequested = useStore((s) => s.tutorialRunRequested);
   const clearTutorialReplay = useStore((s) => s.clearTutorialReplay);
   const [run, setRun] = useState(false);
+  const [stepIndex, setStepIndex] = useState(0);
 
   useEffect(() => {
     if (!user || markets.length === 0) return;
     const seen = localStorage.getItem(getStorageKey(user.id));
     if (!seen) {
-      const timer = setTimeout(() => setRun(true), 800);
+      const timer = setTimeout(() => {
+        setStepIndex(0);
+        setRun(true);
+      }, 800);
       return () => clearTimeout(timer);
     }
   }, [user, markets.length]);
 
   useEffect(() => {
     if (tutorialRunRequested) {
+      setStepIndex(0);
       setRun(true);
       clearTutorialReplay();
     }
   }, [tutorialRunRequested, clearTutorialReplay]);
 
   const handleCallback = (data) => {
-    const { status } = data;
+    const { status, type, index, action } = data;
+
+    if (type === EVENTS.STEP_BEFORE) {
+      scrollTargetIntoView(steps[index].target);
+    }
+
+    if (type === EVENTS.STEP_AFTER) {
+      if (action === ACTIONS.NEXT) {
+        setStepIndex(index + 1);
+      } else if (action === ACTIONS.PREV) {
+        setStepIndex(index - 1);
+      }
+    }
+
     if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
       setRun(false);
+      setStepIndex(0);
       if (user) {
         localStorage.setItem(getStorageKey(user.id), 'true');
       }
@@ -155,17 +195,16 @@ export default function Tutorial() {
     <Joyride
       steps={steps}
       run={run}
+      stepIndex={stepIndex}
       continuous
       showSkipButton
-      scrollToFirstStep
-      disableScrolling={false}
+      disableScrolling
       spotlightClicks={false}
       tooltipComponent={CustomTooltip}
       callback={handleCallback}
-      scrollOffset={100}
       floaterProps={{
         disableAnimation: true,
-        offset: 12,
+        offset: 8,
       }}
       styles={{
         options: {
