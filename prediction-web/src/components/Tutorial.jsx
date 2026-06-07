@@ -156,11 +156,10 @@ export default function Tutorial() {
       const el = document.querySelector(step.target);
       if (el) {
         const rect = el.getBoundingClientRect();
-        const inView = rect.top >= 60 && rect.bottom <= window.innerHeight - 100;
-        if (!inView) {
-          const y = window.scrollY + rect.top - 100;
-          window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
-        }
+        const viewportCenter = window.innerHeight / 2;
+        const elCenter = rect.top + rect.height / 2;
+        const scrollBy = elCenter - viewportCenter;
+        window.scrollTo({ top: Math.max(0, window.scrollY + scrollBy), behavior: 'smooth' });
       }
     }
 
