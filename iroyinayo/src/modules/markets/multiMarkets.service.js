@@ -1,6 +1,7 @@
 const db = require('../../config/database');
 const { NotFoundError, ValidationError } = require('../../utils/errors');
 const gamificationService = require('../gamification/gamification.service');
+const { afterMultiTrade } = require('../liquidity/liquidity.hooks');
 
 /**
  * Numerically stable computation of ln(sum(e^vi))
@@ -257,7 +258,7 @@ async function buyPosition(marketId, outcomeId, studentId, amount) {
 
   const shares = calculateSharesForAmount(sharesSold, market.liquidity_b, outcomeIndex, amount);
 
-  return db.transaction(async (trx) => {
+  const result = await db.transaction(async (trx) => {
     await gamificationService.deductPoints(
       studentId,
       amount,
@@ -288,6 +289,8 @@ async function buyPosition(marketId, outcomeId, studentId, amount) {
 
     return { position, market };
   });
+  afterMultiTrade(marketId, studentId);
+  return result;
 }
 
 /**
