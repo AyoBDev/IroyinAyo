@@ -1,6 +1,7 @@
 const db = require('../../config/database');
 const { NotFoundError, ValidationError } = require('../../utils/errors');
 const gamificationService = require('../gamification/gamification.service');
+const { afterBinaryTrade } = require('../liquidity/liquidity.hooks');
 
 const PROFIT_FEE_RATE = 0.10;
 const MAX_BET_PER_MARKET = 500;
@@ -182,12 +183,15 @@ async function buyPosition(marketId, studentId, side, amount) {
   if (new Date(market.closes_at) <= new Date()) throw new ValidationError('Market has closed');
   if (amount < 1) throw new ValidationError('Amount must be at least 1');
 
-  const existingTotal = await db('market_positions')
-    .where({ market_id: marketId, student_id: studentId })
-    .sum('amount as total').first();
-  const currentTotal = Number(existingTotal?.total || 0);
-  if (currentTotal + amount > MAX_BET_PER_MARKET) {
-    throw new ValidationError(`Max prediction per market is ${MAX_BET_PER_MARKET} points. You have ${currentTotal} already placed.`);
+  const student = await db('students').where({ id: studentId }).first();
+  if (!student.is_system) {
+    const existingTotal = await db('market_positions')
+      .where({ market_id: marketId, student_id: studentId })
+      .sum('amount as total').first();
+    const currentTotal = Number(existingTotal?.total || 0);
+    if (currentTotal + amount > MAX_BET_PER_MARKET) {
+      throw new ValidationError(`Max prediction per market is ${MAX_BET_PER_MARKET} points. You have ${currentTotal} already placed.`);
+    }
   }
 
   const shares = calculateSharesOut(market.yes_pool, market.no_pool, side, amount);
@@ -206,7 +210,9 @@ async function buyPosition(marketId, studentId, side, amount) {
     .insert({ market_id: marketId, student_id: studentId, side, amount, shares })
     .returning('*');
 
-  return { position, market: await getById(marketId) };
+  const result = { position, market: await getById(marketId) };
+  afterBinaryTrade(marketId, studentId);
+  return result;
 }
 
 async function resolve(marketId, outcome) {
