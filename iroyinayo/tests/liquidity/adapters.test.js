@@ -21,7 +21,12 @@ describe('Admin Adapter', () => {
 
 describe('Odds API Adapter', () => {
   beforeEach(() => {
+    process.env.ODDS_API_KEY = 'test-key';
     oddsApiAdapter._clearCache();
+  });
+
+  afterEach(() => {
+    delete process.env.ODDS_API_KEY;
   });
 
   test('convertOddsToProbabilities normalizes decimal odds', () => {
