@@ -186,7 +186,7 @@ export default function Tutorial() {
       disableScrolling
       spotlightClicks={false}
       tooltipComponent={CustomTooltip}
-      callback={handleCallback}
+      onEvent={handleCallback}
       floaterProps={{
         disableAnimation: true,
         offset: 8,
