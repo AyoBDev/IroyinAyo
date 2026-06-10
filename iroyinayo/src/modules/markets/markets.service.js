@@ -275,4 +275,4 @@ async function listAll({ page = 1, limit = 50 } = {}) {
   return { markets: markets.map(withPrices), total, page, limit };
 }
 
-module.exports = { create, getById, listOpen, listPendingApproval, approve, buyPosition, resolve, sponsorMarket, getStudentPositions, calculatePrice, listAll };
+module.exports = { create, getById, listOpen, listPendingApproval, approve, buyPosition, resolve, sponsorMarket, getStudentPositions, calculatePrice, listAll, lmsrCost, calculateSharesOut, newPoolsAfterBuy };
