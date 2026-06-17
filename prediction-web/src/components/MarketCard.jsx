@@ -4,6 +4,7 @@ import { CheckCircle2, ChevronLeft, ChevronRight, Search, Trophy, Share2, Messag
 import OutcomeRow from './OutcomeRow.jsx';
 import PredictSlip from './PredictSlip.jsx';
 import PublicChat from './PublicChat.jsx';
+import MarketShareModal from './MarketShareModal.jsx';
 
 const PAGE_SIZE = 10;
 
@@ -28,18 +29,7 @@ function CardFooter({ market }) {
   const outcomes = market.outcomes || [];
   const participantCount = market.participant_count || 0;
 
-  const handleShare = () => {
-    const sortedOutcomes = [...outcomes].sort((a, b) => b.price - a.price);
-    const topOutcome = sortedOutcomes[0];
-    const topPercent = topOutcome ? Math.round(topOutcome.price * 100) : 0;
-    const shareUrl = `${window.location.origin}/market/${market.id}`;
-    const text = `${topOutcome?.label} leads at ${topPercent}% — "${market.title}" on IroyinMarket`;
-    if (navigator.share) {
-      navigator.share({ text, url: shareUrl });
-    } else {
-      navigator.clipboard.writeText(`${text}\n${shareUrl}`);
-    }
-  };
+  const [showShareModal, setShowShareModal] = useState(false);
 
   return (
     <div className="flex justify-between items-center pt-3 border-t border-line mt-1">
@@ -55,9 +45,12 @@ function CardFooter({ market }) {
           <span className="text-[11px] font-medium">{outcomes.length} options</span>
         </div>
       </div>
-      <button onClick={handleShare} className="p-1 px-2 bg-paper rounded-md border border-line text-ink-muted hover:bg-paper-hover transition-colors flex items-center">
+      <button onClick={() => setShowShareModal(true)} className="p-1 px-2 bg-paper rounded-md border border-line text-ink-muted hover:bg-paper-hover transition-colors flex items-center">
         <Share2 size={12} />
       </button>
+      {showShareModal && (
+        <MarketShareModal market={market} onClose={() => setShowShareModal(false)} />
+      )}
     </div>
   );
 }
@@ -329,15 +322,7 @@ function SmallMarketCard({ market, dataTutorial }) {
 }
 
 function ResolvedMarketCard({ market }) {
-  const handleShare = () => {
-    const shareUrl = `${window.location.origin}/market/${market.id}`;
-    const text = `${market.winnerLabel} won "${market.title}" on IroyinMarket!`;
-    if (navigator.share) {
-      navigator.share({ text, url: shareUrl });
-    } else {
-      navigator.clipboard.writeText(`${text}\n${shareUrl}`);
-    }
-  };
+  const [showShareModal, setShowShareModal] = useState(false);
 
   return (
     <div className="bg-paper rounded-2xl border border-accent-green-border overflow-hidden relative">
@@ -366,11 +351,14 @@ function ResolvedMarketCard({ market }) {
         </div>
 
         <button
-          onClick={handleShare}
+          onClick={() => setShowShareModal(true)}
           className="flex items-center justify-center gap-1.5 w-full py-2.5 bg-paper border border-line rounded-lg text-ink-muted text-[12px] font-semibold hover:bg-paper-hover transition-colors"
         >
           <Share2 size={13} /> Share Result
         </button>
+        {showShareModal && (
+          <MarketShareModal market={market} onClose={() => setShowShareModal(false)} />
+        )}
       </div>
     </div>
   );
