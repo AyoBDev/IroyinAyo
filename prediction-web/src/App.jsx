@@ -15,6 +15,7 @@ import ResolutionToast from './components/ResolutionToast.jsx';
 import WinPopup from './components/WinPopup.jsx';
 import MarketDetail from './pages/MarketDetail.jsx';
 import ShareCard from './pages/ShareCard.jsx';
+import SharePrediction from './pages/SharePrediction.jsx';
 import Portfolio from './pages/Portfolio.jsx';
 
 function TokenExchange() {
@@ -119,6 +120,7 @@ export default function App() {
       <TokenExchange />
       <Routes>
         <Route path="/share/:marketId" element={<ShareCard />} />
+        <Route path="/share/prediction/:positionId" element={<SharePrediction />} />
         <Route path="*" element={<MainApp />} />
       </Routes>
     </BrowserRouter>
