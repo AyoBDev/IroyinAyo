@@ -97,8 +97,8 @@ export default function MarketShareModal({ market, onClose }) {
 
   const shareUrl = `${window.location.origin}/market/${market.id}`;
   const shareText = isResolved
-    ? `${market.winnerLabel} won "${market.title}" on IroyinMarket!\n\nPredict here: ${shareUrl}`
-    : `${topOutcome?.label} leads at ${topPercent}% — "${market.title}" on IroyinMarket\n\nPredict here: ${shareUrl}`;
+    ? `${market.winnerLabel || 'Result'} won "${market.title}" on IroyinMarket!\n\nPredict here: ${shareUrl}`
+    : `${topOutcome?.label || 'Leading'} leads at ${topPercent}% — "${market.title}" on IroyinMarket\n\nPredict here: ${shareUrl}`;
 
   const handleShareImage = useCallback(async () => {
     if (!cardRef.current) return;
