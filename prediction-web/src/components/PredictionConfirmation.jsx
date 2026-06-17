@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import PredictionCard from './PredictionCard.jsx';
@@ -65,7 +66,7 @@ export default function PredictionConfirmation({ data, onClose }) {
     setShowShareSheet(false);
   }, [data, shareUrl]);
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm" onClick={onClose} />
@@ -119,6 +120,7 @@ export default function PredictionConfirmation({ data, onClose }) {
           onClose={() => setShowShareSheet(false)}
         />
       )}
-    </div>
+    </div>,
+    document.body
   );
 }
