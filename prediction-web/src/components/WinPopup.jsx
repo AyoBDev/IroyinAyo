@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Trophy, X, Sparkles, Share2 } from 'lucide-react';
 import { apiFetch, getToken } from '../api.js';
-import { shareWithImage } from '../shareImage.js';
+import { shareWithImage, downloadImage } from '../shareImage.js';
+import ShareSheet from './ShareSheet.jsx';
 
 function Confetti({ canvasRef }) {
   useEffect(() => {
@@ -68,6 +69,7 @@ export default function WinPopup() {
   const [visible, setVisible] = useState(false);
   const canvasRef = useRef(null);
   const cardRef = useRef(null);
+  const [showShareSheet, setShowShareSheet] = useState(false);
 
   useEffect(() => {
     if (!getToken()) return;
@@ -90,16 +92,38 @@ export default function WinPopup() {
     }
   }
 
-  async function handleShare() {
-    const win = wins[currentIndex];
-    const refParam = win.referral_code ? `?ref=${win.referral_code}` : '';
-    const text = `I just won +${win.payout} pts on IroyinMarket!\n"${win.market_title}" — picked ${win.outcome_label}\n\nPredict & compete: ${window.location.origin}${refParam}`;
-    await shareWithImage(cardRef.current, { text, fileName: 'iroyinmarket-win.png', backgroundColor: '#f4efe6' });
-  }
+  const win = wins[currentIndex] || {};
+  const shareUrl = `${window.location.origin}/market/${win.market_id}`;
+  const refParam = win.referral_code ? `?ref=${win.referral_code}` : '';
+  const shareText = `I just won +${win.payout} pts on IroyinMarket!\n"${win.market_title}" — picked ${win.outcome_label}\n\nPredict & compete: ${window.location.origin}${refParam}`;
+
+  const handleShareImage = useCallback(async () => {
+    if (!cardRef.current) return;
+    if (navigator.share) {
+      await shareWithImage(cardRef.current, { text: shareText, fileName: 'iroyinmarket-win.png', backgroundColor: '#f4efe6' });
+    } else {
+      await downloadImage(cardRef.current, { fileName: 'iroyinmarket-win.png', backgroundColor: '#f4efe6' });
+    }
+    setShowShareSheet(false);
+  }, [shareText]);
+
+  const handleCopyLink = useCallback(() => {
+    navigator.clipboard.writeText(shareUrl);
+  }, [shareUrl]);
+
+  const handleShareLink = useCallback(async () => {
+    if (navigator.share) {
+      await navigator.share({
+        title: `I won on IroyinMarket!`,
+        text: shareText,
+        url: shareUrl,
+      });
+    }
+    setShowShareSheet(false);
+  }, [shareText, shareUrl]);
 
   if (!visible || wins.length === 0) return null;
 
-  const win = wins[currentIndex];
   const profit = win.payout - win.amount;
 
   return (
@@ -170,7 +194,7 @@ export default function WinPopup() {
 
           {/* Action buttons */}
           <div className="w-full flex flex-col gap-3">
-            <button onClick={handleShare} className="w-full py-3.5 bg-emerald text-bone rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 hover:bg-emerald-deep">
+            <button onClick={() => setShowShareSheet(true)} className="w-full py-3.5 bg-emerald text-bone rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 hover:bg-emerald-deep">
               <Share2 size={16} />
               Share to Social
             </button>
@@ -186,6 +210,15 @@ export default function WinPopup() {
           )}
         </div>
       </div>
+
+      {showShareSheet && (
+        <ShareSheet
+          onShareImage={handleShareImage}
+          onCopyLink={handleCopyLink}
+          onShareLink={handleShareLink}
+          onClose={() => setShowShareSheet(false)}
+        />
+      )}
     </div>
   );
 }
