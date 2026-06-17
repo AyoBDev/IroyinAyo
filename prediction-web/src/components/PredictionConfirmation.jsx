@@ -6,7 +6,6 @@ import PredictionCard from './PredictionCard.jsx';
 import ShareSheet from './ShareSheet.jsx';
 
 export default function PredictionConfirmation({ data, onClose }) {
-  console.log('[PredictionConfirmation] rendered with data:', data);
   const [showShareSheet, setShowShareSheet] = useState(false);
   const cardRef = useRef(null);
 
@@ -18,7 +17,8 @@ export default function PredictionConfirmation({ data, onClose }) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  const shareUrl = `${window.location.origin}/share/prediction/${data.positionId}`;
+  const shareUrl = `${window.location.origin}/market/${data.marketId}`;
+  const shareText = `I'm calling it: ${data.outcomeLabel}\n${data.marketTitle} — ${Math.round(data.probability * 100)}% confidence\n\nPredict here: ${shareUrl}`;
 
   const handleShareImage = useCallback(async () => {
     if (!cardRef.current) return;
@@ -34,8 +34,7 @@ export default function PredictionConfirmation({ data, onClose }) {
         if (navigator.share && navigator.canShare?.({ files: [file] })) {
           await navigator.share({
             files: [file],
-            title: `I'm calling it: ${data.outcomeLabel}`,
-            text: `${data.marketTitle} — ${Math.round(data.probability * 100)}% confidence`,
+            text: shareText,
           });
         } else {
           const url = URL.createObjectURL(blob);
@@ -50,7 +49,7 @@ export default function PredictionConfirmation({ data, onClose }) {
       console.error('Failed to generate image:', err);
     }
     setShowShareSheet(false);
-  }, [data]);
+  }, [data, shareText]);
 
   const handleCopyLink = useCallback(() => {
     navigator.clipboard.writeText(shareUrl);
@@ -60,12 +59,12 @@ export default function PredictionConfirmation({ data, onClose }) {
     if (navigator.share) {
       await navigator.share({
         title: `I'm calling it: ${data.outcomeLabel}`,
-        text: `${data.marketTitle} — ${Math.round(data.probability * 100)}% confidence`,
+        text: shareText,
         url: shareUrl,
       });
     }
     setShowShareSheet(false);
-  }, [data, shareUrl]);
+  }, [data, shareText, shareUrl]);
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
