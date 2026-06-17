@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Trophy, X, Sparkles, Share2 } from 'lucide-react';
 import { apiFetch, getToken } from '../api.js';
-import { shareWithImage, downloadImage } from '../shareImage.js';
+import { shareWithImage } from '../shareImage.js';
 import ShareSheet from './ShareSheet.jsx';
 
 function Confetti({ canvasRef }) {
@@ -99,11 +99,7 @@ export default function WinPopup() {
 
   const handleShareImage = useCallback(async () => {
     if (!cardRef.current) return;
-    if (navigator.share) {
-      await shareWithImage(cardRef.current, { text: shareText, fileName: 'iroyinmarket-win.png', backgroundColor: '#f4efe6' });
-    } else {
-      await downloadImage(cardRef.current, { fileName: 'iroyinmarket-win.png', backgroundColor: '#f4efe6' });
-    }
+    await shareWithImage(cardRef.current, { text: shareText, fileName: 'iroyinmarket-win.png', backgroundColor: '#f4efe6' });
     setShowShareSheet(false);
   }, [shareText]);
 

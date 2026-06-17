@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import { shareWithImage, downloadImage } from '../shareImage.js';
+import { shareWithImage } from '../shareImage.js';
 import PredictionCard from './PredictionCard.jsx';
 import ShareSheet from './ShareSheet.jsx';
 
@@ -22,11 +22,7 @@ export default function PredictionConfirmation({ data, onClose }) {
 
   const handleShareImage = useCallback(async () => {
     if (!cardRef.current) return;
-    if (navigator.share) {
-      await shareWithImage(cardRef.current, { text: shareText, fileName: 'prediction.png' });
-    } else {
-      await downloadImage(cardRef.current, { fileName: 'prediction.png' });
-    }
+    await shareWithImage(cardRef.current, { text: shareText, fileName: 'prediction.png' });
     setShowShareSheet(false);
   }, [shareText]);
 

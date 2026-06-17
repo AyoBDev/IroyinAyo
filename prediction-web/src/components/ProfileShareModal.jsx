@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import { shareWithImage, downloadImage } from '../shareImage.js';
+import { shareWithImage } from '../shareImage.js';
 import ProfileCard from './ProfileCard.jsx';
 import ShareSheet from './ShareSheet.jsx';
 
@@ -24,11 +24,7 @@ export default function ProfileShareModal({ data, onClose }) {
 
   const handleShareImage = useCallback(async () => {
     if (!cardRef.current) return;
-    if (navigator.share) {
-      await shareWithImage(cardRef.current, { text: shareText, fileName: 'profile.png' });
-    } else {
-      await downloadImage(cardRef.current, { fileName: 'profile.png' });
-    }
+    await shareWithImage(cardRef.current, { text: shareText, fileName: 'profile.png' });
     setShowShareSheet(false);
   }, [shareText]);
 

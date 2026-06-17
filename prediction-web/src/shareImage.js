@@ -17,10 +17,9 @@ export async function shareWithImage(element, { text, fileName = 'iroyinmarket.p
     const file = new File([blob], fileName, { type: 'image/png' });
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
       await navigator.share({ text, files: [file] });
-    } else if (navigator.share) {
-      await navigator.share({ text });
     } else {
-      navigator.clipboard.writeText(text);
+      // Can't share with file — download the image instead
+      downloadBlob(blob, fileName);
     }
   } catch {
     fallbackShare(text);
@@ -30,18 +29,22 @@ export async function shareWithImage(element, { text, fileName = 'iroyinmarket.p
 function fallbackShare(text) {
   if (navigator.share) {
     navigator.share({ text }).catch(() => {});
-  } else {
+  } else if (navigator.clipboard) {
     navigator.clipboard.writeText(text);
   }
 }
 
-export async function downloadImage(element, { fileName = 'iroyinmarket.png', backgroundColor } = {}) {
-  const blob = await captureElement(element, { backgroundColor });
-  if (!blob) return;
+function downloadBlob(blob, fileName) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = fileName;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+export async function downloadImage(element, { fileName = 'iroyinmarket.png', backgroundColor } = {}) {
+  const blob = await captureElement(element, { backgroundColor });
+  if (!blob) return;
+  downloadBlob(blob, fileName);
 }
