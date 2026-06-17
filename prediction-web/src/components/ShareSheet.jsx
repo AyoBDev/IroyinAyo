@@ -12,7 +12,7 @@ export default function ShareSheet({ onShareImage, onCopyLink, onShareLink, onCl
   }
 
   return (
-    <div className="fixed inset-0 z-[9998] flex items-end justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-[10000] flex items-end justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm" />
       <div
         className="relative w-full max-w-[400px] bg-bone rounded-t-2xl border border-line border-b-0 p-5 pb-8 animate-slide-up"
