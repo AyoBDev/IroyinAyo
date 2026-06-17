@@ -3,6 +3,7 @@ import { TrendingUp, Target, Flame, Award, ArrowUpRight, ArrowDownRight, Share2,
 import { apiFetch, getToken } from '../api.js';
 import useStore from '../store.js';
 import { getTheme, toggleTheme } from '../theme.js';
+import ProfileShareModal from '../components/ProfileShareModal.jsx';
 
 function MyMarkets() {
   const [markets, setMarkets] = useState([]);
@@ -432,19 +433,44 @@ export default function Profile() {
       <ReferralCard />
 
       {/* Share Profile */}
+      <ShareProfileButton user={user} accuracy={accuracy} streak={streak} winRate={winRate} totalPredictions={positions.length} />
+    </div>
+  );
+}
+
+function ShareProfileButton({ user, accuracy, streak, winRate, totalPredictions }) {
+  const [showModal, setShowModal] = useState(false);
+  const [referralCode, setReferralCode] = useState(null);
+
+  useEffect(() => {
+    apiFetch('/api/referrals/me')
+      .then((data) => setReferralCode(data?.code || null))
+      .catch(() => {});
+  }, []);
+
+  return (
+    <>
       <button
-        onClick={() => {
-          const text = `${user.name} on IroyinMarket\n${accuracy}% accuracy | ${streak} week streak\n\nPredict & compete: ${window.location.origin}`;
-          if (navigator.share) {
-            navigator.share({ text });
-          } else {
-            navigator.clipboard.writeText(text);
-          }
-        }}
+        onClick={() => setShowModal(true)}
         className="flex items-center justify-center gap-2 w-full mt-6 py-3.5 bg-accent-green-bg border border-emerald/30 rounded-full text-emerald text-[13px] font-bold"
       >
         <Share2 size={14} /> Share Profile
       </button>
-    </div>
+      {showModal && (
+        <ProfileShareModal
+          data={{
+            name: user.name,
+            title: user.title || 'Newcomer',
+            accuracy,
+            streak,
+            totalPredictions,
+            winRate,
+            pointsBalance: user.points_balance,
+            referralCode,
+          }}
+          onClose={() => setShowModal(false)}
+        />
+      )}
+    </>
   );
 }
