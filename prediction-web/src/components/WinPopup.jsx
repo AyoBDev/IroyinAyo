@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Trophy, X, Sparkles, Share2 } from 'lucide-react';
 import { apiFetch, getToken } from '../api.js';
+import html2canvas from 'html2canvas';
 
 function Confetti({ canvasRef }) {
   useEffect(() => {
@@ -88,13 +89,23 @@ export default function WinPopup() {
     }
   }
 
+  const cardRef = useRef(null);
+
   async function handleShare() {
     const win = wins[currentIndex];
     const refParam = win.referral_code ? `?ref=${win.referral_code}` : '';
     const text = `I just won +${win.payout} pts on IroyinMarket!\n"${win.market_title}" — picked ${win.outcome_label}\n\nPredict & compete: ${window.location.origin}${refParam}`;
     try {
-      const blob = await generateShareImage(win);
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'win.png', { type: 'image/png' })] })) {
+      let blob = null;
+      if (cardRef.current) {
+        const canvas = await html2canvas(cardRef.current, {
+          backgroundColor: '#f4efe6',
+          scale: 2,
+          useCORS: true,
+        });
+        blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      }
+      if (blob && navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'win.png', { type: 'image/png' })] })) {
         const file = new File([blob], 'iroyinmarket-win.png', { type: 'image/png' });
         await navigator.share({ text, files: [file] });
       } else if (navigator.share) {
@@ -109,105 +120,6 @@ export default function WinPopup() {
         navigator.clipboard.writeText(text);
       }
     }
-  }
-
-  function generateShareImage(win) {
-    return new Promise((resolve) => {
-      const size = 1080;
-      const c = document.createElement('canvas');
-      c.width = size;
-      c.height = size;
-      const ctx = c.getContext('2d');
-
-      // Background gradient
-      const grad = ctx.createLinearGradient(0, 0, size, size);
-      grad.addColorStop(0, '#0A0E17');
-      grad.addColorStop(1, '#0f1a12');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, size, size);
-
-      // Top accent bar
-      const topGrad = ctx.createLinearGradient(0, 0, size, 0);
-      topGrad.addColorStop(0, '#10B981');
-      topGrad.addColorStop(1, '#F59E0B');
-      ctx.fillStyle = topGrad;
-      ctx.fillRect(0, 0, size, 8);
-
-      // Trophy circle
-      ctx.beginPath();
-      ctx.arc(size / 2, 240, 80, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(16, 185, 129, 0.15)';
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
-      ctx.lineWidth = 3;
-      ctx.stroke();
-
-      // Trophy emoji
-      ctx.font = '72px serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('\u{1F3C6}', size / 2, 240);
-
-      // Headline
-      ctx.font = 'bold 52px Inter, sans-serif';
-      ctx.fillStyle = '#F0F4F8';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'alphabetic';
-      ctx.fillText('I Won on IroyinMarket!', size / 2, 400);
-
-      // Payout
-      ctx.font = 'bold 80px Inter, sans-serif';
-      ctx.fillStyle = '#10B981';
-      ctx.fillText(`+${win.payout} pts`, size / 2, 520);
-
-      // Multiplier
-      const multiplier = win.amount > 0 ? (win.payout / win.amount).toFixed(1) : '0.0';
-      ctx.font = 'bold 36px Inter, sans-serif';
-      ctx.fillStyle = '#F59E0B';
-      ctx.fillText(`${multiplier}x return`, size / 2, 590);
-
-      // Market title
-      ctx.font = '32px Inter, sans-serif';
-      ctx.fillStyle = '#7B8BA3';
-      let title = win.market_title;
-      if (title.length > 45) title = title.slice(0, 42) + '...';
-      ctx.fillText(`"${title}"`, size / 2, 680);
-
-      // Outcome
-      ctx.font = 'bold 36px Inter, sans-serif';
-      ctx.fillStyle = '#F0F4F8';
-      ctx.fillText(`Picked: ${win.outcome_label}`, size / 2, 740);
-
-      // Entry price
-      if (win.entry_price != null) {
-        const entryPercent = Math.round(win.entry_price * 100);
-        ctx.font = '28px Inter, sans-serif';
-        ctx.fillStyle = '#6366F1';
-        ctx.fillText(`Bought at ${entryPercent}%`, size / 2, 800);
-      }
-
-      // Divider
-      ctx.strokeStyle = 'rgba(123, 139, 163, 0.3)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(size * 0.2, 860);
-      ctx.lineTo(size * 0.8, 860);
-      ctx.stroke();
-
-      // Referral link
-      if (win.referral_code) {
-        ctx.font = '28px Inter, sans-serif';
-        ctx.fillStyle = '#10B981';
-        ctx.fillText(`Join me: iroyinmarket.com/?ref=${win.referral_code}`, size / 2, 920);
-      }
-
-      // Brand footer
-      ctx.font = 'bold 24px Inter, sans-serif';
-      ctx.fillStyle = '#4A5568';
-      ctx.fillText('IroyinMarket — Predict & compete for cash', size / 2, 1000);
-
-      c.toBlob((blob) => resolve(blob), 'image/png');
-    });
   }
 
   if (!visible || wins.length === 0) return null;
@@ -232,6 +144,7 @@ export default function WinPopup() {
 
       {/* Modal */}
       <div
+        ref={cardRef}
         onClick={(e) => e.stopPropagation()}
         className="relative bg-paper rounded-[32px] w-full max-w-[360px] overflow-hidden shadow-float-lg animate-pop-in"
       >
