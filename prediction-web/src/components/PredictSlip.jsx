@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, ArrowRight, Users, Copy, Check } from 'lucide-react';
 import useStore from '../store.js';
 import { getToken } from '../api.js';
+import PredictionConfirmation from './PredictionConfirmation.jsx';
 
 function getSlipClasses(label) {
   const lower = label.toLowerCase();
@@ -39,6 +40,7 @@ export default function PredictSlip({ market, outcome, onClose }) {
   const openAuthModal = useStore((s) => s.openAuthModal);
   const isAuthenticated = !!getToken();
   const classes = getSlipClasses(outcome.label);
+  const [confirmationData, setConfirmationData] = useState(null);
 
   const amountNum = parseInt(amount, 10) || 0;
   const payout = amountNum > 0 ? Math.floor(amountNum / outcome.price) : 0;
@@ -49,9 +51,18 @@ export default function PredictSlip({ market, outcome, onClose }) {
     setSubmitting(true);
     setError(null);
     try {
-      await placePrediction(market.id, outcome.id, amountNum);
+      const result = await placePrediction(market.id, outcome.id, amountNum);
       fetchPositions();
-      onClose();
+      setConfirmationData({
+        positionId: result.position.id,
+        marketTitle: market.title,
+        outcomeLabel: outcome.label,
+        probability: outcome.price,
+        amount: amountNum,
+        potentialPayout: payout,
+        username: user?.username || user?.phone || 'user',
+        timestamp: result.position.created_at || new Date().toISOString(),
+      });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -163,6 +174,13 @@ export default function PredictSlip({ market, outcome, onClose }) {
 
       {/* Referral prompt when low balance */}
       {isAuthenticated && user && user.points_balance < 20 && <ReferralPrompt />}
+
+      {confirmationData && (
+        <PredictionConfirmation
+          data={confirmationData}
+          onClose={() => { setConfirmationData(null); onClose(); }}
+        />
+      )}
     </div>
   );
 }
