@@ -427,6 +427,48 @@ router.get('/:id/share', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.get('/positions/:positionId/public', async (req, res, next) => {
+  try {
+    const position = await db('multi_market_positions')
+      .where({ 'multi_market_positions.id': req.params.positionId })
+      .join('multi_markets', 'multi_markets.id', 'multi_market_positions.market_id')
+      .join('multi_market_outcomes', 'multi_market_outcomes.id', 'multi_market_positions.outcome_id')
+      .join('students', 'students.id', 'multi_market_positions.student_id')
+      .select(
+        'multi_market_positions.id as position_id',
+        'multi_market_positions.amount',
+        'multi_market_positions.entry_price',
+        'multi_market_positions.shares',
+        'multi_market_positions.created_at',
+        'multi_markets.title as market_title',
+        'multi_markets.id as market_id',
+        'multi_market_outcomes.label as outcome_label',
+        'students.username'
+      )
+      .first();
+
+    if (!position) {
+      return res.status(404).json({ error: 'Position not found' });
+    }
+
+    const potentialPayout = position.amount > 0
+      ? Math.floor(position.amount / position.entry_price)
+      : 0;
+
+    res.json({
+      positionId: position.position_id,
+      marketId: position.market_id,
+      marketTitle: position.market_title,
+      outcomeLabel: position.outcome_label,
+      probability: position.entry_price,
+      amount: position.amount,
+      potentialPayout,
+      username: position.username || 'user',
+      timestamp: position.created_at,
+    });
+  } catch (err) { next(err); }
+});
+
 router.post('/:id/predict', authenticateStudent, async (req, res, next) => {
   try {
     const { outcomeId } = req.body;
