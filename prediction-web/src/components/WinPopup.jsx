@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Trophy, X, Sparkles, Share2 } from 'lucide-react';
 import { apiFetch, getToken } from '../api.js';
-import html2canvas from 'html2canvas';
+import { shareWithImage } from '../shareImage.js';
 
 function Confetti({ canvasRef }) {
   useEffect(() => {
@@ -67,6 +67,7 @@ export default function WinPopup() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [visible, setVisible] = useState(false);
   const canvasRef = useRef(null);
+  const cardRef = useRef(null);
 
   useEffect(() => {
     if (!getToken()) return;
@@ -89,37 +90,11 @@ export default function WinPopup() {
     }
   }
 
-  const cardRef = useRef(null);
-
   async function handleShare() {
     const win = wins[currentIndex];
     const refParam = win.referral_code ? `?ref=${win.referral_code}` : '';
     const text = `I just won +${win.payout} pts on IroyinMarket!\n"${win.market_title}" — picked ${win.outcome_label}\n\nPredict & compete: ${window.location.origin}${refParam}`;
-    try {
-      let blob = null;
-      if (cardRef.current) {
-        const canvas = await html2canvas(cardRef.current, {
-          backgroundColor: '#f4efe6',
-          scale: 2,
-          useCORS: true,
-        });
-        blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-      }
-      if (blob && navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'win.png', { type: 'image/png' })] })) {
-        const file = new File([blob], 'iroyinmarket-win.png', { type: 'image/png' });
-        await navigator.share({ text, files: [file] });
-      } else if (navigator.share) {
-        await navigator.share({ text });
-      } else {
-        navigator.clipboard.writeText(text);
-      }
-    } catch {
-      if (navigator.share) {
-        navigator.share({ text }).catch(() => {});
-      } else {
-        navigator.clipboard.writeText(text);
-      }
-    }
+    await shareWithImage(cardRef.current, { text, fileName: 'iroyinmarket-win.png', backgroundColor: '#f4efe6' });
   }
 
   if (!visible || wins.length === 0) return null;

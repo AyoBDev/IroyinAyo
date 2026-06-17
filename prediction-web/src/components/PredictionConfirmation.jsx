@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import html2canvas from 'html2canvas';
+import { shareWithImage, downloadImage } from '../shareImage.js';
 import PredictionCard from './PredictionCard.jsx';
 import ShareSheet from './ShareSheet.jsx';
 
@@ -22,34 +22,13 @@ export default function PredictionConfirmation({ data, onClose }) {
 
   const handleShareImage = useCallback(async () => {
     if (!cardRef.current) return;
-    try {
-      const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: '#fbf7ef',
-        scale: 2,
-        useCORS: true,
-      });
-      canvas.toBlob(async (blob) => {
-        if (!blob) return;
-        const file = new File([blob], 'prediction.png', { type: 'image/png' });
-        if (navigator.share && navigator.canShare?.({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            text: shareText,
-          });
-        } else {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'prediction.png';
-          a.click();
-          URL.revokeObjectURL(url);
-        }
-      }, 'image/png');
-    } catch (err) {
-      console.error('Failed to generate image:', err);
+    if (navigator.share) {
+      await shareWithImage(cardRef.current, { text: shareText, fileName: 'prediction.png' });
+    } else {
+      await downloadImage(cardRef.current, { fileName: 'prediction.png' });
     }
     setShowShareSheet(false);
-  }, [data, shareText]);
+  }, [shareText]);
 
   const handleCopyLink = useCallback(() => {
     navigator.clipboard.writeText(shareUrl);
