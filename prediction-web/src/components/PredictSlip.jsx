@@ -54,6 +54,8 @@ export default function PredictSlip({ market, outcome, onClose }) {
       const result = await placePrediction(market.id, outcome.id, amountNum);
       fetchPositions();
       const position = result?.position;
+      console.log('[PredictSlip] prediction result:', result);
+      console.log('[PredictSlip] setting confirmationData');
       setConfirmationData({
         positionId: position?.id || 'unknown',
         marketTitle: market.title,
@@ -65,6 +67,7 @@ export default function PredictSlip({ market, outcome, onClose }) {
         timestamp: position?.created_at || new Date().toISOString(),
       });
     } catch (err) {
+      console.error('[PredictSlip] error:', err);
       setError(err.message);
     } finally {
       setSubmitting(false);

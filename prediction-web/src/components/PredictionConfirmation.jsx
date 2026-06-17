@@ -6,6 +6,7 @@ import PredictionCard from './PredictionCard.jsx';
 import ShareSheet from './ShareSheet.jsx';
 
 export default function PredictionConfirmation({ data, onClose }) {
+  console.log('[PredictionConfirmation] rendered with data:', data);
   const [showShareSheet, setShowShareSheet] = useState(false);
   const cardRef = useRef(null);
 
