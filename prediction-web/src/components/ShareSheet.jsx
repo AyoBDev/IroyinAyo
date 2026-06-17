@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Image, Link2, Share2, Check, X } from 'lucide-react';
 
-export default function ShareSheet({ onShareImage, onCopyLink, onShareLink, onClose }) {
+export default function ShareSheet({ onShareImage, onCopyLink, onShareLink, onClose, title = 'Share' }) {
   const [copied, setCopied] = useState(false);
   const canNativeShare = typeof navigator !== 'undefined' && !!navigator.share;
 
@@ -19,7 +19,7 @@ export default function ShareSheet({ onShareImage, onCopyLink, onShareLink, onCl
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-4">
-          <span className="font-serif text-[15px] font-semibold text-ink">Share prediction</span>
+          <span className="font-serif text-[15px] font-semibold text-ink">{title}</span>
           <button
             onClick={onClose}
             className="w-7 h-7 flex items-center justify-center rounded-lg bg-paper text-ink-muted hover:bg-paper-hover"

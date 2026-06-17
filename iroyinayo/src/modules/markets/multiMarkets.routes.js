@@ -213,6 +213,7 @@ router.get('/me/wins', authenticateStudent, async (req, res, next) => {
       .where('multi_market_positions.payout', '>', 0)
       .select(
         'multi_market_positions.id',
+        'multi_market_positions.market_id',
         'multi_market_positions.payout',
         'multi_market_positions.amount',
         'multi_market_positions.entry_price',

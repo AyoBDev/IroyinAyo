@@ -96,6 +96,7 @@ export default function ProfileShareModal({ data, onClose }) {
       {/* Share sheet */}
       {showShareSheet && (
         <ShareSheet
+          title="Share profile"
           onShareImage={handleShareImage}
           onCopyLink={handleCopyLink}
           onShareLink={handleShareLink}

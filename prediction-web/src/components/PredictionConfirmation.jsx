@@ -93,6 +93,7 @@ export default function PredictionConfirmation({ data, onClose }) {
       {/* Share sheet */}
       {showShareSheet && (
         <ShareSheet
+          title="Share prediction"
           onShareImage={handleShareImage}
           onCopyLink={handleCopyLink}
           onShareLink={handleShareLink}

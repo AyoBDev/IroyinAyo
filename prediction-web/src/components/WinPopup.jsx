@@ -213,6 +213,7 @@ export default function WinPopup() {
 
       {showShareSheet && (
         <ShareSheet
+          title="Share your win"
           onShareImage={handleShareImage}
           onCopyLink={handleCopyLink}
           onShareLink={handleShareLink}
