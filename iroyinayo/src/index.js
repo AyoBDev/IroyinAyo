@@ -65,6 +65,14 @@ server.listen(PORT, async () => {
     console.error('Scheduler startup failed:', err.message);
   }
 
+  try {
+    const { startScheduler: startSimulation } = require('./modules/simulation/scheduler');
+    startSimulation(io);
+    console.log('Simulation scheduler started');
+  } catch (err) {
+    console.error('Simulation scheduler failed to start:', err.message);
+  }
+
   if (process.env.ENABLE_BOT !== 'false') {
     try {
       const { createConnection } = require('./bot/connection');

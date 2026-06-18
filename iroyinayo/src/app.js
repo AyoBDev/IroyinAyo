@@ -16,6 +16,7 @@ const ambassadorRoutes = require('./modules/markets/ambassador.routes');
 const ambassadorAdminRoutes = require('./modules/markets/ambassadorAdmin.routes');
 const schedulerRoutes = require('./modules/markets/scheduler.routes');
 const liquidityRoutes = require('./modules/liquidity/liquidity.routes');
+const simulationRoutes = require('./modules/simulation/simulation.routes');
 const { generalLimiter } = require('./middleware/rateLimiter');
 const { AppError } = require('./utils/errors');
 
@@ -103,6 +104,7 @@ app.use('/api/ambassador', ambassadorRoutes);
 app.use('/api/ambassador-admin', ambassadorAdminRoutes);
 app.use('/api/schedules', schedulerRoutes);
 app.use('/api/admin/liquidity', liquidityRoutes);
+app.use('/api/admin/simulation', simulationRoutes);
 
 
 // OG tags for share pages (crawlers don't run JS)
