@@ -189,14 +189,14 @@ export default function AuthModal({ onClose }) {
                       setLoading(true);
                       setError('');
                       try {
-                        const result = await apiFetch('/api/auth/quick-join', {
+                        await apiFetch('/api/auth/send-code', {
                           method: 'POST',
-                          body: JSON.stringify({ phoneNumber: phone.trim(), name: '_returning' }),
+                          body: JSON.stringify({ phoneNumber: phone.trim() }),
                         });
-                        setToken(result.token);
-                        window.location.reload();
+                        setError('');
+                        alert('A new code has been sent to your WhatsApp.');
                       } catch (err) {
-                        setError(err.message || 'Could not log in');
+                        setError(err.message || 'Could not resend code');
                       } finally {
                         setLoading(false);
                       }
@@ -207,7 +207,7 @@ export default function AuthModal({ onClose }) {
                   }}
                   className="text-emerald text-xs font-semibold"
                 >
-                  Didn't get code? Skip
+                  {isReturning ? 'Resend code' : "Didn't get code? Skip"}
                 </button>
               </div>
             </form>

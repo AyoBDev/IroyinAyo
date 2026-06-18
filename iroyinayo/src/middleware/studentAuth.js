@@ -24,8 +24,10 @@ async function authenticateStudent(req, res, next) {
     if (!header || !header.startsWith('Bearer ')) throw new UnauthorizedError('No token provided');
     const token = header.split(' ')[1];
     const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.purpose) throw new UnauthorizedError('Invalid token type');
     const student = await db('students').where({ id: decoded.studentId }).first();
     if (!student) throw new UnauthorizedError('Student not found');
+    if (student.is_banned) throw new UnauthorizedError('Account suspended');
     req.student = student;
     next();
   } catch (err) {
