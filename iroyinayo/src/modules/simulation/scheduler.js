@@ -3,6 +3,7 @@ const db = require('../../config/database');
 const { runSimulation } = require('./engine');
 const { saveSimulationResult, executeTier1Actions, checkTier2Alerts } = require('./actions');
 const { shouldTrigger, isDebounced } = require('./triggers');
+const { calculatePrices } = require('../markets/multiMarkets.service');
 
 const INTERVAL_MINUTES = parseInt(process.env.SIMULATION_INTERVAL_MINUTES || '30', 10);
 const NEAR_CLOSE_INTERVAL_MINUTES = parseInt(process.env.NEAR_CLOSE_INTERVAL_MINUTES || '10', 10);
@@ -76,15 +77,16 @@ function attachSocketListeners(io) {
 
 async function handleOddsUpdate(marketId, newOutcomes) {
   const market = await getMarketWithOutcomes(marketId);
-  if (!market) return;
+  if (!market || !market.outcomes || market.outcomes.length < 2) return;
+
+  const sharesSold = market.outcomes.map((o) => o.shares_sold || 0);
+  const oldPrices = calculatePrices(sharesSold, market.liquidity_b);
 
   let maxSwing = 0;
-  for (const newO of newOutcomes) {
-    const old = market.outcomes.find((o) => o.id === newO.id);
-    if (old) {
-      const oldPrice = old.price || 0;
-      const newPrice = newO.price || 0;
-      const swing = Math.abs(newPrice - oldPrice);
+  for (let i = 0; i < market.outcomes.length; i++) {
+    const newO = newOutcomes.find((o) => o.id === market.outcomes[i].id);
+    if (newO) {
+      const swing = Math.abs((newO.price || 0) - oldPrices[i]);
       if (swing > maxSwing) maxSwing = swing;
     }
   }

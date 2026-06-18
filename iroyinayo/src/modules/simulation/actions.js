@@ -54,8 +54,12 @@ async function checkTier2Alerts(market, simResult, simulationId) {
 async function checkManipulation(market, simResult, simulationId) {
   if (!simResult.externalAnchorUsed) return;
 
+  const systemAccount = await db('students').where({ is_system: true }).first();
   const positions = await db('multi_market_positions')
     .where({ market_id: market.id })
+    .modify((qb) => {
+      if (systemAccount) qb.whereNot({ student_id: systemAccount.id });
+    })
     .select('student_id')
     .sum('amount as total_amount')
     .groupBy('student_id');
