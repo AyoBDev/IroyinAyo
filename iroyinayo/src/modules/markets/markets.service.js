@@ -194,25 +194,29 @@ async function buyPosition(marketId, studentId, side, amount) {
     }
   }
 
-  const shares = calculateSharesOut(market.yes_pool, market.no_pool, side, amount);
-  if (shares <= 0) throw new ValidationError('Trade too small or pool exhausted');
+  const result = await db.transaction(async (trx) => {
+    const freshMarket = await trx('markets').where({ id: marketId }).forUpdate().first();
+    const shares = calculateSharesOut(freshMarket.yes_pool, freshMarket.no_pool, side, amount);
+    if (shares <= 0) throw new ValidationError('Trade too small or pool exhausted');
 
-  await gamificationService.deductPoints(studentId, amount, 'market_buy', `Bought ${side} on: ${market.question}`, marketId);
+    await gamificationService.deductPoints(studentId, amount, 'market_buy', `Bought ${side} on: ${market.question}`, marketId);
 
-  // LMSR: buying shares increases the outstanding share count for that side
-  const pools = newPoolsAfterBuy(market.yes_pool, market.no_pool, side, shares);
-  await db('markets').where({ id: marketId }).update({
-    yes_pool: pools.yes_pool,
-    no_pool: pools.no_pool,
+    const pools = newPoolsAfterBuy(freshMarket.yes_pool, freshMarket.no_pool, side, shares);
+    await trx('markets').where({ id: marketId }).update({
+      yes_pool: pools.yes_pool,
+      no_pool: pools.no_pool,
+    });
+
+    const [position] = await trx('market_positions')
+      .insert({ market_id: marketId, student_id: studentId, side, amount, shares })
+      .returning('*');
+
+    return { position };
   });
 
-  const [position] = await db('market_positions')
-    .insert({ market_id: marketId, student_id: studentId, side, amount, shares })
-    .returning('*');
-
-  const result = { position, market: await getById(marketId) };
+  const updatedMarket = await getById(marketId);
   afterBinaryTrade(marketId, studentId);
-  return result;
+  return { position: result.position, market: updatedMarket };
 }
 
 async function resolve(marketId, outcome) {
@@ -222,34 +226,35 @@ async function resolve(marketId, outcome) {
   if (!market) throw new NotFoundError('Market not found');
   if (market.status === 'resolved') throw new ValidationError('Market already resolved');
 
-  // $1 rule: each winning share pays exactly 1 point
-  // Sponsor bonus is distributed proportionally to winners
-  const winningPositions = await db('market_positions').where({ market_id: marketId, side: outcome });
-  const totalWinningShares = winningPositions.reduce((sum, p) => sum + p.shares, 0);
-  const sponsorBonus = market.sponsor_bonus || 0;
+  await db.transaction(async (trx) => {
+    const freshMarket = await trx('markets').where({ id: marketId }).forUpdate().first();
+    if (freshMarket.status === 'resolved') throw new ValidationError('Market already resolved');
 
-  for (const position of winningPositions) {
-    // $1 rule: 1 point per share
-    let payout = Math.floor(position.shares);
-    // Add proportional sponsor bonus
-    if (sponsorBonus > 0 && totalWinningShares > 0) {
-      payout += Math.floor((position.shares / totalWinningShares) * sponsorBonus);
+    const winningPositions = await trx('market_positions').where({ market_id: marketId, side: outcome });
+    const totalWinningShares = winningPositions.reduce((sum, p) => sum + p.shares, 0);
+    const sponsorBonus = freshMarket.sponsor_bonus || 0;
+
+    for (const position of winningPositions) {
+      let payout = Math.floor(position.shares);
+      if (sponsorBonus > 0 && totalWinningShares > 0) {
+        payout += Math.floor((position.shares / totalWinningShares) * sponsorBonus);
+      }
+
+      const profit = payout - position.amount;
+      if (profit > 0) {
+        const fee = Math.floor(profit * PROFIT_FEE_RATE);
+        payout -= fee;
+      }
+
+      if (payout > 0) {
+        await gamificationService.addPoints(position.student_id, payout, 'market_win', `Won prediction: ${market.question}`, marketId);
+        await trx('market_positions').where({ id: position.id }).update({ payout });
+      }
     }
 
-    // 10% fee on profit only (payout - original spend)
-    const profit = payout - position.amount;
-    if (profit > 0) {
-      const fee = Math.floor(profit * PROFIT_FEE_RATE);
-      payout -= fee;
-    }
+    await trx('markets').where({ id: marketId }).update({ status: 'resolved', outcome, resolved_at: new Date() });
+  });
 
-    if (payout > 0) {
-      await gamificationService.addPoints(position.student_id, payout, 'market_win', `Won prediction: ${market.question}`, marketId);
-      await db('market_positions').where({ id: position.id }).update({ payout });
-    }
-  }
-
-  await db('markets').where({ id: marketId }).update({ status: 'resolved', outcome, resolved_at: new Date() });
   return getById(marketId);
 }
 

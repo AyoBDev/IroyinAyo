@@ -60,7 +60,7 @@ async function applyReferral(referredStudentId, referralCode) {
     await trx('students').where({ id: referredStudentId }).update({ referred_by: referrer.id });
   });
 
-  await gamificationService.addPoints(referrer.id, REFERRER_BONUS, 'referral', `Referral bonus: new user joined`);
+  await gamificationService.addPoints(referrer.id, REFERRER_BONUS, 'referral', 'Referral bonus: new user joined');
   await gamificationService.addPoints(referredStudentId, REFERRED_BONUS, 'referral', `Welcome bonus: referred by ${referrer.name}`);
 
   // Auto-promote to ambassador at 10 referrals
