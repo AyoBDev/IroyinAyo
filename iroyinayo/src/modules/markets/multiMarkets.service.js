@@ -357,6 +357,7 @@ async function getStudentPositions(studentId) {
       'multi_market_positions.*',
       'multi_markets.title as market_title',
       'multi_markets.status as market_status',
+      'multi_markets.category as market_category',
       'multi_market_outcomes.label as outcome_label'
     )
     .orderBy('multi_market_positions.created_at', 'desc');
