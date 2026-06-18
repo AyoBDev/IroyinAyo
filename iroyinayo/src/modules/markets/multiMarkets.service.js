@@ -313,7 +313,7 @@ async function resolveMarket(marketId, winningOutcomeId) {
       .where({ market_id: marketId, outcome_id: winningOutcomeId });
 
     for (const position of winningPositions) {
-      const payout = Math.floor(position.shares);
+      const payout = Math.round(position.shares);
 
       await trx('multi_market_positions')
         .where({ id: position.id })

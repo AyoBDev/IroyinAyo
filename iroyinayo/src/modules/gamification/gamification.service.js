@@ -41,10 +41,11 @@ async function deductPoints(studentId, amount, type, description, referenceId) {
       }
 
       const needed = amount - student.points_balance;
-      const refill = Math.min(Math.max(needed, 100), 200);
+      const maxRefill = Math.min(200, MAX_POINTS_BALANCE - student.points_balance);
+      const refill = Math.min(Math.max(needed, 100), maxRefill);
 
-      if (student.points_balance + refill < amount) {
-        throw new ValidationError(`Insufficient points. You have ${student.points_balance} pts (max refill: ${refill}).`);
+      if (refill <= 0 || student.points_balance + refill < amount) {
+        throw new ValidationError(`Insufficient points. You have ${student.points_balance} pts.`);
       }
 
       await trx('point_transactions').insert({

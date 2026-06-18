@@ -27,18 +27,21 @@ async function getCurrentWeekStandings(limit = 20) {
     .select(
       'students.id',
       'students.name',
+      db.raw('COALESCE(SUM(multi_market_positions.payout - multi_market_positions.amount), 0) as net_profit'),
       db.raw('COALESCE(SUM(multi_market_positions.amount), 0) as total_wagered'),
       db.raw('COUNT(multi_market_positions.id) as predictions'),
       db.raw('SUM(CASE WHEN multi_market_positions.payout > 0 THEN 1 ELSE 0 END) as wins')
     )
-    .orderBy('total_wagered', 'desc')
+    .orderBy('net_profit', 'desc')
+    .orderBy('wins', 'desc')
     .limit(limit);
 
   return standings.map((s, i) => ({
     rank: i + 1,
     id: s.id,
     name: s.name,
-    netProfit: parseInt(s.total_wagered, 10),
+    netProfit: parseInt(s.net_profit, 10),
+    totalWagered: parseInt(s.total_wagered, 10),
     predictions: parseInt(s.predictions, 10),
     wins: parseInt(s.wins, 10),
   }));
@@ -94,18 +97,21 @@ async function getAllTimeStandings(limit = 20) {
     .select(
       'students.id',
       'students.name',
+      db.raw('COALESCE(SUM(multi_market_positions.payout - multi_market_positions.amount), 0) as net_profit'),
       db.raw('COALESCE(SUM(multi_market_positions.amount), 0) as total_wagered'),
       db.raw('COUNT(multi_market_positions.id) as predictions'),
       db.raw('SUM(CASE WHEN multi_market_positions.payout > 0 THEN 1 ELSE 0 END) as wins')
     )
-    .orderBy('total_wagered', 'desc')
+    .orderBy('net_profit', 'desc')
+    .orderBy('wins', 'desc')
     .limit(limit);
 
   return standings.map((s, i) => ({
     rank: i + 1,
     id: s.id,
     name: s.name,
-    netProfit: parseInt(s.total_wagered, 10),
+    netProfit: parseInt(s.net_profit, 10),
+    totalWagered: parseInt(s.total_wagered, 10),
     predictions: parseInt(s.predictions, 10),
     wins: parseInt(s.wins, 10),
   }));
