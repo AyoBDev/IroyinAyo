@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { TrendingUp, Target, Flame, Award, ArrowUpRight, ArrowDownRight, Share2, Copy, Check, Gift, Sun, Moon, Wallet, Star, History, Trophy } from 'lucide-react';
+import { TrendingUp, Target, Flame, Award, ArrowUpRight, ArrowDownRight, Share2, Copy, Check, Gift, Sun, Moon, Wallet, Star, History, Trophy, MessageCircle } from 'lucide-react';
 import { apiFetch, getToken } from '../api.js';
 import useStore from '../store.js';
 import { getTheme, toggleTheme } from '../theme.js';
@@ -430,6 +430,21 @@ export default function Profile() {
       </section>
 
       <ThemeToggle />
+
+      {/* WhatsApp Community */}
+      <a
+        href="https://chat.whatsapp.com/KAXumZJDd0b340F4OLvwvn?s=cl&p=i&ilr=2"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-3 w-full mt-6 px-5 py-4 bg-accent-green-bg border border-accent-green/30 rounded-2xl no-underline"
+      >
+        <MessageCircle size={20} className="text-accent-green shrink-0" />
+        <div className="flex-1">
+          <span className="text-sm font-semibold text-ink block">Join our WhatsApp community</span>
+          <span className="text-[11px] text-ink-muted">Get tips, updates & chat with other predictors</span>
+        </div>
+      </a>
+
       <ReferralCard />
 
       {/* Share Profile */}
