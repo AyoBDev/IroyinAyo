@@ -7,6 +7,7 @@ beforeAll(async () => {
 beforeEach(async () => {
   const tables = [
     'verification_codes',
+    'whatsapp_daily_queue',
     'market_positions', 'markets', 'point_transactions', 'streaks',
     'quiz_answers', 'quizzes', 'redemptions', 'reward_options',
     'content_tags', 'content', 'student_interests', 'students', 'admins',
