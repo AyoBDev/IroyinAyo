@@ -28,7 +28,7 @@ router.get('/accuracy/:userId', async (req, res) => {
   }
 });
 
-router.get('/triggers/in-app-strip', authenticateStudent, async (req, res) => {
+router.get('/triggers/in-app-strip', authenticateStudent, lastAppOpenMiddleware, async (req, res) => {
   try {
     const studentId = req.student.id;
     const openPositions = await db('multi_market_positions as p')
@@ -40,10 +40,19 @@ router.get('/triggers/in-app-strip', authenticateStudent, async (req, res) => {
     const since = new Date(Date.now() - SHARP_MOVE_WINDOW_MS);
     const sharpMoves = [];
     for (const market of openPositions) {
-      const snapshots = await db('market_price_snapshots').where({ market_id: market.id }).where('captured_at', '>=', since).orderBy('captured_at', 'asc').limit(2);
-      if (snapshots.length < 2) continue;
-      const oldPrices = JSON.parse(snapshots[0].prices);
-      const newPrices = JSON.parse(snapshots[snapshots.length - 1].prices);
+      const earliest = await db('market_price_snapshots')
+        .where({ market_id: market.id })
+        .where('captured_at', '>=', since)
+        .orderBy('captured_at', 'asc')
+        .first();
+      const latest = await db('market_price_snapshots')
+        .where({ market_id: market.id })
+        .where('captured_at', '>=', since)
+        .orderBy('captured_at', 'desc')
+        .first();
+      if (!earliest || !latest || earliest.id === latest.id) continue;
+      const oldPrices = typeof earliest.prices === 'string' ? JSON.parse(earliest.prices) : earliest.prices;
+      const newPrices = typeof latest.prices === 'string' ? JSON.parse(latest.prices) : latest.prices;
       const ownPosition = await db('multi_market_positions').where({ student_id: studentId, market_id: market.id }).select('outcome_id').first();
       const oldP = oldPrices.find((p) => p.outcome_id === ownPosition.outcome_id);
       const newP = newPrices.find((p) => p.outcome_id === ownPosition.outcome_id);
@@ -58,7 +67,7 @@ router.get('/triggers/in-app-strip', authenticateStudent, async (req, res) => {
   }
 });
 
-router.post('/opt-in', authenticateStudent, async (req, res) => {
+router.post('/opt-in', authenticateStudent, lastAppOpenMiddleware, async (req, res) => {
   try {
     await db('students').where({ id: req.student.id }).update({ wa_daily_enabled: true });
     res.json({ ok: true });

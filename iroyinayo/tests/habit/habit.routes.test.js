@@ -36,6 +36,57 @@ describe('GET /api/habit/triggers/in-app-strip', () => {
     expect(res.status).toBe(200);
     expect(res.body.sharpMoves).toEqual([]);
   });
+
+  test('updates last_app_open_at on authenticated request', async () => {
+    const { id, token } = await makeUserWithToken();
+    await request(app).get('/api/habit/triggers/in-app-strip').set('Authorization', `Bearer ${token}`);
+    await new Promise(r => setTimeout(r, 50));
+    const student = await db('students').where({ id }).first();
+    expect(student.last_app_open_at).toBeTruthy();
+    expect(new Date(student.last_app_open_at).getTime()).toBeGreaterThan(Date.now() - 10000);
+  });
+
+  test('throttles back-to-back last_app_open_at writes', async () => {
+    const { id, token } = await makeUserWithToken();
+    await request(app).get('/api/habit/triggers/in-app-strip').set('Authorization', `Bearer ${token}`);
+    await new Promise(r => setTimeout(r, 50));
+    const student1 = await db('students').where({ id }).first();
+    const first = student1.last_app_open_at;
+    await request(app).get('/api/habit/triggers/in-app-strip').set('Authorization', `Bearer ${token}`);
+    await new Promise(r => setTimeout(r, 50));
+    const student2 = await db('students').where({ id }).first();
+    expect(student2.last_app_open_at).toEqual(first);
+  });
+
+  test('detects sharp move with earliest and latest snapshots', async () => {
+    const { id, token } = await makeUserWithToken();
+    const marketId = crypto.randomUUID();
+    await db('multi_markets').insert({ id: marketId, title: 'Will X?', closes_at: new Date(Date.now() + 1000*60*60), status: 'open' });
+    const outcomeId = crypto.randomUUID();
+    await db('multi_market_outcomes').insert({ id: outcomeId, market_id: marketId, label: 'Yes' });
+    await db('multi_market_positions').insert({ student_id: id, market_id: marketId, outcome_id: outcomeId, shares: 10, amount: 100 });
+    const snap1 = { market_id: marketId, captured_at: new Date(Date.now() - 30*60*1000), prices: JSON.stringify([{ outcome_id: outcomeId, price: 0.40 }]) };
+    const snap2 = { market_id: marketId, captured_at: new Date(Date.now() - 5*60*1000), prices: JSON.stringify([{ outcome_id: outcomeId, price: 0.55 }]) };
+    await db('market_price_snapshots').insert([snap1, snap2]);
+    const res = await request(app).get('/api/habit/triggers/in-app-strip').set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(res.body.sharpMoves).toHaveLength(1);
+    expect(res.body.sharpMoves[0].marketId).toBe(marketId);
+    expect(res.body.sharpMoves[0].deltaPp).toBe(15);
+  });
+
+  test('returns empty when only one snapshot exists', async () => {
+    const { id, token } = await makeUserWithToken();
+    const marketId = crypto.randomUUID();
+    await db('multi_markets').insert({ id: marketId, title: 'Will Y?', closes_at: new Date(Date.now() + 1000*60*60), status: 'open' });
+    const outcomeId = crypto.randomUUID();
+    await db('multi_market_outcomes').insert({ id: outcomeId, market_id: marketId, label: 'Yes' });
+    await db('multi_market_positions').insert({ student_id: id, market_id: marketId, outcome_id: outcomeId, shares: 10, amount: 100 });
+    await db('market_price_snapshots').insert({ market_id: marketId, captured_at: new Date(Date.now() - 5*60*1000), prices: JSON.stringify([{ outcome_id: outcomeId, price: 0.40 }]) });
+    const res = await request(app).get('/api/habit/triggers/in-app-strip').set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(res.body.sharpMoves).toEqual([]);
+  });
 });
 
 describe('POST /api/habit/opt-in', () => {
