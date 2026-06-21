@@ -6,30 +6,38 @@ const {
   sendCodeLimiter,
   verifyLimiter,
   quickJoinLimiter,
+  exchangeTokenLimiter,
+  otpIpBurstLimiter,
 } = require('../../middleware/rateLimiter');
 
-router.post('/send-code', sendCodeLimiter, async (req, res, next) => {
+router.post('/send-code', otpIpBurstLimiter, sendCodeLimiter, async (req, res, next) => {
   try {
     const { phoneNumber } = req.body;
-    if (!phoneNumber) throw new ValidationError('phoneNumber is required');
+    if (typeof phoneNumber !== 'string' || !phoneNumber) {
+      throw new ValidationError('phoneNumber is required');
+    }
     const result = await authService.sendCode(phoneNumber);
     res.json(result);
   } catch (err) { next(err); }
 });
 
-router.post('/verify', verifyLimiter, async (req, res, next) => {
+router.post('/verify', otpIpBurstLimiter, verifyLimiter, async (req, res, next) => {
   try {
     const { phoneNumber, code, name, referralCode } = req.body;
-    if (!phoneNumber || !code || !name) throw new ValidationError('phoneNumber, code, and name are required');
+    if (typeof phoneNumber !== 'string' || !phoneNumber || typeof code !== 'string' || !code || typeof name !== 'string' || !name) {
+      throw new ValidationError('phoneNumber, code, and name are required');
+    }
     const result = await authService.verifyCode(phoneNumber, code, name, referralCode);
     res.json(result);
   } catch (err) { next(err); }
 });
 
-router.post('/login', sendCodeLimiter, async (req, res, next) => {
+router.post('/login', otpIpBurstLimiter, sendCodeLimiter, async (req, res, next) => {
   try {
     const { phoneNumber } = req.body;
-    if (!phoneNumber) throw new ValidationError('phoneNumber is required');
+    if (typeof phoneNumber !== 'string' || !phoneNumber) {
+      throw new ValidationError('phoneNumber is required');
+    }
     const result = await authService.login(phoneNumber);
     res.json(result);
   } catch (err) { next(err); }
@@ -38,13 +46,15 @@ router.post('/login', sendCodeLimiter, async (req, res, next) => {
 router.post('/quick-join', quickJoinLimiter, async (req, res, next) => {
   try {
     const { phoneNumber, name, referralCode } = req.body;
-    if (!phoneNumber || !name) throw new ValidationError('phoneNumber and name are required');
+    if (typeof phoneNumber !== 'string' || !phoneNumber || typeof name !== 'string' || !name) {
+      throw new ValidationError('phoneNumber and name are required');
+    }
     const result = await authService.quickJoin(phoneNumber, name, referralCode);
     res.json(result);
   } catch (err) { next(err); }
 });
 
-router.post('/exchange-token', async (req, res, next) => {
+router.post('/exchange-token', exchangeTokenLimiter, async (req, res, next) => {
   try {
     const { urlToken } = req.body;
     if (!urlToken) throw new ValidationError('urlToken is required');

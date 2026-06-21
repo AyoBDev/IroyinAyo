@@ -8,16 +8,30 @@ const skipInTest = isTest ? () => true : () => false;
 // Key rate limits by normalized phone number when the request carries one, so
 // users on shared/CGNAT IPs (campus Wi-Fi, mobile carriers) don't lock each
 // other out, and so the same number in different formats shares one bucket.
-// Falls back to IP (via ipKeyGenerator to handle IPv6 correctly).
-function phoneOrIpKey(req, res) {
+// Falls back to IP (via ipKeyGenerator, which handles IPv6 subnet bucketing).
+function phoneOrIpKey(req) {
   const phone = req.body && req.body.phoneNumber;
-  if (!phone) return ipKeyGenerator(req, res);
+  if (typeof phone !== 'string' || phone.length === 0) {
+    return ipKeyGenerator(req.ip);
+  }
   try {
     return `phone:${normalizePhone(phone)}`;
   } catch {
-    return ipKeyGenerator(req, res);
+    return ipKeyGenerator(req.ip);
   }
 }
+
+// Secondary IP-keyed cap on OTP sends. Even though the primary limiter is
+// phone-keyed (so legit users on shared IPs aren't punished), this stops one
+// attacker IP from spamming OTPs to many different phone numbers.
+const otpIpBurstLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  skip: skipInTest,
+  message: { error: 'Too many requests from this device. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Admin auth (admin login/register) - 5 attempts per 15 minutes per IP
 const authLimiter = rateLimit({
@@ -51,12 +65,23 @@ const verifyLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Account creation via quick-join - 3 per hour per IP
+// Account creation via quick-join - 10 per hour per IP. Tuned to accommodate
+// groups of students signing up together on shared campus Wi-Fi / CGNAT.
 const quickJoinLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 3,
+  max: 10,
   skip: skipInTest,
   message: { error: 'Too many sign-up attempts from this device. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Token exchange (persistent login link) - 20 per 15 minutes per IP
+const exchangeTokenLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  skip: skipInTest,
+  message: { error: 'Too many token exchange attempts. Please request a new link.' },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -86,6 +111,8 @@ module.exports = {
   sendCodeLimiter,
   verifyLimiter,
   quickJoinLimiter,
+  exchangeTokenLimiter,
+  otpIpBurstLimiter,
   aiLimiter,
   generalLimiter,
 };
