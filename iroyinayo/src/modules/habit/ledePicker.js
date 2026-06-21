@@ -7,13 +7,13 @@ const SOCIAL_RECENT_HOURS = 12;
 async function rankLede(studentId) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
-  const rows = await db('weekly_leaderboard')
+  const rows = await db('daily_rank_snapshots')
     .where('student_id', studentId)
-    .whereIn('week_start', [today, yesterday])
-    .select('week_start', 'rank');
+    .whereIn('snapshot_date', [today, yesterday])
+    .select('snapshot_date', 'rank');
   if (rows.length < 2) return null;
-  const todayRow = rows.find((r) => new Date(r.week_start).getTime() === today.getTime());
-  const yesterdayRow = rows.find((r) => new Date(r.week_start).getTime() === yesterday.getTime());
+  const todayRow = rows.find((r) => new Date(r.snapshot_date).getTime() === today.getTime());
+  const yesterdayRow = rows.find((r) => new Date(r.snapshot_date).getTime() === yesterday.getTime());
   if (!todayRow || !yesterdayRow) return null;
   const delta = yesterdayRow.rank - todayRow.rank;
   if (Math.abs(delta) < 3) return null;

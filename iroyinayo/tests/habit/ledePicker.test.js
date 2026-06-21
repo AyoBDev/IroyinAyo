@@ -39,9 +39,9 @@ describe('pickLede', () => {
     const studentId = await createStudent();
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
-    await db('weekly_leaderboard').insert([
-      { id: uuidv4(), student_id: studentId, rank: 50, week_start: yesterday, points: 0 },
-      { id: uuidv4(), student_id: studentId, rank: 45, week_start: today, points: 0 },
+    await db('daily_rank_snapshots').insert([
+      { id: uuidv4(), student_id: studentId, rank: 50, snapshot_date: yesterday, points_balance: 0, net_profit_week: 0 },
+      { id: uuidv4(), student_id: studentId, rank: 45, snapshot_date: today, points_balance: 0, net_profit_week: 0 },
     ]);
     const r = await pickLede(studentId);
     expect(r.type).toBe('rank');
