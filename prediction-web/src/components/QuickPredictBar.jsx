@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { computeDefaultStake, STAKE_FLOOR } from '../utils/defaultStake';
+import { computeDefaultStake, computeEffectiveCeiling, STAKE_FLOOR } from '../utils/defaultStake';
 
 export default function QuickPredictBar({ market, outcomes, recentStakes, balance, onPredict }) {
   const [stake, setStake] = useState(() => computeDefaultStake({ recentStakes, balance }));
   const [selectedOutcomeId, setSelectedOutcomeId] = useState(null);
 
-  const cappedAtMax = stake === Math.min(1000, Math.floor(balance * 0.10 / 50) * 50);
-  const canSubmit = selectedOutcomeId && stake >= STAKE_FLOOR && stake <= balance;
+  const ceiling = computeEffectiveCeiling(balance);
+  const cappedAtMax = stake === ceiling && balance < STAKE_FLOOR;
+  const canSubmit = selectedOutcomeId && stake > 0 && stake <= balance && stake <= ceiling;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-paper border-t border-line p-4 z-40">
@@ -24,12 +25,12 @@ export default function QuickPredictBar({ market, outcomes, recentStakes, balanc
         </div>
 
         <div className="flex items-center gap-3">
-          <button onClick={() => setStake((s) => Math.max(STAKE_FLOOR, s - 50))} className="h-11 w-11 rounded-lg border border-line">−</button>
+          <button onClick={() => setStake((s) => Math.max(balance < STAKE_FLOOR ? Math.max(50, Math.floor(balance / 50) * 50) : STAKE_FLOOR, s - 50))} className="h-11 w-11 rounded-lg border border-line">−</button>
           <div className="flex-1 text-center font-mono">
             <div className="text-xl">{stake} pts</div>
             {cappedAtMax && <span className="text-xs text-ochre">max</span>}
           </div>
-          <button onClick={() => setStake((s) => Math.min(balance, s + 50))} className="h-11 w-11 rounded-lg border border-line">+</button>
+          <button onClick={() => setStake((s) => Math.min(balance, ceiling, s + 50))} className="h-11 w-11 rounded-lg border border-line">+</button>
         </div>
 
         <button
