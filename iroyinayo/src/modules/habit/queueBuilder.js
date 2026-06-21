@@ -62,19 +62,24 @@ async function selectMarketsForUser(studentId, ledePayload) {
   return out;
 }
 
-async function buildDailyQueue({ targetDate, rng = Math.random } = {}) {
-  if (!targetDate) targetDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
+async function buildDailyQueue({ targetDate, now, rng = Math.random } = {}) {
+  const effectiveNow = now || new Date();
+  if (!targetDate) targetDate = new Date(effectiveNow.getTime() + 24 * 60 * 60 * 1000);
   const students = await db('students')
     .where({ wa_daily_enabled: true, is_banned: false })
-    .where(function () { this.whereNull('wa_paused_until').orWhere('wa_paused_until', '<', new Date()); })
+    .where(function () { this.whereNull('wa_paused_until').orWhere('wa_paused_until', '<', effectiveNow); })
     .select('id', 'wa_anchor_time');
 
   let enqueued = 0;
   let skipped = 0;
   for (const student of students) {
     if (!student.wa_anchor_time) {
-      await db('students').where('id', student.id).update({ wa_anchor_time: pickAnchorTime(rng) });
-      student.wa_anchor_time = (await db('students').where('id', student.id).select('wa_anchor_time').first()).wa_anchor_time;
+      const candidate = pickAnchorTime(rng);
+      const updated = await db('students')
+        .where('id', student.id)
+        .update({ wa_anchor_time: db.raw('COALESCE(wa_anchor_time, ?)', [candidate]) })
+        .returning('wa_anchor_time');
+      student.wa_anchor_time = updated[0]?.wa_anchor_time || candidate;
     }
     const lede = await pickLede(student.id);
     if (!lede.type) { skipped += 1; continue; }

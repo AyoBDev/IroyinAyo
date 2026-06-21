@@ -130,4 +130,49 @@ describe('buildDailyQueue', () => {
     expect(row.markets).toBeDefined();
     expect(Array.isArray(row.markets)).toBe(true);
   });
+
+  test('excludes banned users', async () => {
+    await createCuriosityLede();
+    await createMarket({ status: 'open' });
+    await createMarket({ status: 'open' });
+    await createEnrolledStudent({ is_banned: true });
+    await createEnrolledStudent();
+    const result = await buildDailyQueue({ targetDate: new Date('2026-06-22') });
+    expect(result.enqueued).toBe(1);
+  });
+
+  test('includes users with wa_paused_until in the past', async () => {
+    await createCuriosityLede();
+    await createMarket({ status: 'open' });
+    await createMarket({ status: 'open' });
+    const past = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    await createEnrolledStudent({ wa_paused_until: past });
+    await createEnrolledStudent();
+    const result = await buildDailyQueue({ targetDate: new Date('2026-06-22'), now: new Date() });
+    expect(result.enqueued).toBe(2);
+  });
+
+  test('skips students when lede picker returns no type', async () => {
+    // No curiosity lede (no hot markets), no positions = no lede
+    await createMarket({ status: 'open' });
+    await createEnrolledStudent();
+    const result = await buildDailyQueue({ targetDate: new Date('2026-06-22') });
+    expect(result.skipped).toBe(1);
+    expect(result.enqueued).toBe(0);
+    const rows = await db('whatsapp_daily_queue').select('*');
+    expect(rows.length).toBe(0);
+  });
+
+  test('assigns wa_anchor_time if missing and uses it for scheduled_for', async () => {
+    await createCuriosityLede();
+    await createMarket({ status: 'open' });
+    await createMarket({ status: 'open' });
+    const studentId = await createEnrolledStudent({ wa_anchor_time: null });
+    await buildDailyQueue({ targetDate: new Date('2026-06-22'), rng: fixedRng([0.5]) });
+    const student = await db('students').where('id', studentId).first();
+    expect(student.wa_anchor_time).not.toBeNull();
+    const queueRow = await db('whatsapp_daily_queue').where('student_id', studentId).first();
+    expect(queueRow).toBeDefined();
+    expect(queueRow.scheduled_for).toBeDefined();
+  });
 });
