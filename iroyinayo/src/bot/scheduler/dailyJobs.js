@@ -1,9 +1,7 @@
 const cron = require('node-cron');
 const db = require('../../config/database');
-const contentService = require('../../modules/content/content.service');
 const contentAI = require('../../modules/content/content.ai');
-const gamificationService = require('../../modules/gamification/gamification.service');
-const { formatFeed, formatQuiz, bold } = require('../formatters');
+const { formatQuiz, bold } = require('../formatters');
 const { buildDailyQueue } = require('../../modules/habit/queueBuilder');
 const { drainDailyQueue } = require('../../modules/habit/queueSender');
 const { evaluatePositionTriggers, fireResolvedAwayNotifications } = require('../../modules/habit/positionTriggers');
