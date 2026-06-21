@@ -2,11 +2,13 @@ const express = require('express');
 const router = express.Router();
 const authService = require('./auth.service');
 const { ValidationError } = require('../../utils/errors');
-const { authLimiter } = require('../../middleware/rateLimiter');
+const {
+  sendCodeLimiter,
+  verifyLimiter,
+  quickJoinLimiter,
+} = require('../../middleware/rateLimiter');
 
-router.use(authLimiter);
-
-router.post('/send-code', async (req, res, next) => {
+router.post('/send-code', sendCodeLimiter, async (req, res, next) => {
   try {
     const { phoneNumber } = req.body;
     if (!phoneNumber) throw new ValidationError('phoneNumber is required');
@@ -15,7 +17,7 @@ router.post('/send-code', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-router.post('/verify', async (req, res, next) => {
+router.post('/verify', verifyLimiter, async (req, res, next) => {
   try {
     const { phoneNumber, code, name, referralCode } = req.body;
     if (!phoneNumber || !code || !name) throw new ValidationError('phoneNumber, code, and name are required');
@@ -24,7 +26,7 @@ router.post('/verify', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-router.post('/login', async (req, res, next) => {
+router.post('/login', sendCodeLimiter, async (req, res, next) => {
   try {
     const { phoneNumber } = req.body;
     if (!phoneNumber) throw new ValidationError('phoneNumber is required');
@@ -33,7 +35,7 @@ router.post('/login', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-router.post('/quick-join', async (req, res, next) => {
+router.post('/quick-join', quickJoinLimiter, async (req, res, next) => {
   try {
     const { phoneNumber, name, referralCode } = req.body;
     if (!phoneNumber || !name) throw new ValidationError('phoneNumber and name are required');
