@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Share2, Clock, Users, MessageSquare, TrendingUp, Trophy, Flag } from 'lucide-react';
 import useStore from '../store.js';
@@ -6,6 +6,8 @@ import { apiFetch, getToken } from '../api.js';
 import PredictSlip from '../components/PredictSlip.jsx';
 import PublicChat from '../components/PublicChat.jsx';
 import MarketShareModal from '../components/MarketShareModal.jsx';
+import { useDeepLinkRef, buildSourceRef } from '../hooks/useDeepLinkRef.js';
+import QuickPredictBar from '../components/QuickPredictBar.jsx';
 
 function PriceChart({ outcomes }) {
   const sorted = [...outcomes].sort((a, b) => b.price - a.price);
@@ -226,9 +228,20 @@ export default function MarketDetail() {
   const navigate = useNavigate();
   const markets = useStore((s) => s.markets);
   const user = useStore((s) => s.user);
+  const placePrediction = useStore((s) => s.placePrediction);
   const [showReport, setShowReport] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reporting, setReporting] = useState(false);
+
+  const { ref, lede } = useDeepLinkRef();
+  const isQuickPredict = ref === 'wa_daily' && (lede === 'social' || lede === 'curiosity' || lede === 'resolution');
+  const [quickPredictActive, setQuickPredictActive] = useState(isQuickPredict);
+
+  useEffect(() => {
+    if (!isQuickPredict) return;
+    const timer = setTimeout(() => setQuickPredictActive(false), 30000);
+    return () => clearTimeout(timer);
+  }, [isQuickPredict]);
 
   const market = markets.find((m) => m.id === marketId);
   const isCreator = user && market && market.created_by && market.created_by === user.id;
@@ -387,6 +400,24 @@ export default function MarketDetail() {
             </div>
           </div>
         </div>
+      )}
+
+      {quickPredictActive && market && (
+        <QuickPredictBar
+          market={market}
+          outcomes={outcomes}
+          recentStakes={[]}
+          balance={user?.points_balance ?? 0}
+          onPredict={async (outcomeId, stake) => {
+            const sourceRef = buildSourceRef({ ref, lede });
+            try {
+              await placePrediction(market.id, outcomeId, stake, sourceRef);
+            } catch (e) {
+              console.error('Quick-predict failed:', e);
+            }
+            setQuickPredictActive(false);
+          }}
+        />
       )}
     </div>
   );
