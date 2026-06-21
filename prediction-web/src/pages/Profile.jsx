@@ -4,6 +4,7 @@ import { apiFetch, getToken } from '../api.js';
 import useStore from '../store.js';
 import { getTheme, toggleTheme } from '../theme.js';
 import ProfileShareModal from '../components/ProfileShareModal.jsx';
+import ProfileAccuracyHeader from '../components/ProfileAccuracyHeader.jsx';
 
 function MyMarkets() {
   const [markets, setMarkets] = useState([]);
@@ -271,6 +272,9 @@ export default function Profile() {
           )}
         </div>
       </div>
+
+      {/* Accuracy Header */}
+      <ProfileAccuracyHeader userId={user.id} isOwn={true} />
 
       {/* Hero: Portfolio Summary */}
       <section className="mb-6">
