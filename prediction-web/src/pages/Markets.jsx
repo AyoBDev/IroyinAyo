@@ -11,6 +11,8 @@ import SharpMoney from '../components/SharpMoney.jsx';
 import CreateMarketFAB from '../components/CreateMarketFAB.jsx';
 import CreateMarketForm from '../components/CreateMarketForm.jsx';
 import Tutorial from '../components/Tutorial.jsx';
+import { useDeepLinkRef } from '../hooks/useDeepLinkRef.js';
+import MarketsTopStrip from '../components/MarketsTopStrip.jsx';
 
 function SocialProofBanner({ socialProof }) {
   if (!socialProof) return null;
@@ -327,6 +329,9 @@ export default function Markets() {
   const [activeTab, setActiveTab] = useState('all');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const { markets } = useStore();
+  const { ref, lede } = useDeepLinkRef();
+  const showRankStrip = ref === 'wa_daily' && lede === 'rank';
+  const [stripMarkets, setStripMarkets] = useState([]);
 
   if (!getToken()) {
     return <AuthWall />;
@@ -345,6 +350,7 @@ export default function Markets() {
     <>
       <Tutorial />
       <LivePredictorCount />
+      {showRankStrip && <MarketsTopStrip markets={stripMarkets} />}
 
       {/* Category Chips */}
       <section className="no-scrollbar flex gap-2 px-4 py-4 overflow-x-auto">
