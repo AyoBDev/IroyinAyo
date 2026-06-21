@@ -300,6 +300,35 @@ describe('Multi-outcome LMSR Service', () => {
         const updatedOutcome = await db('multi_market_outcomes').where({ id: outcome.id }).first();
         expect(updatedOutcome.shares_sold).toBeGreaterThan(0);
       });
+
+      test('persists source_ref when provided', async () => {
+        const market = await multiMarketsService.createMarket('Test market');
+        const outcome = await multiMarketsService.addOutcome(market.id, 'Option A');
+        await multiMarketsService.addOutcome(market.id, 'Option B');
+
+        const result = await multiMarketsService.buyPosition(market.id, outcome.id, student.id, 50, 'wa_daily:rank');
+
+        const position = await db('multi_market_positions')
+          .where({ student_id: student.id, market_id: market.id })
+          .first();
+
+        expect(position.source_ref).toBe('wa_daily:rank');
+        expect(result.position.source_ref).toBe('wa_daily:rank');
+      });
+
+      test('allows null source_ref for backward compatibility', async () => {
+        const market = await multiMarketsService.createMarket('Test market');
+        const outcome = await multiMarketsService.addOutcome(market.id, 'Option A');
+        await multiMarketsService.addOutcome(market.id, 'Option B');
+
+        const result = await multiMarketsService.buyPosition(market.id, outcome.id, student.id, 50);
+
+        const position = await db('multi_market_positions')
+          .where({ student_id: student.id, market_id: market.id })
+          .first();
+
+        expect(position.source_ref).toBeNull();
+      });
     });
 
     describe('resolveMarket', () => {

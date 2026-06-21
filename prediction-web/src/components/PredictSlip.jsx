@@ -3,6 +3,7 @@ import { X, ArrowRight, Users, Copy, Check } from 'lucide-react';
 import useStore from '../store.js';
 import { getToken } from '../api.js';
 import PredictionConfirmation from './PredictionConfirmation.jsx';
+import { useDeepLinkRef, buildSourceRef } from '../hooks/useDeepLinkRef.js';
 
 function getSlipClasses(label) {
   const lower = label.toLowerCase();
@@ -41,6 +42,7 @@ export default function PredictSlip({ market, outcome, onClose }) {
   const isAuthenticated = !!getToken();
   const classes = getSlipClasses(outcome.label);
   const [confirmationData, setConfirmationData] = useState(null);
+  const deepLink = useDeepLinkRef();
 
   const amountNum = parseInt(amount, 10) || 0;
   const payout = amountNum > 0 ? Math.floor(amountNum / outcome.price) : 0;
@@ -51,7 +53,8 @@ export default function PredictSlip({ market, outcome, onClose }) {
     setSubmitting(true);
     setError(null);
     try {
-      const result = await placePrediction(market.id, outcome.id, amountNum);
+      const sourceRef = buildSourceRef(deepLink);
+      const result = await placePrediction(market.id, outcome.id, amountNum, sourceRef);
       fetchPositions();
       const position = result?.position;
       setConfirmationData({

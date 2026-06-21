@@ -237,7 +237,7 @@ async function listOpenMarkets() {
  * @param {number} amount - points to spend
  * @returns {object} - {position, market}
  */
-async function buyPosition(marketId, outcomeId, studentId, amount) {
+async function buyPosition(marketId, outcomeId, studentId, amount, sourceRef = null) {
   const market = await db('multi_markets').where({ id: marketId }).first();
   if (!market) {
     throw new NotFoundError('Market not found');
@@ -285,6 +285,7 @@ async function buyPosition(marketId, outcomeId, studentId, amount) {
         shares,
         entry_price: entryPrice,
         payout: 0,
+        source_ref: sourceRef,
       })
       .returning('*');
 

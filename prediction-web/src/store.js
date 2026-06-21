@@ -61,10 +61,10 @@ const useStore = create((set, get) => ({
     }
   },
 
-  placePrediction: async (marketId, outcomeId, amount) => {
+  placePrediction: async (marketId, outcomeId, amount, sourceRef = null) => {
     const result = await apiFetch(`/api/multi-markets/${marketId}/predict`, {
       method: 'POST',
-      body: JSON.stringify({ outcomeId, amount }),
+      body: JSON.stringify({ outcomeId, amount, sourceRef }),
     });
     const user = get().user;
     if (user) set({ user: { ...user, points_balance: user.points_balance - amount } });

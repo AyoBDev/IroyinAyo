@@ -472,7 +472,7 @@ router.get('/positions/:positionId/public', async (req, res, next) => {
 
 router.post('/:id/predict', authenticateStudent, async (req, res, next) => {
   try {
-    const { outcomeId } = req.body;
+    const { outcomeId, sourceRef } = req.body;
     const amount = Math.floor(Number(req.body.amount));
     if (!outcomeId || !amount) throw new ValidationError('outcomeId and amount are required');
     if (!Number.isFinite(amount) || amount < 1) throw new ValidationError('Amount must be at least 1');
@@ -486,7 +486,7 @@ router.post('/:id/predict', authenticateStudent, async (req, res, next) => {
       throw new ValidationError('Betting is closed for this market');
     }
 
-    const result = await multiMarkets.buyPosition(req.params.id, outcomeId, req.student.id, amount);
+    const result = await multiMarkets.buyPosition(req.params.id, outcomeId, req.student.id, amount, sourceRef);
 
     const io = req.app.get('io');
     if (io) {
