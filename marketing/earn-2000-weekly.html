@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iroyin Market - Earn ₦2,000/Week</title>
+<style>
+@font-face {
+  font-family: 'Fraunces';
+  src: url('../prediction-web/public/fonts/fraunces-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Instrument Sans';
+  src: url('../prediction-web/public/fonts/instrument-sans-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Instrument Sans';
+  src: url('../prediction-web/public/fonts/instrument-sans-medium.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  background: #fbf7ef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.poster {
+  width: 1080px;
+  height: 1350px;
+  background: #fbf7ef;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Subtle warm gradient overlay */
+.poster::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(ellipse at 50% 30%, rgba(230, 199, 100, 0.12) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* Brand header */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: absolute;
+  top: 60px;
+  left: 72px;
+  z-index: 2;
+}
+
+.brand-icon {
+  width: 52px;
+  height: 52px;
+  background: #0f3d2e;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.brand-name {
+  font-family: 'Fraunces', ui-serif, Georgia, serif;
+  font-size: 28px;
+  color: #14110f;
+  letter-spacing: -0.5px;
+}
+
+/* Main text */
+.headline {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  margin-top: 200px;
+}
+
+.headline .pre {
+  font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: 42px;
+  font-weight: 400;
+  color: #14110f;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+
+.headline .amount {
+  font-family: 'Fraunces', ui-serif, Georgia, serif;
+  font-size: 120px;
+  color: #0f3d2e;
+  letter-spacing: -4px;
+  line-height: 1.1;
+  font-weight: 400;
+}
+
+.headline .sub {
+  font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: 38px;
+  font-weight: 400;
+  color: #2a2521;
+  letter-spacing: -0.3px;
+  margin-top: 12px;
+}
+
+/* Naira notes illustration */
+.notes-container {
+  position: relative;
+  z-index: 2;
+  margin-top: 60px;
+  width: 600px;
+  height: 480px;
+}
+
+.hand-notes {
+  width: 100%;
+  height: 100%;
+}
+
+/* Bottom CTA */
+.cta-section {
+  position: absolute;
+  bottom: 80px;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  z-index: 2;
+}
+
+.cta-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.cta-text {
+  font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: 26px;
+  font-weight: 500;
+  color: #14110f;
+}
+
+.cta-pill {
+  background: #0f3d2e;
+  color: #fbf7ef;
+  font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: 22px;
+  font-weight: 500;
+  padding: 14px 32px;
+  border-radius: 9999px;
+  letter-spacing: -0.2px;
+}
+
+.terms {
+  font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: 18px;
+  color: #6b6055;
+  margin-top: 4px;
+}
+
+/* Gold decorative accent */
+.accent-line {
+  position: absolute;
+  top: 160px;
+  right: 60px;
+  width: 80px;
+  height: 4px;
+  background: #e6c764;
+  border-radius: 2px;
+}
+
+.accent-dot {
+  position: absolute;
+  bottom: 200px;
+  left: 60px;
+  width: 12px;
+  height: 12px;
+  background: #e6c764;
+  border-radius: 50%;
+}
+</style>
+</head>
+<body>
+
+<div class="poster">
+  <!-- Decorative accents -->
+  <div class="accent-line"></div>
+  <div class="accent-dot"></div>
+
+  <!-- Brand -->
+  <div class="brand">
+    <div class="brand-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+        <path d="M6 22L13 15L17.5 19.5L26 11" stroke="#2ed49a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M19 11H26V18" stroke="#2ed49a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span class="brand-name">IroyinMarket</span>
+  </div>
+
+  <!-- Headline -->
+  <div class="headline">
+    <div class="pre">Earn up to</div>
+    <div class="amount">₦2,000/Week</div>
+    <div class="sub">Predicting on IroyinMarket</div>
+  </div>
+
+  <!-- Hand holding Naira notes -->
+  <div class="notes-container">
+    <svg class="hand-notes" viewBox="0 0 600 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Hand -->
+      <g>
+        <!-- Wrist/Palm -->
+        <path d="M280 480 C280 480 260 420 265 380 C270 340 275 320 290 300 C305 280 320 275 340 270 C360 265 370 270 380 280 C390 290 395 310 390 330" fill="#8B5E3C"/>
+        <!-- Thumb -->
+        <path d="M290 300 C285 290 275 275 270 265 C265 255 268 245 278 242 C288 239 298 248 302 258 C306 268 305 280 305 290" fill="#9B6E4C"/>
+        <!-- Fingers wrapping -->
+        <path d="M340 270 C345 255 350 240 355 225 C360 215 368 210 376 214 C384 218 385 230 382 242 C379 254 375 265 370 275" fill="#8B5E3C"/>
+        <path d="M360 265 C365 250 372 235 378 222 C384 212 393 210 400 215 C407 220 406 232 402 245 C398 258 392 268 388 278" fill="#7A4E2C"/>
+        <path d="M380 270 C385 256 392 242 398 230 C404 220 413 219 419 224 C425 229 424 241 419 253 C414 265 408 275 403 283" fill="#8B5E3C"/>
+      </g>
+
+      <!-- Naira Note 1 (back, rotated) -->
+      <g transform="rotate(-15, 350, 180)">
+        <rect x="220" y="110" width="280" height="140" rx="8" fill="#1a6b3c" stroke="#14532d" stroke-width="1.5"/>
+        <rect x="232" y="122" width="256" height="116" rx="4" fill="none" stroke="#2d8a6e" stroke-width="1" stroke-dasharray="4 2"/>
+        <text x="360" y="165" text-anchor="middle" font-family="serif" font-size="18" fill="#a7f3d0" font-weight="bold">CENTRAL BANK OF NIGERIA</text>
+        <text x="360" y="210" text-anchor="middle" font-family="'Fraunces', serif" font-size="42" fill="#d1fae5" font-weight="bold">₦1,000</text>
+        <circle cx="270" cy="180" r="30" fill="none" stroke="#2d8a6e" stroke-width="1.5"/>
+        <circle cx="270" cy="180" r="22" fill="#15803d" opacity="0.5"/>
+      </g>
+
+      <!-- Naira Note 2 (middle, slightly rotated) -->
+      <g transform="rotate(-8, 340, 170)">
+        <rect x="215" y="100" width="280" height="140" rx="8" fill="#1e7a44" stroke="#166534" stroke-width="1.5"/>
+        <rect x="227" y="112" width="256" height="116" rx="4" fill="none" stroke="#34d399" stroke-width="1" stroke-dasharray="4 2"/>
+        <text x="355" y="155" text-anchor="middle" font-family="serif" font-size="18" fill="#a7f3d0" font-weight="bold">CENTRAL BANK OF NIGERIA</text>
+        <text x="355" y="200" text-anchor="middle" font-family="'Fraunces', serif" font-size="42" fill="#ecfdf5" font-weight="bold">₦1,000</text>
+        <circle cx="265" cy="170" r="30" fill="none" stroke="#34d399" stroke-width="1.5"/>
+        <circle cx="265" cy="170" r="22" fill="#16a34a" opacity="0.4"/>
+        <!-- Portrait circle placeholder -->
+        <ellipse cx="265" cy="168" rx="16" ry="18" fill="#15803d" opacity="0.6"/>
+      </g>
+
+      <!-- Naira Note 3 (front) -->
+      <g transform="rotate(-2, 330, 160)">
+        <rect x="210" y="90" width="280" height="140" rx="8" fill="#22883e" stroke="#16a34a" stroke-width="1.5"/>
+        <rect x="222" y="102" width="256" height="116" rx="4" fill="none" stroke="#4ade80" stroke-width="1" stroke-dasharray="4 2"/>
+        <text x="350" y="142" text-anchor="middle" font-family="serif" font-size="16" fill="#bbf7d0" font-weight="bold">CENTRAL BANK OF NIGERIA</text>
+        <text x="350" y="188" text-anchor="middle" font-family="'Fraunces', serif" font-size="44" fill="#f0fdf4" font-weight="bold">₦1,000</text>
+        <circle cx="260" cy="158" r="30" fill="none" stroke="#4ade80" stroke-width="1.5"/>
+        <!-- Stylized portrait -->
+        <ellipse cx="260" cy="155" rx="17" ry="19" fill="#16a34a" opacity="0.5"/>
+        <ellipse cx="260" cy="148" rx="10" ry="11" fill="#15803d" opacity="0.6"/>
+        <!-- Serial number -->
+        <text x="420" y="206" text-anchor="middle" font-family="monospace" font-size="10" fill="#86efac">AA/12 345678</text>
+      </g>
+
+      <!-- Naira Note 4 (topmost, fan out) -->
+      <g transform="rotate(5, 320, 150)">
+        <rect x="205" y="80" width="280" height="140" rx="8" fill="#25994a" stroke="#22c55e" stroke-width="1.5"/>
+        <rect x="217" y="92" width="256" height="116" rx="4" fill="none" stroke="#86efac" stroke-width="1" stroke-dasharray="4 2"/>
+        <text x="345" y="132" text-anchor="middle" font-family="serif" font-size="16" fill="#dcfce7" font-weight="bold">CENTRAL BANK OF NIGERIA</text>
+        <text x="345" y="178" text-anchor="middle" font-family="'Fraunces', serif" font-size="44" fill="#ffffff" font-weight="bold">₦1,000</text>
+        <circle cx="255" cy="148" r="30" fill="none" stroke="#86efac" stroke-width="1.5"/>
+        <ellipse cx="255" cy="145" rx="17" ry="19" fill="#16a34a" opacity="0.4"/>
+        <ellipse cx="255" cy="138" rx="10" ry="11" fill="#15803d" opacity="0.5"/>
+        <text x="415" y="196" text-anchor="middle" font-family="monospace" font-size="10" fill="#bbf7d0">BB/98 765432</text>
+      </g>
+    </svg>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-section">
+    <div class="cta-row">
+      <span class="cta-text">Start predicting today</span>
+      <span class="cta-pill">iroyinmarket.com</span>
+    </div>
+    <span class="terms">Predict. Win. Withdraw.</span>
+  </div>
+</div>
+
+</body>
+</html>
