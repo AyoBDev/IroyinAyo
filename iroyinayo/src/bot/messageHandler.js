@@ -12,6 +12,7 @@ const { handleHelp } = require('./handlers/help');
 const { handleInfo } = require('./handlers/info');
 const { handleWelcomeBack } = require('./handlers/greeting');
 const { handleAdminCommand } = require('./admin/adminHandler');
+const { handleDailyOptIn } = require('./handlers/dailyOptIn');
 
 const GREETINGS = ['hi', 'hello', 'hey', 'yo', 'sup', 'good morning', 'good afternoon', 'good evening', 'gm', 'whatsup', 'wassup', 'howdy', 'hola', 'hy'];
 
@@ -54,6 +55,10 @@ async function handleMessage(sock, jid, text, msg) {
   if (student.whatsapp_jid !== jid) {
     await db('students').where({ id: student.id }).update({ whatsapp_jid: jid });
   }
+
+  // Handle daily opt-in / PAUSE / STOP
+  const optIn = await handleDailyOptIn({ phoneNumber: phone, text, sock });
+  if (optIn.handled) return;
 
   // Check if student is banned
   if (student.is_banned) {
