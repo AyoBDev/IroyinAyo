@@ -4,6 +4,10 @@ const contentService = require('../../modules/content/content.service');
 const contentAI = require('../../modules/content/content.ai');
 const gamificationService = require('../../modules/gamification/gamification.service');
 const { formatFeed, formatQuiz, bold } = require('../formatters');
+const { buildDailyQueue } = require('../../modules/habit/queueBuilder');
+const { drainDailyQueue } = require('../../modules/habit/queueSender');
+const { evaluatePositionTriggers, fireResolvedAwayNotifications } = require('../../modules/habit/positionTriggers');
+const { snapshotDailyRanks } = require('../../modules/habit/dailyRankSnapshot');
 
 // Random delay between messages to avoid WhatsApp ban (3-8 seconds)
 function randomDelay() {
@@ -38,33 +42,47 @@ function startScheduler(sock) {
     }
   }, { timezone: 'Africa/Lagos' });
 
-  // Morning digest — 8am WAT daily
-  cron.schedule('0 8 * * *', async () => {
-    console.log('Running morning digest...');
-    if (!activeSock) { console.error('Morning digest skipped: no active socket'); return; }
+  // Daily rank snapshot — 00:30 WAT
+  cron.schedule('30 0 * * *', async () => {
+    console.log('Snapshotting daily ranks...');
     try {
-      const students = await db('students').where({ is_banned: false, is_onboarded: true });
-
-      let sent = 0;
-      for (const student of students) {
-        try {
-          const feed = await contentService.getFeedForStudent(student.id);
-          if (feed.length > 0) {
-            const jid = getJid(student);
-            const items = feed.slice(0, 3);
-            await activeSock.sendMessage(jid, {
-              text: `☀️ ${bold('Good morning, ' + student.name + '!')}\n\n${formatFeed(items)}`,
-            });
-            sent++;
-            await randomDelay();
-          }
-        } catch (err) {
-          console.error(`Failed digest for ${student.phone_number}:`, err.message);
-        }
-      }
-      console.log(`Morning digest sent to ${sent}/${students.length} students`);
+      const result = await snapshotDailyRanks();
+      console.log(`Rank snapshot saved: ${result.count} students`);
     } catch (err) {
-      console.error('Morning digest failed:', err);
+      console.error('Rank snapshot failed:', err);
+    }
+  }, { timezone: 'Africa/Lagos' });
+
+  // Build today's WhatsApp daily queue — 5am WAT
+  cron.schedule('0 5 * * *', async () => {
+    console.log('Building WhatsApp daily queue...');
+    try {
+      const result = await buildDailyQueue({ targetDate: new Date() });
+      console.log(`Queue built: enqueued=${result.enqueued} skipped=${result.skipped}`);
+    } catch (err) {
+      console.error('Queue build failed:', err);
+    }
+  }, { timezone: 'Africa/Lagos' });
+
+  // Drain WhatsApp daily queue — 6:55am WAT
+  cron.schedule('55 6 * * *', async () => {
+    console.log('Draining WhatsApp daily queue...');
+    if (!activeSock) { console.error('Drain skipped: no active socket'); return; }
+    try {
+      const result = await drainDailyQueue();
+      console.log(`Queue drained: sent=${result.sent} failed=${result.failed} skipped=${result.skipped}`);
+    } catch (err) {
+      console.error('Queue drain failed:', err);
+    }
+  }, { timezone: 'Africa/Lagos' });
+
+  // Evaluate position triggers — every 10 minutes
+  cron.schedule('*/10 * * * *', async () => {
+    try {
+      await evaluatePositionTriggers();
+      await fireResolvedAwayNotifications();
+    } catch (err) {
+      console.error('Position triggers eval failed:', err);
     }
   }, { timezone: 'Africa/Lagos' });
 
@@ -277,7 +295,7 @@ function startScheduler(sock) {
     }
   }, { timezone: 'Africa/Lagos' });
 
-  console.log('Scheduler started: AI content (6am), morning digest (8am), midday quiz (12pm), market auto-close (hourly), odds movement (15min), closing-soon (30min)');
+  console.log('Scheduler started: daily rank snapshot (00:30), AI content (6am), WA queue build (5am), WA queue drain (6:55am), midday quiz (12pm), market auto-close (hourly), odds movement (15min), closing-soon (30min), position triggers (10min)');
 }
 
 module.exports = { startScheduler, updateSocket };
