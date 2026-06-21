@@ -2,6 +2,7 @@ require('dotenv').config();
 const http = require('http');
 const app = require('./app');
 const { createSocketServer } = require('./socket');
+const posthog = require('./utils/posthog');
 
 async function seedAdminFromEnv() {
   const email = process.env.ADMIN_EMAIL;
@@ -86,4 +87,14 @@ server.listen(PORT, async () => {
       console.error('Bot startup failed:', err.message);
     }
   }
+});
+
+process.on('SIGINT', async () => {
+  await posthog.shutdown();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  await posthog.shutdown();
+  process.exit(0);
 });

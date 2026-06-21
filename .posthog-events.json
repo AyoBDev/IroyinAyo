@@ -1,0 +1,62 @@
+[
+  {
+    "event_name": "user_signed_up",
+    "event_description": "A new student successfully completes OTP verification and creates an account.",
+    "file": "iroyinayo/src/modules/auth/auth.service.js"
+  },
+  {
+    "event_name": "user_logged_in",
+    "event_description": "A returning student successfully verifies OTP and logs in.",
+    "file": "iroyinayo/src/modules/auth/auth.service.js"
+  },
+  {
+    "event_name": "quick_join_completed",
+    "event_description": "A new student registers via the quick-join flow without OTP verification.",
+    "file": "iroyinayo/src/modules/auth/auth.service.js"
+  },
+  {
+    "event_name": "prediction_placed",
+    "event_description": "A student buys a yes/no position on a binary prediction market.",
+    "file": "iroyinayo/src/modules/markets/markets.service.js"
+  },
+  {
+    "event_name": "multi_prediction_placed",
+    "event_description": "A student buys a position on a multi-outcome prediction market.",
+    "file": "iroyinayo/src/modules/markets/multiMarkets.service.js"
+  },
+  {
+    "event_name": "market_resolved",
+    "event_description": "An admin resolves a binary market and payouts are distributed to winners.",
+    "file": "iroyinayo/src/modules/markets/markets.service.js"
+  },
+  {
+    "event_name": "multi_market_resolved",
+    "event_description": "An admin resolves a multi-outcome market and payouts are distributed to winners.",
+    "file": "iroyinayo/src/modules/markets/multiMarkets.service.js"
+  },
+  {
+    "event_name": "reward_redeemed",
+    "event_description": "A student redeems points for a cash or airtime reward.",
+    "file": "iroyinayo/src/modules/rewards/rewards.service.js"
+  },
+  {
+    "event_name": "referral_applied",
+    "event_description": "A referral code is successfully applied, granting bonuses to both referrer and referred student.",
+    "file": "iroyinayo/src/modules/referrals/referrals.service.js"
+  },
+  {
+    "event_name": "ambassador_promoted",
+    "event_description": "A student is automatically promoted to ambassador after reaching 10 successful referrals.",
+    "file": "iroyinayo/src/modules/referrals/referrals.service.js"
+  },
+  {
+    "event_name": "market_approved",
+    "event_description": "An admin approves a student-submitted market proposal, making it live.",
+    "file": "iroyinayo/src/modules/markets/markets.service.js"
+  },
+  {
+    "event_name": "market_created",
+    "event_description": "An admin creates a new binary prediction market.",
+    "file": "iroyinayo/src/modules/markets/markets.service.js"
+  }
+]

@@ -19,6 +19,8 @@ const liquidityRoutes = require('./modules/liquidity/liquidity.routes');
 const simulationRoutes = require('./modules/simulation/simulation.routes');
 const { generalLimiter } = require('./middleware/rateLimiter');
 const { AppError } = require('./utils/errors');
+const posthog = require('./utils/posthog');
+const { setupExpressRequestContext, setupExpressErrorHandler } = require('posthog-node');
 
 const app = express();
 
@@ -42,6 +44,7 @@ app.use(cors({
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
 
 // Serve static files before rate limiter to avoid throttling asset requests
@@ -80,6 +83,8 @@ app.use(express.static(frontendPath));
 app.use(generalLimiter);
 
 app.use(express.json());
+
+setupExpressRequestContext(posthog, app);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
@@ -167,6 +172,8 @@ app.use((req, res, next) => {
     res.status(200).send('<html><body><h1>IroyinMarket</h1><p>Frontend not deployed yet. Use WhatsApp bot to interact.</p></body></html>');
   }
 });
+
+setupExpressErrorHandler(posthog, app);
 
 app.use((err, req, res, next) => {
   if (err instanceof AppError) {

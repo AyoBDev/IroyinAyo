@@ -2,6 +2,7 @@ const db = require('../../config/database');
 const { NotFoundError, ValidationError } = require('../../utils/errors');
 const gamificationService = require('../gamification/gamification.service');
 const { afterBinaryTrade } = require('../liquidity/liquidity.hooks');
+const posthog = require('../../utils/posthog');
 
 const PROFIT_FEE_RATE = 0.10;
 const MAX_BET_PER_MARKET = 500;
@@ -144,6 +145,20 @@ async function create({ question, description, category, closes_at, created_by_t
       liquidity,
     })
     .returning('*');
+
+  posthog.capture({
+    distinctId: created_by_id ? String(created_by_id) : 'admin',
+    event: 'market_created',
+    properties: {
+      market_id: market.id,
+      question: market.question,
+      category: market.category,
+      created_by_type,
+      is_approved: isApproved,
+      has_sponsor_bonus: (sponsor_bonus || 0) > 0,
+    },
+  });
+
   return withPrices(market);
 }
 
@@ -172,6 +187,18 @@ async function approve(id) {
   if (market.created_by_type === 'student') {
     await gamificationService.addPoints(market.created_by_id, 10, 'market_proposal', 'Market proposal approved', id);
   }
+
+  posthog.capture({
+    distinctId: market.created_by_id ? String(market.created_by_id) : 'admin',
+    event: 'market_approved',
+    properties: {
+      market_id: id,
+      question: market.question,
+      category: market.category,
+      created_by_type: market.created_by_type,
+    },
+  });
+
   return getById(id);
 }
 
@@ -216,6 +243,22 @@ async function buyPosition(marketId, studentId, side, amount) {
 
   const updatedMarket = await getById(marketId);
   afterBinaryTrade(marketId, studentId);
+
+  posthog.capture({
+    distinctId: String(studentId),
+    event: 'prediction_placed',
+    properties: {
+      market_id: marketId,
+      question: market.question,
+      category: market.category,
+      side,
+      amount,
+      shares: result.position.shares,
+      yes_price: updatedMarket.yes_price,
+      no_price: updatedMarket.no_price,
+    },
+  });
+
   return { position: result.position, market: updatedMarket };
 }
 
@@ -253,6 +296,19 @@ async function resolve(marketId, outcome) {
     }
 
     await trx('markets').where({ id: marketId }).update({ status: 'resolved', outcome, resolved_at: new Date() });
+  });
+
+  const winnerResult = await db('market_positions').where({ market_id: marketId, side: outcome }).count('id as c').first();
+  posthog.capture({
+    distinctId: 'admin',
+    event: 'market_resolved',
+    properties: {
+      market_id: marketId,
+      question: market.question,
+      category: market.category,
+      outcome,
+      winner_count: parseInt(winnerResult?.c || 0, 10),
+    },
   });
 
   return getById(marketId);

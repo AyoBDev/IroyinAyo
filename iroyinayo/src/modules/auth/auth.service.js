@@ -2,6 +2,7 @@ const db = require('../../config/database');
 const { getBotSocket } = require('../../bot/botSocket');
 const { generateStudentToken } = require('../../middleware/studentAuth');
 const { ValidationError } = require('../../utils/errors');
+const posthog = require('../../utils/posthog');
 
 function generateCode() {
   return String(Math.floor(100000 + Math.random() * 900000));
@@ -102,7 +103,7 @@ async function sendCode(phoneNumber) {
 async function verifyCode(phoneNumber, code, name, referralCode) {
   const phone = normalizePhone(phoneNumber);
 
-  const result = await db.transaction(async (trx) => {
+  const { student: result, isNew } = await db.transaction(async (trx) => {
     const record = await trx('verification_codes')
       .where({ phone_number: phone, code, used: false })
       .where('expires_at', '>', new Date())
@@ -117,7 +118,9 @@ async function verifyCode(phoneNumber, code, name, referralCode) {
     await trx('verification_codes').where({ id: record.id }).update({ used: true });
 
     let student = await trx('students').where({ phone_number: phone }).first();
+    let isNew = false;
     if (!student) {
+      isNew = true;
       const insertData = { phone_number: phone, name, points_balance: 100, is_verified: true, campus: 'unilorin' };
 
       if (referralCode) {
@@ -142,8 +145,39 @@ async function verifyCode(phoneNumber, code, name, referralCode) {
         .returning('*');
     }
 
-    return student;
+    return { student, isNew };
   });
+
+  const distinctId = String(result.id);
+
+  posthog.identify({
+    distinctId,
+    properties: {
+      $set: { name: result.name, campus: result.campus, is_ambassador: result.is_ambassador },
+      $set_once: { first_seen: result.created_at },
+    },
+  });
+
+  if (isNew) {
+    posthog.capture({
+      distinctId,
+      event: 'user_signed_up',
+      properties: {
+        name: result.name,
+        campus: result.campus,
+        had_referral: !!(referralCode),
+      },
+    });
+  } else {
+    posthog.capture({
+      distinctId,
+      event: 'user_logged_in',
+      properties: {
+        name: result.name,
+        campus: result.campus,
+      },
+    });
+  }
 
   const token = generateStudentToken(result.id);
   return { token, student: { id: result.id, name: result.name, points_balance: result.points_balance } };
@@ -210,6 +244,26 @@ async function quickJoin(phoneNumber, name, referralCode) {
     const { applyReferral } = require('../referrals/referrals.service');
     applyReferral(student.id, referralCode).catch(() => {});
   }
+
+  const distinctId = String(student.id);
+
+  posthog.identify({
+    distinctId,
+    properties: {
+      $set: { name: student.name, campus: student.campus },
+      $set_once: { first_seen: student.created_at },
+    },
+  });
+
+  posthog.capture({
+    distinctId,
+    event: 'quick_join_completed',
+    properties: {
+      name: student.name,
+      campus: student.campus,
+      had_referral: !!(referralCode && insertData.referred_by),
+    },
+  });
 
   const token = generateStudentToken(student.id);
   return { token, student: { id: student.id, name: student.name, points_balance: student.points_balance } };

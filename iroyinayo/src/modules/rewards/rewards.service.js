@@ -1,6 +1,7 @@
 const db = require('../../config/database');
 const { NotFoundError, ValidationError } = require('../../utils/errors');
 const gamificationService = require('../gamification/gamification.service');
+const posthog = require('../../utils/posthog');
 
 const MINIMUM_REDEMPTION_POINTS = 500;
 const WEEKLY_BUDGET_NGN = 10000;
@@ -113,6 +114,18 @@ async function redeem(studentId, rewardOptionId) {
   const [redemption] = await db('redemptions')
     .insert({ student_id: studentId, reward_option_id: rewardOptionId, phone_number: student.phone_number })
     .returning('*');
+
+  posthog.capture({
+    distinctId: String(studentId),
+    event: 'reward_redeemed',
+    properties: {
+      reward_option_id: rewardOptionId,
+      reward_name: option.name,
+      reward_type: option.type,
+      reward_value: option.value,
+      points_cost: option.points_cost,
+    },
+  });
 
   return { redemption, reward: option };
 }

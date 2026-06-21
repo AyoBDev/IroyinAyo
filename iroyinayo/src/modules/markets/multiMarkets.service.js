@@ -2,6 +2,7 @@ const db = require('../../config/database');
 const { NotFoundError, ValidationError } = require('../../utils/errors');
 const gamificationService = require('../gamification/gamification.service');
 const { afterMultiTrade } = require('../liquidity/liquidity.hooks');
+const posthog = require('../../utils/posthog');
 
 /**
  * Numerically stable computation of ln(sum(e^vi))
@@ -290,6 +291,22 @@ async function buyPosition(marketId, outcomeId, studentId, amount) {
     return { position, market };
   });
   afterMultiTrade(marketId, studentId);
+
+  const chosenOutcome = outcomes[outcomeIndex];
+  posthog.capture({
+    distinctId: String(studentId),
+    event: 'multi_prediction_placed',
+    properties: {
+      market_id: marketId,
+      market_title: market.title,
+      outcome_id: outcomeId,
+      outcome_label: chosenOutcome?.label,
+      amount,
+      shares: result.position.shares,
+      entry_price: result.position.entry_price,
+    },
+  });
+
   return result;
 }
 
@@ -308,7 +325,7 @@ async function resolveMarket(marketId, winningOutcomeId) {
     throw new ValidationError('Market already resolved');
   }
 
-  return db.transaction(async (trx) => {
+  const resolvedMarket = await db.transaction(async (trx) => {
     const winningPositions = await trx('multi_market_positions')
       .where({ market_id: marketId, outcome_id: winningOutcomeId });
 
@@ -330,7 +347,7 @@ async function resolveMarket(marketId, winningOutcomeId) {
       }
     }
 
-    const [resolvedMarket] = await trx('multi_markets')
+    const [resolved] = await trx('multi_markets')
       .where({ id: marketId })
       .update({
         status: 'resolved',
@@ -339,8 +356,28 @@ async function resolveMarket(marketId, winningOutcomeId) {
       })
       .returning('*');
 
-    return resolvedMarket;
+    return resolved;
   });
+
+  const winningOutcome = await db('multi_market_outcomes').where({ id: winningOutcomeId }).first();
+  const winnerCount = await db('multi_market_positions')
+    .where({ market_id: marketId, outcome_id: winningOutcomeId })
+    .count('id as c')
+    .first();
+
+  posthog.capture({
+    distinctId: 'admin',
+    event: 'multi_market_resolved',
+    properties: {
+      market_id: marketId,
+      market_title: resolvedMarket.title,
+      winning_outcome_id: winningOutcomeId,
+      winning_outcome_label: winningOutcome?.label,
+      winner_count: parseInt(winnerCount?.c || 0, 10),
+    },
+  });
+
+  return resolvedMarket;
 }
 
 /**

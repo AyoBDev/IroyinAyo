@@ -1,6 +1,7 @@
 const db = require('../../config/database');
 const { ValidationError, NotFoundError } = require('../../utils/errors');
 const gamificationService = require('../gamification/gamification.service');
+const posthog = require('../../utils/posthog');
 
 const REFERRER_BONUS = 50;
 const REFERRED_BONUS = 50;
@@ -63,13 +64,33 @@ async function applyReferral(referredStudentId, referralCode) {
   await gamificationService.addPoints(referrer.id, REFERRER_BONUS, 'referral', 'Referral bonus: new user joined');
   await gamificationService.addPoints(referredStudentId, REFERRED_BONUS, 'referral', `Welcome bonus: referred by ${referrer.name}`);
 
+  posthog.capture({
+    distinctId: String(referrer.id),
+    event: 'referral_applied',
+    properties: {
+      referred_student_id: String(referredStudentId),
+      referral_code: referralCode,
+      referrer_bonus: REFERRER_BONUS,
+      referred_bonus: REFERRED_BONUS,
+    },
+  });
+
   // Auto-promote to ambassador at 10 referrals
   const totalReferrals = await db('referrals')
     .where({ referrer_id: referrer.id })
     .count('id as count')
     .first();
-  if (parseInt(totalReferrals.count, 10) >= 10 && !referrer.is_ambassador) {
+  const referralCount = parseInt(totalReferrals.count, 10);
+  if (referralCount >= 10 && !referrer.is_ambassador) {
     await db('students').where({ id: referrer.id }).update({ is_ambassador: true });
+
+    posthog.capture({
+      distinctId: String(referrer.id),
+      event: 'ambassador_promoted',
+      properties: {
+        total_referrals: referralCount,
+      },
+    });
   }
 
   return { referrerBonus: REFERRER_BONUS, referredBonus: REFERRED_BONUS };
