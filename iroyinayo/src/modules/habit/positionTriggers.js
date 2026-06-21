@@ -10,10 +10,13 @@ async function findResolutionTodayEligible(now) {
   const horizon = new Date(now.getTime() + 24 * 60 * 60 * 1000);
   return db('multi_market_positions as p')
     .join('multi_markets as m', 'p.market_id', 'm.id')
+    .join('students as s', 'p.student_id', 's.id')
     .where('m.status', 'open')
     .whereNotNull('m.closes_at')
     .where('m.closes_at', '<=', horizon)
     .where('m.closes_at', '>', now)
+    .where('s.is_system', false)
+    .where('s.is_banned', false)
     .select('p.id as position_id');
 }
 
@@ -28,6 +31,7 @@ async function findResolvedAwayEligible(now) {
       this.whereNull('s.last_app_open_at').orWhere('s.last_app_open_at', '<', userIdleCutoff);
     })
     .where('s.is_system', false)
+    .where('s.is_banned', false)
     .select('p.id as position_id', 'p.student_id', 'p.payout', 'p.amount', 'm.title');
 }
 
@@ -67,6 +71,7 @@ async function fireResolvedAwayNotifications({ now = new Date() } = {}) {
     .join('students as s', 'p.student_id', 's.id')
     .where('t.condition', 'resolved_away')
     .whereNull('t.fired_at')
+    .where('s.is_banned', false)
     .whereNotExists(function () {
       this.select('*').from('whatsapp_daily_queue as q')
         .whereRaw('q.student_id = s.id')
