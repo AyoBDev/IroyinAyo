@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { X, ArrowRight, Users, Copy, Check } from 'lucide-react';
 import useStore from '../store.js';
 import { getToken } from '../api.js';
-import PredictionConfirmation from './PredictionConfirmation.jsx';
+import PredictionReveal from './PredictionReveal.jsx';
 import { useDeepLinkRef, buildSourceRef } from '../hooks/useDeepLinkRef.js';
 
 function getSlipClasses(label) {
@@ -58,15 +58,12 @@ export default function PredictSlip({ market, outcome, onClose }) {
       fetchPositions();
       const position = result?.position;
       setConfirmationData({
-        positionId: position?.id || 'unknown',
-        marketId: market.id,
-        marketTitle: market.title,
         outcomeLabel: outcome.label,
-        probability: outcome.price,
-        amount: amountNum,
-        potentialPayout: payout,
-        username: user?.username || user?.phone || 'user',
-        timestamp: position?.created_at || new Date().toISOString(),
+        stake: amountNum,
+        projectedPayout: Math.round(position?.shares || payout),
+        oldPrice: result?.oldPrice || outcome.price,
+        newPrice: result?.newPrice || outcome.price,
+        socialTicker: result?.socialTicker || null,
       });
     } catch (err) {
       setError(err.message);
@@ -181,7 +178,7 @@ export default function PredictSlip({ market, outcome, onClose }) {
       {isAuthenticated && user && user.points_balance < 20 && <ReferralPrompt />}
 
       {confirmationData && (
-        <PredictionConfirmation
+        <PredictionReveal
           data={confirmationData}
           onClose={() => { setConfirmationData(null); onClose(); }}
         />

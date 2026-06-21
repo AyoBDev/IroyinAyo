@@ -329,6 +329,28 @@ describe('Multi-outcome LMSR Service', () => {
 
         expect(position.source_ref).toBeNull();
       });
+
+      test('returns oldPrice, newPrice, totalPredictionsAfter, and socialTicker in result', async () => {
+        const market = await multiMarketsService.createMarket('Test market');
+        const outcome = await multiMarketsService.addOutcome(market.id, 'Option A');
+        await multiMarketsService.addOutcome(market.id, 'Option B');
+
+        const result = await multiMarketsService.buyPosition(market.id, outcome.id, student.id, 50);
+
+        expect(result.position).toBeDefined();
+        expect(result.market).toBeDefined();
+        expect(result.oldPrice).toBeDefined();
+        expect(result.newPrice).toBeDefined();
+        expect(result.totalPredictionsAfter).toBeDefined();
+        expect(result.oldPrice).toBeGreaterThan(0);
+        expect(result.newPrice).toBeGreaterThan(0);
+        expect(result.totalPredictionsAfter).toBe(1);
+        // socialTicker can be null or an object with type + copy
+        if (result.socialTicker !== null) {
+          expect(result.socialTicker).toHaveProperty('type');
+          expect(result.socialTicker).toHaveProperty('copy');
+        }
+      });
     });
 
     describe('resolveMarket', () => {

@@ -268,13 +268,18 @@ async function buyPosition(marketId, outcomeId, studentId, amount, sourceRef = n
       marketId
     );
 
+    // Calculate old price before updating shares_sold
+    const oldPrices = calculatePrices(sharesSold, market.liquidity_b);
+    const oldPrice = oldPrices[outcomeIndex];
+
     await trx('multi_market_outcomes')
       .where({ id: outcomeId })
       .increment('shares_sold', shares);
 
-    const prices = calculatePrices(sharesSold, market.liquidity_b);
-    const outcomeIdx = outcomes.findIndex((o) => o.id === outcomeId);
-    const entryPrice = prices[outcomeIdx];
+    // Calculate new price using the locally updated shares_sold (not a re-fetch from DB)
+    const updatedSharesSold = sharesSold.map((s, i) => (i === outcomeIndex ? s + shares : s));
+    const newPrices = calculatePrices(updatedSharesSold, market.liquidity_b);
+    const newPrice = newPrices[outcomeIndex];
 
     const [position] = await trx('multi_market_positions')
       .insert({
@@ -283,14 +288,34 @@ async function buyPosition(marketId, outcomeId, studentId, amount, sourceRef = n
         student_id: studentId,
         amount,
         shares,
-        entry_price: entryPrice,
+        entry_price: oldPrice,
         payout: 0,
         source_ref: sourceRef,
       })
       .returning('*');
 
-    return { position, market };
+    // Count total predictions on this market after the insert
+    const totalPredictionsResult = await trx('multi_market_positions')
+      .where({ market_id: marketId })
+      .count('id as c')
+      .first();
+    const totalPredictionsAfter = Number(totalPredictionsResult.c);
+
+    return { position, market, oldPrice, newPrice, totalPredictionsAfter };
   });
+
+  // Compute social ticker OUTSIDE the transaction so it doesn't roll back if the query fails
+  const { computeSocialTicker } = require('../habit/socialTicker');
+  const socialTicker = await computeSocialTicker({
+    studentId,
+    marketId,
+    outcomeId,
+    totalPredictionsAfter: result.totalPredictionsAfter,
+  }).catch((err) => {
+    console.error('socialTicker failed:', err);
+    return null;
+  });
+
   afterMultiTrade(marketId, studentId);
 
   const chosenOutcome = outcomes[outcomeIndex];
@@ -305,10 +330,11 @@ async function buyPosition(marketId, outcomeId, studentId, amount, sourceRef = n
       amount,
       shares: result.position.shares,
       entry_price: result.position.entry_price,
+      source_ref: sourceRef || null,
     },
   });
 
-  return result;
+  return { ...result, socialTicker };
 }
 
 /**
