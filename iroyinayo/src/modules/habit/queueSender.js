@@ -59,19 +59,10 @@ async function drainDailyQueue({
     if (ok) {
       sent += 1;
       await db('whatsapp_daily_queue').where('id', row.id).update({ status: 'sent', sent_at: new Date(), attempts: row.attempts + 1, body_text: text });
-      if (student.wa_failure_count > 0) {
-        await db('students').where({ id: student.id }).update({ wa_failure_count: 0 });
-      }
     } else {
       failed += 1;
       failsInWindow += 1;
       await db('whatsapp_daily_queue').where('id', row.id).update({ status: 'failed', attempts: row.attempts + 1, body_text: text });
-      const newCount = (student.wa_failure_count || 0) + 1;
-      const update = { wa_failure_count: newCount };
-      if (newCount >= 2) {
-        update.wa_paused_until = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
-      }
-      await db('students').where({ id: student.id }).update(update);
     }
 
     const isLast = i === rows.length - 1;

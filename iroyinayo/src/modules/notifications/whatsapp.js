@@ -161,7 +161,7 @@ async function notifyReferralWins(marketId) {
 }
 
 async function sendWhatsAppWithFailureTracking(student, text) {
-  const ok = await sendWhatsApp(student.phone_number, text);
+  const ok = await module.exports.sendWhatsApp(student.phone_number, text);
   if (ok) {
     if (student.wa_failure_count > 0) {
       await db('students').where({ id: student.id }).update({ wa_failure_count: 0 });

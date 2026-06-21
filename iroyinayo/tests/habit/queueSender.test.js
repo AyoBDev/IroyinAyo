@@ -1,5 +1,6 @@
 const db = require('../../src/config/database');
 const { drainDailyQueue } = require('../../src/modules/habit/queueSender');
+const notifications = require('../../src/modules/notifications/whatsapp');
 const crypto = require('crypto');
 
 async function enroll(overrides = {}) {
@@ -70,8 +71,13 @@ describe('drainDailyQueue', () => {
   test('pauses student after 2 consecutive failures', async () => {
     const s = await enroll({ wa_failure_count: 1 });
     await enqueue(s);
-    const sendFn = async () => false;
-    await drainDailyQueue({ sendFn, sleepFn: async () => {} });
+    const orig = notifications.sendWhatsApp;
+    notifications.sendWhatsApp = async () => false;
+    try {
+      await drainDailyQueue({ sleepFn: async () => {} });
+    } finally {
+      notifications.sendWhatsApp = orig;
+    }
     const student = await db('students').where({ id: s }).first();
     expect(student.wa_failure_count).toBeGreaterThanOrEqual(2);
     expect(student.wa_paused_until).not.toBeNull();
