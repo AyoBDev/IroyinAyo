@@ -63,7 +63,66 @@ describe('pickLede', () => {
     });
     const r = await pickLede(studentId);
     expect(r.type).toBe('resolution');
-    expect(r.payload.count).toBeGreaterThanOrEqual(1);
+    expect(r.payload.count).toBe(1);
+  });
+
+  test('returns social lede when peer placed matching position recently', async () => {
+    const studentA = await createStudent();
+    const studentB = await createStudent();
+    const { marketId, outcomeId } = await createMarket({ status: 'open' });
+    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000);
+    await db('multi_market_positions').insert({
+      id: uuidv4(),
+      student_id: studentA,
+      market_id: marketId,
+      outcome_id: outcomeId,
+      shares: 5,
+      amount: 250,
+      created_at: twoDaysAgo,
+    });
+    await db('multi_market_positions').insert({
+      id: uuidv4(),
+      student_id: studentB,
+      market_id: marketId,
+      outcome_id: outcomeId,
+      shares: 3,
+      amount: 150,
+      created_at: thirtyMinAgo,
+    });
+    const r = await pickLede(studentA);
+    expect(r.type).toBe('social');
+    expect(r.payload.friendName).toBe('Test');
+    expect(r.payload.marketId).toBe(marketId);
+    expect(typeof r.payload.marketTitle).toBe('string');
+  });
+
+  test('does not return social lede when peer position is too old', async () => {
+    const studentA = await createStudent();
+    const studentB = await createStudent();
+    const { marketId, outcomeId } = await createMarket({ status: 'open' });
+    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    const thirteenHoursAgo = new Date(Date.now() - 13 * 60 * 60 * 1000);
+    await db('multi_market_positions').insert({
+      id: uuidv4(),
+      student_id: studentA,
+      market_id: marketId,
+      outcome_id: outcomeId,
+      shares: 5,
+      amount: 250,
+      created_at: twoDaysAgo,
+    });
+    await db('multi_market_positions').insert({
+      id: uuidv4(),
+      student_id: studentB,
+      market_id: marketId,
+      outcome_id: outcomeId,
+      shares: 3,
+      amount: 150,
+      created_at: thirteenHoursAgo,
+    });
+    const r = await pickLede(studentA);
+    expect(r.type).not.toBe('social');
   });
 
   test('returns curiosity lede when no priority 1-3 matches but a hot market exists', async () => {

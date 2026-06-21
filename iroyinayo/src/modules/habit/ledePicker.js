@@ -37,27 +37,24 @@ async function resolutionLede(studentId) {
 async function socialLede(studentId) {
   const lookback = new Date(Date.now() - SOCIAL_LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
   const recent = new Date(Date.now() - SOCIAL_RECENT_HOURS * 60 * 60 * 1000);
-  const myPositions = await db('multi_market_positions')
-    .where('student_id', studentId)
-    .where('created_at', '>=', lookback)
-    .select('market_id', 'outcome_id');
-  if (myPositions.length === 0) return null;
-  for (const mp of myPositions) {
-    const recentMatching = await db('multi_market_positions as p')
-      .join('students as s', 'p.student_id', 's.id')
-      .where('p.market_id', mp.market_id)
-      .where('p.outcome_id', mp.outcome_id)
-      .where('p.student_id', '!=', studentId)
-      .where('p.created_at', '>=', recent)
-      .where('s.is_system', false)
-      .select('s.id', 's.name', 'p.market_id')
-      .first();
-    if (recentMatching) {
-      const market = await db('multi_markets').where('id', mp.market_id).select('title').first();
-      return { type: 'social', payload: { friendName: recentMatching.name, marketId: mp.market_id, marketTitle: market.title } };
-    }
-  }
-  return null;
+
+  const match = await db('multi_market_positions as my_pos')
+    .join('multi_market_positions as peer_pos', function() {
+      this.on('my_pos.market_id', '=', 'peer_pos.market_id')
+          .andOn('my_pos.outcome_id', '=', 'peer_pos.outcome_id');
+    })
+    .join('students as s', 'peer_pos.student_id', 's.id')
+    .join('multi_markets as m', 'my_pos.market_id', 'm.id')
+    .where('my_pos.student_id', studentId)
+    .where('my_pos.created_at', '>=', lookback)
+    .where('peer_pos.student_id', '!=', studentId)
+    .where('peer_pos.created_at', '>=', recent)
+    .where('s.is_system', false)
+    .select('s.name as friendName', 'm.id as marketId', 'm.title as marketTitle')
+    .first();
+
+  if (!match) return null;
+  return { type: 'social', payload: { friendName: match.friendName, marketId: match.marketId, marketTitle: match.marketTitle } };
 }
 
 async function curiosityLede() {
