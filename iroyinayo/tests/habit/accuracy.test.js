@@ -144,4 +144,32 @@ describe('computeAccuracyRank', () => {
     expect(top.totalRanked).toBe(3);
     expect(top.percentile).toBeCloseTo(100);
   });
+
+  test('correctly ranks 5 users with varying accuracies', async () => {
+    const ids = [];
+    const correctCounts = [3, 2, 1, 0, 2]; // 100%, 66.7%, 33.3%, 0%, 66.7%
+    for (let u = 0; u < 5; u++) {
+      const studentId = await createStudent();
+      ids.push(studentId);
+      const correctCount = correctCounts[u];
+      for (let i = 0; i < 3; i++) {
+        const m = await createResolvedMarket({ category: 'football', winningLabel: 'YES' });
+        const pickWinner = i < correctCount;
+        await placePosition({ studentId, marketId: m.marketId, outcomeId: pickWinner ? m.outcomes[0].id : m.outcomes[1].id, shares: 5, payout: pickWinner ? 250 : 0 });
+      }
+    }
+    const rank0 = await computeAccuracyRank(ids[0]); // 100%
+    expect(rank0.rank).toBe(1);
+    expect(rank0.totalRanked).toBe(5);
+    expect(rank0.percentile).toBeCloseTo(100);
+
+    const rank1 = await computeAccuracyRank(ids[1]); // 66.7% (tied with ids[4])
+    expect([2, 3]).toContain(rank1.rank);
+    expect(rank1.totalRanked).toBe(5);
+
+    const rank3 = await computeAccuracyRank(ids[3]); // 0%
+    expect(rank3.rank).toBe(5);
+    expect(rank3.totalRanked).toBe(5);
+    expect(rank3.percentile).toBeCloseTo(20);
+  });
 });

@@ -45,8 +45,7 @@
     "posthog-node": "^5.38.0",
     "qrcode-terminal": "^0.12.0",
     "rss-parser": "^3.13.0",
-    "socket.io": "^4.8.3",
-    "uuid": "^14.0.1"
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "jest": "^30.3.0",

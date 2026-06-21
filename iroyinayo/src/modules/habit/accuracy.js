@@ -75,12 +75,59 @@ async function computeCategoryAccuracy(studentId) {
     }));
 }
 
+function collapseCallsByStudent(rows) {
+  const byStudent = new Map();
+  for (const row of rows) {
+    if (!byStudent.has(row.student_id)) byStudent.set(row.student_id, new Map());
+    const markets = byStudent.get(row.student_id);
+    if (!markets.has(row.market_id)) {
+      markets.set(row.market_id, {
+        netByOutcome: new Map(),
+        category: row.category,
+        winningOutcomeId: row.winning_outcome_id
+      });
+    }
+    const m = markets.get(row.market_id);
+    m.netByOutcome.set(row.outcome_id, (m.netByOutcome.get(row.outcome_id) || 0) + Number(row.shares));
+  }
+  const callsByStudent = new Map();
+  for (const [studentId, markets] of byStudent) {
+    const calls = [];
+    for (const [, m] of markets) {
+      const entries = [...m.netByOutcome.entries()].filter(([, n]) => n > 0);
+      if (entries.length !== 1) continue;
+      const [outcomeId] = entries[0];
+      calls.push({ category: m.category, correct: outcomeId === m.winningOutcomeId });
+    }
+    callsByStudent.set(studentId, calls);
+  }
+  return callsByStudent;
+}
+
 async function computeAccuracyRank(studentId) {
-  const allStudents = await db('students').where({ is_system: false, is_banned: false }).select('id');
+  const rows = await db('multi_market_positions as p')
+    .join('multi_markets as m', 'p.market_id', 'm.id')
+    .join('students as s', 'p.student_id', 's.id')
+    .where('m.status', 'resolved')
+    .whereNotIn('m.status', ['void', 'canceled'])
+    .where('s.is_system', false)
+    .where('s.is_banned', false)
+    .select(
+      'p.student_id',
+      'p.market_id',
+      'p.outcome_id',
+      'p.shares',
+      'm.category',
+      'm.winning_outcome_id'
+    );
+
+  const callsByStudent = collapseCallsByStudent(rows);
   const accuracies = [];
-  for (const s of allStudents) {
-    const a = await computeAccuracy(s.id);
-    if (a.accuracy !== null) accuracies.push({ studentId: s.id, accuracy: a.accuracy });
+  for (const [sid, calls] of callsByStudent) {
+    const resolvedCalls = calls.length;
+    if (resolvedCalls < MIN_CALLS_HEADLINE) continue;
+    const correct = calls.filter((c) => c.correct).length;
+    accuracies.push({ studentId: sid, accuracy: correct / resolvedCalls });
   }
   accuracies.sort((a, b) => b.accuracy - a.accuracy);
   const totalRanked = accuracies.length;
