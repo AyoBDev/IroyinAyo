@@ -45,6 +45,9 @@ export function isSnoozed(now, dismissedAt) {
 export function markEligible() {
   try {
     localStorage.setItem(ELIGIBLE_KEY, '1');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('installeligible'));
+    }
   } catch {
     // localStorage unavailable — silent no-op
   }

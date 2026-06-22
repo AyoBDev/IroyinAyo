@@ -93,6 +93,14 @@ describe('markEligible / isEligible', () => {
     markEligible();
     expect(localStorage.getItem('installPromptEligible')).toBe('1');
   });
+
+  it('dispatches installeligible event when marking', () => {
+    const handler = vi.fn();
+    window.addEventListener('installeligible', handler);
+    markEligible();
+    expect(handler).toHaveBeenCalledTimes(1);
+    window.removeEventListener('installeligible', handler);
+  });
 });
 
 describe('isStandalone', () => {

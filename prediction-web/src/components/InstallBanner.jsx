@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Share, X } from 'lucide-react';
 import {
@@ -12,12 +12,18 @@ import {
 import { capture } from '../lib/posthogClient.js';
 
 export default function InstallBanner() {
-  const [eligible] = useState(() => isEligible());
+  const [eligible, setEligible] = useState(() => isEligible());
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [dismissed, setDismissed] = useState(false);
 
   const standalone = isStandalone();
   const iOSSafari = isIOSSafari(navigator.userAgent, standalone);
+
+  useEffect(() => {
+    const handler = () => setEligible(true);
+    window.addEventListener('installeligible', handler);
+    return () => window.removeEventListener('installeligible', handler);
+  }, []);
 
   useEffect(() => {
     if (standalone) return undefined;
@@ -37,8 +43,12 @@ export default function InstallBanner() {
     };
   }, [standalone]);
 
+  const shownRef = useRef(false);
+
   useEffect(() => {
+    if (shownRef.current) return;
     if (eligible && !standalone && (deferredPrompt || iOSSafari)) {
+      shownRef.current = true;
       capture('install_banner_shown', { platform: iOSSafari ? 'ios_safari' : 'promptable' });
     }
   }, [eligible, standalone, deferredPrompt, iOSSafari]);

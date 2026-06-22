@@ -68,6 +68,16 @@ describe('<InstallBanner /> — Android Chrome path', () => {
     act(() => { fireBeforeInstallPrompt(); });
     expect(screen.queryByText(/install iroyinmarket/i)).toBeNull();
   });
+
+  it('reacts to installeligible event when not eligible at mount', () => {
+    // eligibility NOT marked at mount time
+    render(<InstallBanner />);
+    act(() => { fireBeforeInstallPrompt(); });
+    expect(screen.queryByRole('button', { name: /^install$/i })).toBeNull();
+    // mark eligible mid-session (dispatches the event)
+    act(() => { markEligible(); });
+    expect(screen.getByRole('button', { name: /^install$/i })).toBeInTheDocument();
+  });
 });
 
 describe('<InstallBanner /> — iOS Safari path', () => {
