@@ -27,13 +27,19 @@ export default function InstallBanner() {
 
   useEffect(() => {
     if (standalone) return undefined;
+    // Pick up any beforeinstallprompt that fired before this component mounted.
+    if (window.__deferredInstallPrompt) {
+      setDeferredPrompt(window.__deferredInstallPrompt);
+    }
     const handler = (e) => {
       e.preventDefault();
+      window.__deferredInstallPrompt = e;
       setDeferredPrompt(e);
     };
     window.addEventListener('beforeinstallprompt', handler);
     const installedHandler = () => {
       capture('app_installed');
+      window.__deferredInstallPrompt = null;
       setDeferredPrompt(null);
     };
     window.addEventListener('appinstalled', installedHandler);
@@ -74,6 +80,7 @@ export default function InstallBanner() {
     } catch (err) {
       capture('install_prompt_error', { message: String(err && err.message) });
     } finally {
+      window.__deferredInstallPrompt = null;
       setDeferredPrompt(null);
     }
   };

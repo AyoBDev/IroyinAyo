@@ -2,8 +2,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import InstallBanner from './InstallBanner.jsx';
 import { markEligible } from '../lib/installPrompt.js';
+import * as posthogClient from '../lib/posthogClient.js';
 
 beforeEach(() => {
+  vi.restoreAllMocks();
   localStorage.clear();
   vi.spyOn(window, 'matchMedia').mockReturnValue({ matches: false });
   Object.defineProperty(window.navigator, 'userAgent', {
@@ -77,6 +79,26 @@ describe('<InstallBanner /> — Android Chrome path', () => {
     // mark eligible mid-session (dispatches the event)
     act(() => { markEligible(); });
     expect(screen.getByRole('button', { name: /^install$/i })).toBeInTheDocument();
+  });
+
+  it('captures app_installed when the appinstalled event fires', () => {
+    const spy = vi.spyOn(posthogClient, 'capture');
+    markEligible();
+    render(<InstallBanner />);
+    act(() => { fireBeforeInstallPrompt(); });
+    act(() => { window.dispatchEvent(new Event('appinstalled')); });
+    expect(spy).toHaveBeenCalledWith('app_installed');
+  });
+
+  it('captures install_prompt_error when prompt() throws', async () => {
+    const spy = vi.spyOn(posthogClient, 'capture');
+    markEligible();
+    render(<InstallBanner />);
+    const failingPrompt = vi.fn(() => Promise.reject(new Error('boom')));
+    act(() => { fireBeforeInstallPrompt(failingPrompt); });
+    fireEvent.click(screen.getByRole('button', { name: /^install$/i }));
+    await new Promise(r => setTimeout(r, 0));
+    expect(spy).toHaveBeenCalledWith('install_prompt_error', expect.objectContaining({ message: expect.stringContaining('boom') }));
   });
 });
 
