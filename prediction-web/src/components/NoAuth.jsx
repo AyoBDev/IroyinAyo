@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { TrendingUp, ArrowRight, Loader2, X } from 'lucide-react';
 import { setToken, apiFetch } from '../api.js';
+import { markEligible } from '../lib/installPrompt.js';
 
 export default function AuthModal({ onClose }) {
   const [step, setStep] = useState('phone'); // 'phone' | 'code' | 'name'
@@ -55,6 +56,7 @@ export default function AuthModal({ onClose }) {
           body: JSON.stringify({ phoneNumber: phone.trim(), code: code.trim(), name: '_returning' }),
         });
         setToken(result.token);
+        markEligible();
         window.location.reload();
       } catch (err) {
         setError(err.message || 'Verification failed');
@@ -81,6 +83,7 @@ export default function AuthModal({ onClose }) {
         body: JSON.stringify(body),
       });
       setToken(result.token);
+      markEligible();
       window.location.reload();
     } catch (err) {
       setError(err.message || 'Verification failed');

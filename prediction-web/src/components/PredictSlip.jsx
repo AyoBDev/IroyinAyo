@@ -4,6 +4,7 @@ import useStore from '../store.js';
 import { getToken } from '../api.js';
 import PredictionReveal from './PredictionReveal.jsx';
 import { useDeepLinkRef, buildSourceRef } from '../hooks/useDeepLinkRef.js';
+import { markEligible } from '../lib/installPrompt.js';
 
 function getSlipClasses(label) {
   const lower = label.toLowerCase();
@@ -55,6 +56,7 @@ export default function PredictSlip({ market, outcome, onClose }) {
     try {
       const sourceRef = buildSourceRef(deepLink);
       const result = await placePrediction(market.id, outcome.id, amountNum, sourceRef);
+      markEligible();
       fetchPositions();
       const position = result?.position;
       setConfirmationData({
