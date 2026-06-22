@@ -273,8 +273,8 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Accuracy Header */}
-      <ProfileAccuracyHeader userId={user.id} isOwn={true} />
+      {/* Accuracy */}
+      <ProfileAccuracyHeader userId={user.id} />
 
       {/* Hero: Portfolio Summary */}
       <section className="mb-6">

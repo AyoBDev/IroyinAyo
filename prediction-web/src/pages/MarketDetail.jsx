@@ -8,7 +8,7 @@ import PublicChat from '../components/PublicChat.jsx';
 import MarketShareModal from '../components/MarketShareModal.jsx';
 import { useDeepLinkRef, buildSourceRef } from '../hooks/useDeepLinkRef.js';
 import QuickPredictBar from '../components/QuickPredictBar.jsx';
-import PredictionReveal from '../components/PredictionReveal.jsx';
+import PredictionConfirmation from '../components/PredictionConfirmation.jsx';
 import { track } from '../utils/telemetry.js';
 
 function PriceChart({ outcomes }) {
@@ -424,17 +424,18 @@ export default function MarketDetail() {
               const result = await placePrediction(market.id, outcomeId, stake, sourceRef);
               const matched = outcomes.find((o) => o.id === outcomeId);
               const outcomeLabel = matched ? matched.label : '';
-              const oldPrice = result?.oldPrice ?? matched?.price ?? 0;
               const newPrice = result?.newPrice ?? matched?.price ?? 0;
-              const shares = result?.position?.shares ?? (oldPrice > 0 ? stake / oldPrice : 0);
+              const shares = result?.position?.shares ?? (newPrice > 0 ? stake / newPrice : 0);
               const projectedPayout = Math.round(shares);
               setQuickRevealData({
-                oldPrice,
-                newPrice,
-                socialTicker: result?.socialTicker || null,
+                marketId: market.id,
+                marketTitle: market.title,
                 outcomeLabel,
-                stake,
-                projectedPayout,
+                probability: newPrice,
+                amount: stake,
+                potentialPayout: projectedPayout,
+                username: user?.name || user?.username || 'you',
+                timestamp: Date.now(),
               });
             } catch (e) {
               console.error('Quick-predict failed:', e);
@@ -445,7 +446,7 @@ export default function MarketDetail() {
       )}
 
       {quickRevealData && (
-        <PredictionReveal data={quickRevealData} onClose={() => setQuickRevealData(null)} />
+        <PredictionConfirmation data={quickRevealData} onClose={() => setQuickRevealData(null)} />
       )}
     </div>
   );

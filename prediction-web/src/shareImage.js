@@ -1,4 +1,4 @@
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro';
 
 export async function captureElement(element, { backgroundColor = '#fbf7ef' } = {}) {
   const canvas = await html2canvas(element, {
@@ -21,7 +21,8 @@ export async function shareWithImage(element, { text, fileName = 'iroyinmarket.p
       // Can't share with file — download the image instead
       downloadBlob(blob, fileName);
     }
-  } catch {
+  } catch (err) {
+    console.warn('shareWithImage capture failed:', err);
     fallbackShare(text);
   }
 }
