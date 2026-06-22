@@ -616,6 +616,22 @@ async function getPortfolio(studentId) {
   return { open: openPositions, resolved: resolvedPositions };
 }
 
+async function approveMarket(marketId, adminId) {
+  const market = await db('multi_markets').where({ id: marketId }).first();
+  if (!market) throw new NotFoundError('Market not found');
+  if (market.status !== 'pending') throw new ValidationError('Market is not pending approval');
+  await db('multi_markets').where({ id: marketId }).update({ status: 'open' });
+  return { ok: true };
+}
+
+async function rejectMarket(marketId, adminId, reason) {
+  const market = await db('multi_markets').where({ id: marketId }).first();
+  if (!market) throw new NotFoundError('Market not found');
+  if (market.status !== 'pending') throw new ValidationError('Market is not pending approval');
+  await db('multi_markets').where({ id: marketId }).update({ status: 'rejected' });
+  return { ok: true };
+}
+
 module.exports = {
   logSumExp,
   calculatePrices,
@@ -635,4 +651,6 @@ module.exports = {
   getAutoLiquidityB,
   seedMarketLiquidity,
   getHouseAccountId,
+  approveMarket,
+  rejectMarket,
 };
