@@ -8,6 +8,7 @@ import PublicChat from '../components/PublicChat.jsx';
 import MarketShareModal from '../components/MarketShareModal.jsx';
 import { useDeepLinkRef, buildSourceRef } from '../hooks/useDeepLinkRef.js';
 import QuickPredictBar from '../components/QuickPredictBar.jsx';
+import PredictionReveal from '../components/PredictionReveal.jsx';
 import { track } from '../utils/telemetry.js';
 
 function PriceChart({ outcomes }) {
@@ -237,6 +238,7 @@ export default function MarketDetail() {
   const { ref, lede } = useDeepLinkRef();
   const isQuickPredict = ref === 'wa_daily' && (lede === 'social' || lede === 'curiosity' || lede === 'resolution');
   const [quickPredictActive, setQuickPredictActive] = useState(isQuickPredict);
+  const [quickRevealData, setQuickRevealData] = useState(null);
 
   useEffect(() => {
     if (ref) {
@@ -410,7 +412,7 @@ export default function MarketDetail() {
         </div>
       )}
 
-      {quickPredictActive && market && (
+      {quickPredictActive && market && outcomes.length === 2 && (
         <QuickPredictBar
           market={market}
           outcomes={outcomes}
@@ -419,13 +421,31 @@ export default function MarketDetail() {
           onPredict={async (outcomeId, stake) => {
             const sourceRef = buildSourceRef({ ref, lede });
             try {
-              await placePrediction(market.id, outcomeId, stake, sourceRef);
+              const result = await placePrediction(market.id, outcomeId, stake, sourceRef);
+              const matched = outcomes.find((o) => o.id === outcomeId);
+              const outcomeLabel = matched ? matched.label : '';
+              const oldPrice = result?.oldPrice ?? matched?.price ?? 0;
+              const newPrice = result?.newPrice ?? matched?.price ?? 0;
+              const shares = result?.position?.shares ?? (oldPrice > 0 ? stake / oldPrice : 0);
+              const projectedPayout = Math.round(shares);
+              setQuickRevealData({
+                oldPrice,
+                newPrice,
+                socialTicker: result?.socialTicker || null,
+                outcomeLabel,
+                stake,
+                projectedPayout,
+              });
             } catch (e) {
               console.error('Quick-predict failed:', e);
             }
             setQuickPredictActive(false);
           }}
         />
+      )}
+
+      {quickRevealData && (
+        <PredictionReveal data={quickRevealData} onClose={() => setQuickRevealData(null)} />
       )}
     </div>
   );

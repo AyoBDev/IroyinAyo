@@ -60,11 +60,14 @@ export default function ProfileAccuracyHeader({ userId, isOwn }) {
       )}
 
       {/* Rank */}
-      {data.rank.rank !== null && (
-        <div className="mt-3 font-sans label-sm text-ink-muted">
-          Rank #{data.rank.rank} of {data.rank.totalRanked} · top {Math.max(1, Math.round(100 - data.rank.percentile + 100 / data.rank.totalRanked))}% on accuracy
-        </div>
-      )}
+      {data.rank.rank !== null && (() => {
+        const topPercent = Math.max(1, Math.ceil((data.rank.rank / data.rank.totalRanked) * 100));
+        return (
+          <div className="mt-3 font-sans label-sm text-ink-muted">
+            Rank #{data.rank.rank} of {data.rank.totalRanked}{topPercent <= 50 ? ` · top ${topPercent}% on accuracy` : ''}
+          </div>
+        );
+      })()}
 
       {/* Open calls (visible on own profile) */}
       {isOwn && (

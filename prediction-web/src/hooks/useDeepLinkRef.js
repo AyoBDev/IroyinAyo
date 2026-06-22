@@ -1,6 +1,27 @@
 import { useEffect, useState } from 'react';
 
 const STORAGE_KEY = 'iroyin_deep_link_ref';
+const STORAGE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+function readFromStorage() {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return { ref: null, lede: null, market: null };
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed._ts && Date.now() - parsed._ts < STORAGE_TTL_MS) {
+      return { ref: parsed.ref || null, lede: parsed.lede || null, market: parsed.market || null };
+    }
+    // Expired — clear and ignore.
+    sessionStorage.removeItem(STORAGE_KEY);
+  } catch {}
+  return { ref: null, lede: null, market: null };
+}
+
+function writeToStorage(next) {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...next, _ts: Date.now() }));
+  } catch {}
+}
 
 export function useDeepLinkRef() {
   const [state, setState] = useState(() => {
@@ -9,14 +30,10 @@ export function useDeepLinkRef() {
     const ref = url.searchParams.get('ref');
     if (ref) {
       const next = { ref, lede: url.searchParams.get('lede'), market: url.searchParams.get('market') };
-      try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+      writeToStorage(next);
       return next;
     }
-    try {
-      const raw = sessionStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
-    } catch {}
-    return { ref: null, lede: null, market: null };
+    return readFromStorage();
   });
 
   useEffect(() => {
@@ -25,7 +42,7 @@ export function useDeepLinkRef() {
       const ref = url.searchParams.get('ref');
       if (ref) {
         const next = { ref, lede: url.searchParams.get('lede'), market: url.searchParams.get('market') };
-        try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+        writeToStorage(next);
         setState(next);
       }
     };

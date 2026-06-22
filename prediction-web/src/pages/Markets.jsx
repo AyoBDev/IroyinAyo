@@ -333,6 +333,16 @@ export default function Markets() {
   const showRankStrip = ref === 'wa_daily' && lede === 'rank';
   const [stripMarkets, setStripMarkets] = useState([]);
 
+  useEffect(() => {
+    if (!showRankStrip) return;
+    if (!getToken()) return;
+    let cancelled = false;
+    apiFetch('/api/habit/rank-strip-markets')
+      .then((data) => { if (!cancelled) setStripMarkets(data?.markets || []); })
+      .catch(() => { if (!cancelled) setStripMarkets([]); });
+    return () => { cancelled = true; };
+  }, [showRankStrip]);
+
   if (!getToken()) {
     return <AuthWall />;
   }

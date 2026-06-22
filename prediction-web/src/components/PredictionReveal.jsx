@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { track } from '../utils/telemetry.js';
 
 export default function PredictionReveal({ data, onClose }) {
   const [phase, setPhase] = useState('beat1');
+  const closeTimerRef = useRef(null);
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase('beat2'), 250);
@@ -13,13 +14,24 @@ export default function PredictionReveal({ data, onClose }) {
         track('reveal_beat3_shown', { condition: data.socialTicker.type });
       }
     }, 850);
-    const t3 = setTimeout(() => onClose?.(), 4000);
+    closeTimerRef.current = setTimeout(() => onClose?.(), 6000);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
-      clearTimeout(t3);
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
     };
   }, [onClose, data]);
+
+  const pauseTimer = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  };
+  const resumeTimer = () => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = setTimeout(() => onClose?.(), 4000);
+  };
 
   const deltaPp = Math.abs((data.newPrice - data.oldPrice) * 100);
   const state = deltaPp >= 3 ? 'sharp' : deltaPp >= 0.5 ? 'notable' : 'negligible';
@@ -29,6 +41,10 @@ export default function PredictionReveal({ data, onClose }) {
       <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm" />
       <div
         onClick={(e) => e.stopPropagation()}
+        onMouseEnter={pauseTimer}
+        onMouseLeave={resumeTimer}
+        onTouchStart={pauseTimer}
+        onTouchEnd={resumeTimer}
         className="relative w-full bg-paper border-t border-line shadow-float-lg rounded-t-2xl p-6"
       >
         {/* Beat 1 */}
