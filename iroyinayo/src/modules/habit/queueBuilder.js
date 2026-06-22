@@ -1,5 +1,6 @@
 const db = require('../../config/database');
 const { pickLede } = require('./ledePicker');
+const { track } = require('../../utils/telemetry');
 
 const WINDOW_START_MIN = 7 * 60;       // 7:00 WAT
 const WINDOW_END_MIN = 9 * 60 + 30;    // 9:30 WAT
@@ -70,9 +71,30 @@ async function buildDailyQueue({ targetDate, now, rng = Math.random } = {}) {
     .where(function () { this.whereNull('wa_paused_until').orWhere('wa_paused_until', '<', effectiveNow); })
     .select('id', 'wa_anchor_time');
 
+  // Aggregate-log paused users (excluded by the SQL filter above so they never enter the loop).
+  const pausedCount = await db('students')
+    .where({ wa_daily_enabled: true, is_banned: false })
+    .where('wa_paused_until', '>=', effectiveNow)
+    .count('id as c')
+    .first();
+  if (Number(pausedCount.c) > 0) {
+    track('wa_daily_skipped', { user_id: 'aggregate', reason: 'paused', count: Number(pausedCount.c) });
+  }
+
+  const startOfTargetDay = new Date(targetDate); startOfTargetDay.setHours(0, 0, 0, 0);
+  const endOfTargetDay = new Date(startOfTargetDay); endOfTargetDay.setDate(endOfTargetDay.getDate() + 1);
+
   let enqueued = 0;
   let skipped = 0;
   for (const student of students) {
+    // Defensive: skip if a row already exists for this student on the target day (uniqueness guard).
+    const existing = await db('whatsapp_daily_queue')
+      .where('student_id', student.id)
+      .where('scheduled_for', '>=', startOfTargetDay)
+      .where('scheduled_for', '<', endOfTargetDay)
+      .first();
+    if (existing) { skipped += 1; continue; }
+
     if (!student.wa_anchor_time) {
       const candidate = pickAnchorTime(rng);
       const updated = await db('students')
@@ -82,9 +104,17 @@ async function buildDailyQueue({ targetDate, now, rng = Math.random } = {}) {
       student.wa_anchor_time = updated[0]?.wa_anchor_time || candidate;
     }
     const lede = await pickLede(student.id);
-    if (!lede.type) { skipped += 1; continue; }
+    if (!lede.type) {
+      track('wa_daily_skipped', { user_id: student.id, reason: 'no_lede' });
+      skipped += 1;
+      continue;
+    }
     const markets = await selectMarketsForUser(student.id, lede.payload);
-    if (markets.length === 0) { skipped += 1; continue; }
+    if (markets.length === 0) {
+      track('wa_daily_skipped', { user_id: student.id, reason: 'no_markets' });
+      skipped += 1;
+      continue;
+    }
     const scheduledFor = jitterScheduledFor(student.wa_anchor_time, targetDate, rng);
     await db('whatsapp_daily_queue').insert({
       student_id: student.id,

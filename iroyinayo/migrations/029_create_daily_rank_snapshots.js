@@ -1,5 +1,4 @@
 exports.up = async function (knex) {
-  await knex.schema.dropTableIfExists('weekly_leaderboard');
   await knex.schema.createTable('daily_rank_snapshots', (table) => {
     table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.uuid('student_id').notNullable().references('id').inTable('students').onDelete('CASCADE');

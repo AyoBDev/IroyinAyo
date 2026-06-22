@@ -5,7 +5,10 @@ const gamificationService = require('../gamification/gamification.service');
 const { authenticateStudent } = require('../../middleware/studentAuth');
 const { authenticate } = require('../../middleware/auth');
 const { ValidationError } = require('../../utils/errors');
+const { lastAppOpenMiddleware } = require('../habit/habit.routes');
 const db = require('../../config/database');
+
+// Update students.last_app_open_at on every authenticated request (throttled to 5 min per user).
 
 router.get('/', async (req, res, next) => {
   try {
@@ -129,7 +132,7 @@ router.get('/sharp-money', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-router.get('/me/info', authenticateStudent, async (req, res, next) => {
+router.get('/me/info', authenticateStudent, lastAppOpenMiddleware, async (req, res, next) => {
   try {
     const { getStudentStats } = require('../gamification/titles');
     const weeklyLeaderboard = require('../gamification/weeklyLeaderboard');
@@ -163,21 +166,21 @@ router.get('/me/info', authenticateStudent, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-router.get('/me/positions', authenticateStudent, async (req, res, next) => {
+router.get('/me/positions', authenticateStudent, lastAppOpenMiddleware, async (req, res, next) => {
   try {
     const positions = await multiMarkets.getStudentPositions(req.student.id);
     res.json(positions);
   } catch (err) { next(err); }
 });
 
-router.get('/me/portfolio', authenticateStudent, async (req, res, next) => {
+router.get('/me/portfolio', authenticateStudent, lastAppOpenMiddleware, async (req, res, next) => {
   try {
     const portfolio = await multiMarkets.getPortfolio(req.student.id);
     res.json(portfolio);
   } catch (err) { next(err); }
 });
 
-router.get('/me/created', authenticateStudent, async (req, res, next) => {
+router.get('/me/created', authenticateStudent, lastAppOpenMiddleware, async (req, res, next) => {
   try {
     const markets = await db('multi_markets')
       .where({ created_by: req.student.id })
@@ -470,7 +473,9 @@ router.get('/positions/:positionId/public', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-router.post('/:id/predict', authenticateStudent, async (req, res, next) => {
+const SOURCE_REF_RE = /^(wa_daily(:[a-z_]+)?|wa_oneoff(:[a-z_]+)?|in_app_strip|direct|share)$/;
+
+router.post('/:id/predict', authenticateStudent, lastAppOpenMiddleware, async (req, res, next) => {
   try {
     const { outcomeId, sourceRef } = req.body;
     const amount = Math.floor(Number(req.body.amount));
@@ -486,7 +491,8 @@ router.post('/:id/predict', authenticateStudent, async (req, res, next) => {
       throw new ValidationError('Betting is closed for this market');
     }
 
-    const result = await multiMarkets.buyPosition(req.params.id, outcomeId, req.student.id, amount, sourceRef);
+    const validatedRef = (typeof sourceRef === 'string' && SOURCE_REF_RE.test(sourceRef)) ? sourceRef : null;
+    const result = await multiMarkets.buyPosition(req.params.id, outcomeId, req.student.id, amount, validatedRef);
 
     const io = req.app.get('io');
     if (io) {

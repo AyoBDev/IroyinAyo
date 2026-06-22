@@ -36,6 +36,7 @@ async function computeSocialTicker({ studentId, marketId, outcomeId, totalPredic
     .where('recent.market_id', marketId)
     .whereNot('recent.outcome_id', outcomeId)
     .where('recent.created_at', '>=', recentTime)
+    .where('s.is_banned', false)
     .whereIn('recent.student_id', function() {
       // Subquery: find peer IDs — students who have predicted alongside me in the last 7 days
       this.select('peer.student_id')

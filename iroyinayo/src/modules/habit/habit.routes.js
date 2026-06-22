@@ -76,6 +76,28 @@ router.post('/opt-in', authenticateStudent, lastAppOpenMiddleware, async (req, r
   }
 });
 
+router.get('/rank-strip-markets', authenticateStudent, lastAppOpenMiddleware, async (req, res) => {
+  try {
+    const row = await db('whatsapp_daily_queue')
+      .where({ student_id: req.student.id, lede_type: 'rank' })
+      .orderBy('scheduled_for', 'desc')
+      .first();
+    if (!row) return res.json({ markets: [] });
+    const marketsArr = typeof row.markets === 'string' ? JSON.parse(row.markets) : (row.markets || []);
+    const marketIds = marketsArr.map((m) => m.market_id).filter(Boolean);
+    if (marketIds.length === 0) return res.json({ markets: [] });
+    const fresh = await db('multi_markets').whereIn('id', marketIds).select('id', 'title');
+    const byId = new Map(fresh.map((m) => [m.id, m.title]));
+    const ordered = marketsArr
+      .map((m) => ({ marketId: m.market_id, title: byId.get(m.market_id) || m.label || '' }))
+      .filter((m) => m.title);
+    res.json({ markets: ordered });
+  } catch (err) {
+    console.error('rank-strip-markets failed:', err);
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
 const LAST_OPEN_THROTTLE_MS = 5 * 60 * 1000;
 const lastOpenCache = new Map();
 function lastAppOpenMiddleware(req, res, next) {
@@ -84,6 +106,12 @@ function lastAppOpenMiddleware(req, res, next) {
   const prev = lastOpenCache.get(sid);
   const now = Date.now();
   if (prev && now - prev < LAST_OPEN_THROTTLE_MS) return next();
+  // Prune stale entries to prevent unbounded growth.
+  if (lastOpenCache.size > 1000) {
+    for (const [key, ts] of lastOpenCache) {
+      if (now - ts > LAST_OPEN_THROTTLE_MS) lastOpenCache.delete(key);
+    }
+  }
   lastOpenCache.set(sid, now);
   db('students').where({ id: sid }).update({ last_app_open_at: new Date() }).catch(() => {});
   next();

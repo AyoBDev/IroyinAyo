@@ -50,6 +50,7 @@ async function socialLede(studentId) {
     .where('peer_pos.student_id', '!=', studentId)
     .where('peer_pos.created_at', '>=', recent)
     .where('s.is_system', false)
+    .where('s.is_banned', false)
     .select('s.name as friendName', 'm.id as marketId', 'm.title as marketTitle')
     .first();
 

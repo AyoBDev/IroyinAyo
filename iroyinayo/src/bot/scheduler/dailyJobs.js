@@ -45,7 +45,7 @@ function startScheduler(sock) {
     console.log('Snapshotting daily ranks...');
     try {
       const result = await snapshotDailyRanks();
-      console.log(`Rank snapshot saved: ${result.count} students`);
+      console.log(`Rank snapshot saved: ${result.snapshotted} students`);
     } catch (err) {
       console.error('Rank snapshot failed:', err);
     }
@@ -62,8 +62,9 @@ function startScheduler(sock) {
     }
   }, { timezone: 'Africa/Lagos' });
 
-  // Drain WhatsApp daily queue — 6:55am WAT
-  cron.schedule('55 6 * * *', async () => {
+  // Drain WhatsApp daily queue — every 5 minutes from 7:00 to 9:59 WAT
+  // Drain runs repeatedly across the anchor window (7:00-9:30 WAT + jitter); sender is idempotent.
+  cron.schedule('*/5 7-9 * * *', async () => {
     console.log('Draining WhatsApp daily queue...');
     if (!activeSock) { console.error('Drain skipped: no active socket'); return; }
     try {
@@ -293,7 +294,7 @@ function startScheduler(sock) {
     }
   }, { timezone: 'Africa/Lagos' });
 
-  console.log('Scheduler started: daily rank snapshot (00:30), AI content (6am), WA queue build (5am), WA queue drain (6:55am), midday quiz (12pm), market auto-close (hourly), odds movement (15min), closing-soon (30min), position triggers (10min)');
+  console.log('Scheduler started: daily rank snapshot (00:30), AI content (6am), WA queue build (5am), WA queue drain (every 5m, 7:00-9:59 WAT), midday quiz (12pm), market auto-close (hourly), odds movement (15min), closing-soon (30min), position triggers (10min)');
 }
 
 module.exports = { startScheduler, updateSocket };

@@ -9,13 +9,13 @@ async function handleDailyOptIn({ phoneNumber, text, sock }) {
   const cmd = (text || '').trim().toUpperCase();
   const jid = `${phoneNumber}@s.whatsapp.net`;
 
-  if (cmd === 'PAUSE') {
+  if (cmd.startsWith('PAUSE')) {
     const until = new Date(Date.now() + PAUSE_DAYS * 24 * 60 * 60 * 1000);
     await db('students').where({ id: student.id }).update({ wa_paused_until: until });
     if (sock) await sock.sendMessage(jid, { text: `Paused for ${PAUSE_DAYS} days. We'll be back.` });
     return { handled: true };
   }
-  if (cmd === 'STOP') {
+  if (cmd.startsWith('STOP')) {
     await db('students').where({ id: student.id }).update({ wa_daily_enabled: false, wa_paused_until: null });
     if (sock) await sock.sendMessage(jid, { text: `Stopped. Re-enable from the web app whenever you're ready.` });
     return { handled: true };

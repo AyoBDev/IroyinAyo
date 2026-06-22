@@ -6,6 +6,9 @@ const SHARP_MOVE_PP = 0.10;
 const SHARP_MOVE_WINDOW_MS = 60 * 60 * 1000;
 const RESOLVED_AWAY_USER_IDLE_MS = 12 * 60 * 60 * 1000;
 const RESOLVED_AWAY_DAILY_GUARD_MS = 6 * 60 * 60 * 1000;
+const RESOLVED_AWAY_PACING_MIN_MS = 4000;
+const RESOLVED_AWAY_PACING_MAX_MS = 8000;
+const RESOLVED_AWAY_MAX_PER_TICK = 20;
 
 async function findResolutionTodayEligible(now) {
   const horizon = new Date(now.getTime() + 24 * 60 * 60 * 1000);
@@ -18,7 +21,7 @@ async function findResolutionTodayEligible(now) {
     .where('m.closes_at', '>', now)
     .where('s.is_system', false)
     .where('s.is_banned', false)
-    .select('p.id as position_id');
+    .select('p.id as position_id', 'p.student_id as student_id');
 }
 
 async function findResolvedAwayEligible(now) {
@@ -51,8 +54,7 @@ async function evaluatePositionTriggers({ now = new Date() } = {}) {
       .returning('id');
     if (inserted.length > 0) {
       counts.resolutionToday += 1;
-      const pos = await db('multi_market_positions').where({ id: r.position_id }).first();
-      if (pos) track('position_trigger_eligible', { user_id: pos.student_id, condition: 'resolution_today', position_id: r.position_id });
+      track('position_trigger_eligible', { user_id: r.student_id, condition: 'resolution_today', position_id: r.position_id });
     }
   }
 
@@ -71,7 +73,10 @@ async function evaluatePositionTriggers({ now = new Date() } = {}) {
   return counts;
 }
 
-async function fireResolvedAwayNotifications({ now = new Date() } = {}) {
+async function fireResolvedAwayNotifications({
+  now = new Date(),
+  sleepFn = (ms) => new Promise((r) => setTimeout(r, ms)),
+} = {}) {
   const guard = new Date(now.getTime() - RESOLVED_AWAY_DAILY_GUARD_MS);
   const eligible = await db('position_triggers as t')
     .join('multi_market_positions as p', 't.position_id', 'p.id')
@@ -86,11 +91,13 @@ async function fireResolvedAwayNotifications({ now = new Date() } = {}) {
         .where('q.status', 'sent')
         .where('q.sent_at', '>', guard);
     })
+    .limit(RESOLVED_AWAY_MAX_PER_TICK)
     .select('t.id', 's.id as student_id', 's.phone_number', 's.name', 's.wa_failure_count', 'p.payout', 'm.title');
 
   let fired = 0;
   const appUrl = process.env.APP_URL || 'https://iroyinmarket.com';
-  for (const e of eligible) {
+  for (let i = 0; i < eligible.length; i++) {
+    const e = eligible[i];
     const won = (e.payout || 0) > 0;
     const text = `Your call on "${e.title}" resolved. ${won ? `Win.` : `Miss.`}\n\nOpen IroyinMarket → ${appUrl}?ref=wa_oneoff&lede=resolved_away`;
     const ok = await notifications.sendWhatsAppWithFailureTracking({ id: e.student_id, phone_number: e.phone_number, wa_failure_count: e.wa_failure_count }, text);
@@ -98,6 +105,10 @@ async function fireResolvedAwayNotifications({ now = new Date() } = {}) {
       await db('position_triggers').where('id', e.id).update({ fired_at: now, surfaced_via: 'wa_oneoff' });
       track('position_trigger_surfaced', { user_id: e.student_id, condition: 'resolved_away', surfaced_via: 'wa_oneoff' });
       fired += 1;
+    }
+    // Pace between sends to avoid WA ban (4-8s random jitter), skip after the last send.
+    if (i < eligible.length - 1) {
+      await sleepFn(RESOLVED_AWAY_PACING_MIN_MS + Math.random() * (RESOLVED_AWAY_PACING_MAX_MS - RESOLVED_AWAY_PACING_MIN_MS));
     }
   }
   return fired;

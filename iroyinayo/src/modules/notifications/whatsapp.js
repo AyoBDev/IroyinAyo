@@ -39,16 +39,20 @@ async function sendWhatsAppImage(phoneNumber, imageBuffer, caption) {
 async function notifyMarketResolution(marketId, winnerLabel) {
   const appUrl = process.env.APP_URL || 'https://iroyinmarket.com';
 
+  // Active holders only; idle holders are handled by fireResolvedAwayNotifications (positionTriggers cron)
+  const activeCutoff = new Date(Date.now() - 12 * 60 * 60 * 1000);
   const positions = await db('multi_market_positions')
     .join('students', 'multi_market_positions.student_id', 'students.id')
     .join('multi_markets', 'multi_market_positions.market_id', 'multi_markets.id')
     .join('multi_market_outcomes', 'multi_market_positions.outcome_id', 'multi_market_outcomes.id')
     .where('multi_market_positions.market_id', marketId)
     .where('students.is_system', false)
+    .where('students.last_app_open_at', '>', activeCutoff)
     .select(
       'students.phone_number',
       'students.name',
       'students.referral_code',
+      'students.last_app_open_at',
       'multi_market_positions.payout',
       'multi_market_positions.amount',
       'multi_market_positions.entry_price',
@@ -163,8 +167,9 @@ async function notifyReferralWins(marketId) {
 async function sendWhatsAppWithFailureTracking(student, text) {
   const ok = await module.exports.sendWhatsApp(student.phone_number, text);
   if (ok) {
-    if (student.wa_failure_count > 0) {
-      await db('students').where({ id: student.id }).update({ wa_failure_count: 0 });
+    // Clear pause too — channel is working again.
+    if (student.wa_failure_count > 0 || student.wa_paused_until) {
+      await db('students').where({ id: student.id }).update({ wa_failure_count: 0, wa_paused_until: null });
     }
     return true;
   }

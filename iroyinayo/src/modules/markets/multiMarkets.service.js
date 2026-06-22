@@ -237,7 +237,7 @@ async function listOpenMarkets() {
  * @param {number} amount - points to spend
  * @returns {object} - {position, market}
  */
-async function buyPosition(marketId, outcomeId, studentId, amount, sourceRef = null) {
+async function buyPosition(marketId, outcomeId, studentId, amount, sourceRef = null, isSystemSeed = false) {
   const market = await db('multi_markets').where({ id: marketId }).first();
   if (!market) {
     throw new NotFoundError('Market not found');
@@ -304,35 +304,41 @@ async function buyPosition(marketId, outcomeId, studentId, amount, sourceRef = n
     return { position, market, oldPrice, newPrice, totalPredictionsAfter };
   });
 
-  // Compute social ticker OUTSIDE the transaction so it doesn't roll back if the query fails
-  const { computeSocialTicker } = require('../habit/socialTicker');
-  const socialTicker = await computeSocialTicker({
-    studentId,
-    marketId,
-    outcomeId,
-    totalPredictionsAfter: result.totalPredictionsAfter,
-  }).catch((err) => {
-    console.error('socialTicker failed:', err);
-    return null;
-  });
+  // Compute social ticker OUTSIDE the transaction so it doesn't roll back if the query fails.
+  // Skip both telemetry and social ticker work for system-seed trades (house liquidity bootstrap).
+  let socialTicker = null;
+  if (!isSystemSeed) {
+    const { computeSocialTicker } = require('../habit/socialTicker');
+    socialTicker = await computeSocialTicker({
+      studentId,
+      marketId,
+      outcomeId,
+      totalPredictionsAfter: result.totalPredictionsAfter,
+    }).catch((err) => {
+      console.error('socialTicker failed:', err);
+      return null;
+    });
+  }
 
   afterMultiTrade(marketId, studentId);
 
-  const chosenOutcome = outcomes[outcomeIndex];
-  posthog.capture({
-    distinctId: String(studentId),
-    event: 'multi_prediction_placed',
-    properties: {
-      market_id: marketId,
-      market_title: market.title,
-      outcome_id: outcomeId,
-      outcome_label: chosenOutcome?.label,
-      amount,
-      shares: result.position.shares,
-      entry_price: result.position.entry_price,
-      source_ref: sourceRef || null,
-    },
-  });
+  if (!isSystemSeed) {
+    const chosenOutcome = outcomes[outcomeIndex];
+    posthog.capture({
+      distinctId: String(studentId),
+      event: 'multi_prediction_placed',
+      properties: {
+        market_id: marketId,
+        market_title: market.title,
+        outcome_id: outcomeId,
+        outcome_label: chosenOutcome?.label,
+        amount,
+        shares: result.position.shares,
+        entry_price: result.position.entry_price,
+        source_ref: sourceRef || null,
+      },
+    });
+  }
 
   return { ...result, socialTicker };
 }
@@ -537,7 +543,7 @@ async function seedMarketLiquidity(marketId) {
     .orderBy('created_at', 'asc');
 
   for (const outcome of outcomes) {
-    await buyPosition(marketId, outcome.id, houseId, seedAmount);
+    await buyPosition(marketId, outcome.id, houseId, seedAmount, null, true);
   }
 }
 
