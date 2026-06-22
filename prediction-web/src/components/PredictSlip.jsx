@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, ArrowRight, Users, Copy, Check } from 'lucide-react';
 import useStore from '../store.js';
 import { getToken } from '../api.js';
+import { markEligible } from '../lib/installPrompt.js';
 import PredictionConfirmation from './PredictionConfirmation.jsx';
 
 function getSlipClasses(label) {
@@ -52,6 +53,7 @@ export default function PredictSlip({ market, outcome, onClose }) {
     setError(null);
     try {
       const result = await placePrediction(market.id, outcome.id, amountNum);
+      markEligible();
       fetchPositions();
       const position = result?.position;
       setConfirmationData({
