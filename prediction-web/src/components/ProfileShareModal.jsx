@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { shareWithImage } from '../shareImage.js';
 import ProfileCard from './ProfileCard.jsx';
 import ShareSheet from './ShareSheet.jsx';
+import { track } from '../utils/telemetry.js';
 
 export default function ProfileShareModal({ data, onClose }) {
   const [showShareSheet, setShowShareSheet] = useState(false);
@@ -27,9 +28,10 @@ export default function ProfileShareModal({ data, onClose }) {
 
   const handleShareImage = useCallback(async () => {
     if (!cardRef.current) return;
+    track('profile_share_captured', { target_user_id: data.referralCode || 'unknown' });
     await shareWithImage(cardRef.current, { text: shareText, fileName: 'profile.png' });
     setShowShareSheet(false);
-  }, [shareText]);
+  }, [shareText, data.referralCode]);
 
   const handleCopyLink = useCallback(() => {
     navigator.clipboard.writeText(shareUrl);

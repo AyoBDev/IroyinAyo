@@ -1,19 +1,25 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { track } from '../utils/telemetry.js';
 
 export default function PredictionReveal({ data, onClose }) {
   const [phase, setPhase] = useState('beat1');
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase('beat2'), 250);
-    const t2 = setTimeout(() => setPhase('beat3'), 850);
+    const t2 = setTimeout(() => {
+      setPhase('beat3');
+      if (data?.socialTicker) {
+        track('reveal_beat3_shown', { condition: data.socialTicker.type });
+      }
+    }, 850);
     const t3 = setTimeout(() => onClose?.(), 4000);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
     };
-  }, [onClose]);
+  }, [onClose, data]);
 
   const deltaPp = Math.abs((data.newPrice - data.oldPrice) * 100);
   const state = deltaPp >= 3 ? 'sharp' : deltaPp >= 0.5 ? 'notable' : 'negligible';

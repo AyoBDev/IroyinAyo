@@ -1,5 +1,6 @@
 const db = require('../../config/database');
 const notifications = require('../notifications/whatsapp');
+const { track } = require('../../utils/telemetry');
 
 const SHARP_MOVE_PP = 0.10;
 const SHARP_MOVE_WINDOW_MS = 60 * 60 * 1000;
@@ -48,7 +49,11 @@ async function evaluatePositionTriggers({ now = new Date() } = {}) {
       .insert({ position_id: r.position_id, condition: 'resolution_today', eligible_at: now })
       .onConflict(['position_id', 'condition']).ignore()
       .returning('id');
-    if (inserted.length > 0) counts.resolutionToday += 1;
+    if (inserted.length > 0) {
+      counts.resolutionToday += 1;
+      const pos = await db('multi_market_positions').where({ id: r.position_id }).first();
+      if (pos) track('position_trigger_eligible', { user_id: pos.student_id, condition: 'resolution_today', position_id: r.position_id });
+    }
   }
 
   const resAway = await findResolvedAwayEligible(now);
@@ -57,7 +62,10 @@ async function evaluatePositionTriggers({ now = new Date() } = {}) {
       .insert({ position_id: r.position_id, condition: 'resolved_away', eligible_at: now })
       .onConflict(['position_id', 'condition']).ignore()
       .returning('id');
-    if (inserted.length > 0) counts.resolvedAway += 1;
+    if (inserted.length > 0) {
+      counts.resolvedAway += 1;
+      track('position_trigger_eligible', { user_id: r.student_id, condition: 'resolved_away', position_id: r.position_id });
+    }
   }
 
   return counts;
@@ -88,6 +96,7 @@ async function fireResolvedAwayNotifications({ now = new Date() } = {}) {
     const ok = await notifications.sendWhatsAppWithFailureTracking({ id: e.student_id, phone_number: e.phone_number, wa_failure_count: e.wa_failure_count }, text);
     if (ok) {
       await db('position_triggers').where('id', e.id).update({ fired_at: now, surfaced_via: 'wa_oneoff' });
+      track('position_trigger_surfaced', { user_id: e.student_id, condition: 'resolved_away', surfaced_via: 'wa_oneoff' });
       fired += 1;
     }
   }

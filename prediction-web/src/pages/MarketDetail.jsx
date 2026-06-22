@@ -8,6 +8,7 @@ import PublicChat from '../components/PublicChat.jsx';
 import MarketShareModal from '../components/MarketShareModal.jsx';
 import { useDeepLinkRef, buildSourceRef } from '../hooks/useDeepLinkRef.js';
 import QuickPredictBar from '../components/QuickPredictBar.jsx';
+import { track } from '../utils/telemetry.js';
 
 function PriceChart({ outcomes }) {
   const sorted = [...outcomes].sort((a, b) => b.price - a.price);
@@ -236,6 +237,13 @@ export default function MarketDetail() {
   const { ref, lede } = useDeepLinkRef();
   const isQuickPredict = ref === 'wa_daily' && (lede === 'social' || lede === 'curiosity' || lede === 'resolution');
   const [quickPredictActive, setQuickPredictActive] = useState(isQuickPredict);
+
+  useEffect(() => {
+    if (ref) {
+      track('deep_link_landed', { ref, lede, market_id: marketId });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!isQuickPredict) return;
