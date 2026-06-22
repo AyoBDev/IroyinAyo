@@ -20,7 +20,10 @@ export default function ProfileShareModal({ data, onClose }) {
   const shareUrl = data.referralCode
     ? `${window.location.origin}?ref=${data.referralCode}`
     : window.location.origin;
-  const shareText = `${data.name} on IroyinMarket\n${data.accuracy}% accuracy | ${data.streak} week streak\n\nPredict & compete: ${shareUrl}`;
+  const firstName = (data.name || '').split(' ')[0] || data.name;
+  const shareText = data.accuracy == null
+    ? `${firstName} is a new caller on IroyinMarket.\n\n${shareUrl}`
+    : `${firstName} is ${Math.round(data.accuracy)}% accurate on IroyinMarket.\n\n${shareUrl}`;
 
   const handleShareImage = useCallback(async () => {
     if (!cardRef.current) return;
