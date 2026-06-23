@@ -6,17 +6,17 @@ const router = express.Router();
 
 router.post('/bot/reconnect', authenticate, requireRole('super_admin', 'moderator'), async (req, res) => {
   try {
-    const botSocket = require('../../bot/botSocket');
-    const current = typeof botSocket.getBotSocket === 'function' ? botSocket.getBotSocket() : null;
+    const { getBotSocket } = require('../../bot/botSocket');
+    const { createConnection } = require('../../bot/connection');
+
+    const current = getBotSocket();
     if (current) {
       return res.json({ status: 'already_connected', message: 'WhatsApp bot socket is already connected.' });
     }
-    if (typeof botSocket.connect === 'function') {
-      // Fire-and-forget; do not await — return promptly so the dashboard sees a quick response.
-      botSocket.connect().catch((err) => console.error('[bot/reconnect] failed:', err.message));
-      return res.json({ status: 'reconnecting', message: 'Reconnect initiated. Check status pill in 5-10 seconds.' });
-    }
-    return res.json({ status: 'failed', message: 'Bot module is not loaded in this process.' });
+
+    // Fire-and-forget; do not await — return promptly so the dashboard sees a quick response.
+    createConnection().catch((err) => console.error('[bot/reconnect] failed:', err.message));
+    return res.json({ status: 'reconnecting', message: 'Reconnect initiated. Check status pill in 5-10 seconds.' });
   } catch (err) {
     return res.json({ status: 'failed', message: err.message });
   }
