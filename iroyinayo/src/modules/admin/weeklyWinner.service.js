@@ -27,14 +27,15 @@ async function getWeeklyWinnerStatus() {
 }
 
 async function markWinnerPaid(weekStart, adminId) {
+  // First check existence so we can throw NotFoundError vs. ValidationError correctly.
   const row = await db('weekly_leaderboards').where({ week_start: weekStart }).first();
   if (!row) throw new NotFoundError('Weekly winner row not found');
-  if (row.prize_paid) throw new ValidationError('Already paid');
-  await db('weekly_leaderboards').where({ week_start: weekStart }).update({
-    prize_paid: true,
-    paid_at: new Date(),
-    paid_by_admin_id: adminId,
-  });
+
+  // Atomic check-and-set: only updates if prize_paid is still false.
+  const updated = await db('weekly_leaderboards')
+    .where({ week_start: weekStart, prize_paid: false })
+    .update({ prize_paid: true, paid_at: new Date(), paid_by_admin_id: adminId });
+  if (updated === 0) throw new ValidationError('Already paid');
   return { ok: true };
 }
 

@@ -18,35 +18,49 @@ async function tableExists(name) {
 }
 
 async function getSummary() {
-  const [marketsToResolve, pendingUserMarkets, simulationAlerts, marketReports, recentBansCount] = await Promise.all([
+  const [
+    marketsToResolve,
+    pendingUserMarkets,
+    pendingContentExists, pendingContentVal,
+    pendingRedemptionsExists, pendingRedemptionsVal,
+    simulationAlerts,
+    marketReports,
+    recentBansCount,
+    winnerRow,
+    totalMarkets,
+    totalStudents,
+    totalQuizzesExists, totalQuizzes,
+    totalSchedulesExists, totalSchedules,
+    totalLiquidityExists, totalLiquidity,
+    totalContentExists, totalContent,
+  ] = await Promise.all([
     safeCount('multi_markets', { status: 'closed' }),
     safeCount('multi_markets', { status: 'pending' }),
+    tableExists('content'), safeCount('content', { status: 'pending' }),
+    tableExists('redemptions'), safeCount('redemptions', { status: 'pending' }),
     safeCount('simulation_alerts', { status: 'pending' }),
     safeCount('market_reports', { resolution_status: 'pending' }),
-    db('students').where({ is_banned: true }).count('* as c').first().then((r) => Number(r.c) || 0),
+    db('students').where({ is_banned: true }).count('* as c').first().then((r) => Number(r.c) || 0).catch(() => 0),
+    db('weekly_leaderboards').orderBy('week_start', 'desc').first().catch(() => null),
+    safeCount('multi_markets'),
+    safeCount('students'),
+    tableExists('quizzes'), safeCount('quizzes'),
+    tableExists('scheduled_markets'), safeCount('scheduled_markets'),
+    tableExists('market_liquidity_config'), safeCount('market_liquidity_config'),
+    tableExists('content'), safeCount('content'),
   ]);
 
-  const pendingContent = (await tableExists('content'))
-    ? await safeCount('content', { status: 'pending' })
-    : 0;
-
-  const pendingRedemptions = (await tableExists('redemptions'))
-    ? await safeCount('redemptions', { status: 'pending' })
-    : 0;
-
-  const winnerRow = await db('weekly_leaderboards')
-    .orderBy('week_start', 'desc')
-    .first();
+  const pendingContent = pendingContentExists ? pendingContentVal : 0;
+  const pendingRedemptions = pendingRedemptionsExists ? pendingRedemptionsVal : 0;
   const weeklyWinnerUnpaid = winnerRow ? !winnerRow.prize_paid : false;
-
   const totalsManageStrip = {
-    markets: await safeCount('multi_markets'),
-    students: await safeCount('students'),
-    quizzes: (await tableExists('quizzes')) ? await safeCount('quizzes') : 0,
-    schedules: (await tableExists('scheduled_markets')) ? await safeCount('scheduled_markets') : 0,
-    ambassadors: 0, // ambassador table name varies; fill in when known
-    liquidityConfigs: (await tableExists('market_liquidity_config')) ? await safeCount('market_liquidity_config') : 0,
-    content: (await tableExists('content')) ? await safeCount('content') : 0,
+    markets: totalMarkets,
+    students: totalStudents,
+    quizzes: totalQuizzesExists ? totalQuizzes : 0,
+    schedules: totalSchedulesExists ? totalSchedules : 0,
+    ambassadors: 0,
+    liquidityConfigs: totalLiquidityExists ? totalLiquidity : 0,
+    content: totalContentExists ? totalContent : 0,
   };
 
   return {
