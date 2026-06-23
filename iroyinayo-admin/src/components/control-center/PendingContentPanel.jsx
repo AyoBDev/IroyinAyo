@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { cc } from '@/lib/api';
 import { usePolling } from './usePolling';
 import { EmptyState } from './EmptyState';
+import { track } from '@/lib/telemetry';
 
 function isUrgent() {
   // 7:30am WAT = 06:30 UTC
@@ -24,7 +25,11 @@ export function PendingContentPanel() {
 
   async function handleApprove(id) {
     setErrInline(null);
-    try { await cc.approveContent(id); refresh(); }
+    try {
+      await cc.approveContent(id);
+      track('cc_content_approved', { content_id: id });
+      refresh();
+    }
     catch (err) { setErrInline({ id, message: err.message }); }
   }
   async function handlePublish(id) {

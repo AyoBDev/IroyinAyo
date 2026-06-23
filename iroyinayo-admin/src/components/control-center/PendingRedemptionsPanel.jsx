@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { cc } from '@/lib/api';
 import { usePolling } from './usePolling';
 import { EmptyState } from './EmptyState';
+import { track } from '@/lib/telemetry';
 
 export function PendingRedemptionsPanel() {
   const { data, error, refresh } = usePolling(cc.getPendingRedemptions, 30000);
@@ -20,6 +21,7 @@ export function PendingRedemptionsPanel() {
     setErrInline(null);
     try {
       await cc.fulfillRedemption(id, notes ? { notes } : {});
+      track('cc_redemption_fulfilled', { redemption_id: id });
       setActiveId(null);
       setNotes('');
       refresh();

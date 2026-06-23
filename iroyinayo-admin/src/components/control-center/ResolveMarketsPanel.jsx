@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { cc } from '@/lib/api';
 import { usePolling } from './usePolling';
 import { EmptyState } from './EmptyState';
+import { track } from '@/lib/telemetry';
 
 export function ResolveMarketsPanel() {
   const { data, error, refresh } = usePolling(cc.getClosedMarkets, 30000);
@@ -19,6 +20,7 @@ export function ResolveMarketsPanel() {
     setErrInline(null);
     try {
       await cc.resolveMarket(marketId, outcomeId);
+      track('cc_market_resolved', { market_id: marketId, winning_outcome_id: outcomeId });
       setOpenId(null);
       refresh();
     } catch (err) {

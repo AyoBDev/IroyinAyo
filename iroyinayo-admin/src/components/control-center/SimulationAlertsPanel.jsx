@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { cc } from '@/lib/api';
 import { usePolling } from './usePolling';
 import { EmptyState } from './EmptyState';
+import { track } from '@/lib/telemetry';
 
 const SEV_COLORS = { high: 'destructive', medium: 'default', low: 'secondary' };
 
@@ -17,7 +18,11 @@ export function SimulationAlertsPanel() {
 
   async function handleUpdate(id, status) {
     setErrInline(null);
-    try { await cc.updateSimulationAlert(id, { status }); refresh(); }
+    try {
+      await cc.updateSimulationAlert(id, { status });
+      track('cc_alert_acknowledged', { alert_id: id, status });
+      refresh();
+    }
     catch (err) { setErrInline({ id, message: err.message }); }
   }
 

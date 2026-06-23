@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { cc } from '@/lib/api';
+import { track } from '@/lib/telemetry';
 
 export function BotReconnectDialog({ online, lastConnectedAt, onClose }) {
   const [result, setResult] = useState(null);
@@ -12,6 +13,7 @@ export function BotReconnectDialog({ online, lastConnectedAt, onClose }) {
     setBusy(true);
     try {
       const r = await cc.reconnectBot();
+      track('cc_bot_reconnect_triggered', { result_status: r.status });
       setResult(r);
     } catch (err) {
       setResult({ status: 'failed', message: err.message });

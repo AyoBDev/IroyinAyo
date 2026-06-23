@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { cc } from '@/lib/api';
 import { usePolling } from './usePolling';
 import { EmptyState } from './EmptyState';
+import { track } from '@/lib/telemetry';
 
 export function PendingUserMarketsPanel() {
   const { data, error, refresh } = usePolling(cc.getPendingMarkets, 30000);
@@ -19,7 +20,11 @@ export function PendingUserMarketsPanel() {
 
   async function handleApprove(id) {
     setErrInline(null);
-    try { await cc.approveMarket(id); refresh(); }
+    try {
+      await cc.approveMarket(id);
+      track('cc_user_market_approved', { market_id: id });
+      refresh();
+    }
     catch (err) { setErrInline({ id, message: err.message }); }
   }
 
@@ -31,6 +36,7 @@ export function PendingUserMarketsPanel() {
     setErrInline(null);
     try {
       await cc.rejectMarket(id, reason.trim());
+      track('cc_user_market_rejected', { market_id: id, reason: reason.trim() });
       setRejectingId(null);
       setReason('');
       refresh();
