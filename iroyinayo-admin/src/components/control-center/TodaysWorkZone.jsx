@@ -1,5 +1,6 @@
 'use client';
 import { ResolveMarketsPanel } from './ResolveMarketsPanel';
+import { PendingUserMarketsPanel } from './PendingUserMarketsPanel';
 import { Card } from '@/components/ui/card';
 
 export function TodaysWorkZone() {
@@ -8,7 +9,8 @@ export function TodaysWorkZone() {
       <h2 className="text-2xl font-serif font-semibold mb-4">Today&apos;s work</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <ResolveMarketsPanel />
-        {['Pending user markets', 'Pending content', 'Pending redemptions', 'Create market with AI'].map((label) => (
+        <PendingUserMarketsPanel />
+        {['Pending content', 'Pending redemptions', 'Create market with AI'].map((label) => (
           <Card key={label} className="p-4">
             <div className="text-sm font-medium">{label}</div>
             <div className="text-xs text-muted-foreground mt-2">(loading…)</div>
