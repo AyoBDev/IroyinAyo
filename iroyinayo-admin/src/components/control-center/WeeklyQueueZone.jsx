@@ -2,6 +2,7 @@
 import { Card } from '@/components/ui/card';
 import { SimulationAlertsPanel } from './SimulationAlertsPanel';
 import { MarketReportsPanel } from './MarketReportsPanel';
+import { BanQueuePanel } from './BanQueuePanel';
 
 export function WeeklyQueueZone() {
   return (
@@ -10,7 +11,8 @@ export function WeeklyQueueZone() {
       <div className="space-y-3">
         <SimulationAlertsPanel />
         <MarketReportsPanel />
-        {['Recent bans', 'Weekly winner'].map((label) => (
+        <BanQueuePanel />
+        {['Weekly winner'].map((label) => (
           <Card key={label} className="p-4">
             <div className="text-sm font-medium">{label}</div>
           </Card>
