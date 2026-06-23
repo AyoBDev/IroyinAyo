@@ -4,6 +4,7 @@ const multiMarkets = require('./multiMarkets.service');
 const gamificationService = require('../gamification/gamification.service');
 const { authenticateStudent } = require('../../middleware/studentAuth');
 const { authenticate } = require('../../middleware/auth');
+const { requireRole } = require('../../middleware/adminRole');
 const { ValidationError } = require('../../utils/errors');
 const { lastAppOpenMiddleware } = require('../habit/habit.routes');
 const db = require('../../config/database');
@@ -542,6 +543,24 @@ router.post('/:id/resolve', authenticate, async (req, res, next) => {
     notifyMarketResolution(req.params.id, outcome?.label || '').catch(() => {});
     notifyReferralWins(req.params.id).catch(() => {});
 
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
+router.post('/:id/approve', authenticate, requireRole('super_admin', 'moderator'), async (req, res, next) => {
+  try {
+    const result = await multiMarkets.approveMarket(req.params.id, req.admin.id);
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
+router.post('/:id/reject', authenticate, requireRole('super_admin', 'moderator'), async (req, res, next) => {
+  try {
+    const { reason } = req.body;
+    if (!reason || typeof reason !== 'string' || reason.length < 3) {
+      return res.status(400).json({ error: 'reason required (min 3 chars)' });
+    }
+    const result = await multiMarkets.rejectMarket(req.params.id, req.admin.id, reason);
     res.json(result);
   } catch (err) { next(err); }
 });
