@@ -3,7 +3,7 @@ import { ResolveMarketsPanel } from './ResolveMarketsPanel';
 import { PendingUserMarketsPanel } from './PendingUserMarketsPanel';
 import { PendingContentPanel } from './PendingContentPanel';
 import { PendingRedemptionsPanel } from './PendingRedemptionsPanel';
-import { Card } from '@/components/ui/card';
+import { AIMarketCreatorPanel } from './AIMarketCreatorPanel';
 
 export function TodaysWorkZone() {
   return (
@@ -14,12 +14,7 @@ export function TodaysWorkZone() {
         <PendingUserMarketsPanel />
         <PendingContentPanel />
         <PendingRedemptionsPanel />
-        {['Create market with AI'].map((label) => (
-          <Card key={label} className="p-4">
-            <div className="text-sm font-medium">{label}</div>
-            <div className="text-xs text-muted-foreground mt-2">(loading…)</div>
-          </Card>
-        ))}
+        <AIMarketCreatorPanel />
       </div>
     </section>
   );
