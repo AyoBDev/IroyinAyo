@@ -18,14 +18,17 @@ async function tableExists(name) {
 }
 
 async function getSummary() {
-  const [marketsToResolve, pendingUserMarkets, pendingContent, simulationAlerts, marketReports, recentBansCount] = await Promise.all([
+  const [marketsToResolve, pendingUserMarkets, simulationAlerts, marketReports, recentBansCount] = await Promise.all([
     safeCount('multi_markets', { status: 'closed' }),
     safeCount('multi_markets', { status: 'pending' }),
-    safeCount('content', { status: 'pending' }),
     safeCount('simulation_alerts', { status: 'pending' }),
     safeCount('market_reports', { resolution_status: 'pending' }),
     db('students').where({ is_banned: true }).count('* as c').first().then((r) => Number(r.c) || 0),
   ]);
+
+  const pendingContent = (await tableExists('content'))
+    ? await safeCount('content', { status: 'pending' })
+    : 0;
 
   const pendingRedemptions = (await tableExists('redemptions'))
     ? await safeCount('redemptions', { status: 'pending' })
