@@ -15,11 +15,13 @@ import {
   LogOut,
   Clock,
   Megaphone,
+  Gauge,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/control-center', label: 'Control Center', icon: Gauge },
   { href: '/students', label: 'Students', icon: Users },
   { href: '/content', label: 'Content', icon: FileText },
   { href: '/quizzes', label: 'Quizzes', icon: Brain },
