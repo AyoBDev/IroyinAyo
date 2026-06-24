@@ -90,6 +90,10 @@ app.use(express.static(frontendPath));
 
 app.use(generalLimiter);
 
+// Larger body limit for broadcast routes (base64-encoded poster images run a few MB).
+// Must be registered before the global express.json() so it claims the body first.
+app.use('/api/admin/broadcast', express.json({ limit: '15mb' }));
+
 app.use(express.json());
 
 setupExpressRequestContext(posthog, app);
