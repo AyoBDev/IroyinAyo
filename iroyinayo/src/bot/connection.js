@@ -88,6 +88,7 @@ async function createConnection(messageHandler) {
         const text =
           msg.message.conversation ||
           msg.message.extendedTextMessage?.text ||
+          msg.message.imageMessage?.caption ||
           '';
 
         if (text && (jid.endsWith('@s.whatsapp.net') || jid.endsWith('@lid'))) {

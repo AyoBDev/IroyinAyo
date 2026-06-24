@@ -38,7 +38,7 @@ async function handleMessage(sock, jid, text, msg) {
 
   // Admin commands start with /
   if (text.startsWith('/') && ADMIN_NUMBERS.includes(phone)) {
-    await handleAdminCommand(sock, jid, text);
+    await handleAdminCommand(sock, jid, text, msg);
     return;
   }
 
