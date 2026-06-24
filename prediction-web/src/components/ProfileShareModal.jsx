@@ -34,9 +34,12 @@ export default function ProfileShareModal({ data, onClose }) {
     ? `${window.location.origin}?ref=${data.referralCode}`
     : window.location.origin;
   const firstName = (data.name || '').split(' ')[0] || data.name;
-  const shareText = data.accuracy == null
-    ? `${firstName} is a new caller on IroyinMarket.\n\n${shareUrl}`
-    : `${firstName} is ${Math.round(data.accuracy)}% accurate on IroyinMarket.\n\n${shareUrl}`;
+  const accuracyLine = data.accuracy == null
+    ? `${firstName} is a new caller on IroyinMarket.`
+    : `${firstName} is ${Math.round(data.accuracy)}% accurate on IroyinMarket.`;
+  const statsLine = `${data.totalPredictions} predictions · ${data.winRate}% win rate${data.streak ? ` · ${data.streak}wk streak` : ''}`;
+  const referralLine = data.referralCode ? `\nJoin with my code: ${data.referralCode}` : '';
+  const shareText = `${accuracyLine}\n${statsLine}${referralLine}\n\n${shareUrl}`;
 
   const handleShareImage = useCallback(() => {
     track('profile_share_captured', { target_user_id: data.referralCode || 'unknown' });
