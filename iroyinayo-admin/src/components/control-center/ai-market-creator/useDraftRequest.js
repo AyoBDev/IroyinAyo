@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef, useCallback } from 'react';
 import { cc } from '@/lib/api';
+import { track } from '@/lib/telemetry';
 
 const INITIAL_STATE = 'idle';
 
@@ -11,6 +12,7 @@ export function useDraftRequest() {
   const [latencyMs, setLatencyMs] = useState(null);
   const [originalDraft, setOriginalDraft] = useState(null);
   const abortRef = useRef(null);
+  const discardStartRef = useRef(null);
 
   const reset = useCallback(() => {
     setState('idle');
@@ -21,11 +23,13 @@ export function useDraftRequest() {
     abortRef.current = null;
   }, []);
 
-  const generate = useCallback(async (prompt) => {
+  const generate = useCallback(async (prompt, opts = {}) => {
     abortRef.current = new AbortController();
     setState('drafting');
     setError(null);
     setDraft(null);
+    const startedAt = Date.now();
+    track('cc_ai_draft_requested', { prompt_length: prompt.length, seeded_from_trend: !!opts.seededFromTrend });
     try {
       const result = await cc.getAIMarketDraft(prompt, { signal: abortRef.current.signal });
       const { model, latencyMs: lm, ...rest } = result;
@@ -33,6 +37,8 @@ export function useDraftRequest() {
       setOriginalDraft(rest);
       setLatencyMs(lm);
       setState('preview');
+      discardStartRef.current = Date.now();
+      track('cc_ai_draft_received', { latency_ms: lm || (Date.now() - startedAt), outcome_count: rest.outcomes?.length || 0, category: rest.category });
     } catch (err) {
       if (err.name === 'AbortError' || (err.message && err.message.includes('aborted'))) {
         setState('idle');
@@ -53,8 +59,10 @@ export function useDraftRequest() {
     if (!draft) return null;
     setState('publishing');
     setError(null);
+    const edited = fieldsEdited();
     try {
       const result = await cc.publishAIMarket(draft);
+      track('cc_ai_draft_published', { market_id: result.marketId, category: draft.category, outcome_count: draft.outcomes.length, fields_edited: edited });
       reset();
       return result;
     } catch (err) {
@@ -62,7 +70,7 @@ export function useDraftRequest() {
       setState('preview');
       return null;
     }
-  }, [draft, reset]);
+  }, [draft, reset, fieldsEdited]);
 
   const cancel = useCallback(() => {
     if (abortRef.current) abortRef.current.abort();
@@ -70,8 +78,11 @@ export function useDraftRequest() {
   }, [reset]);
 
   const discard = useCallback(() => {
+    if (state === 'preview' && discardStartRef.current) {
+      track('cc_ai_draft_discarded', { time_in_preview_seconds: Math.round((Date.now() - discardStartRef.current) / 1000) });
+    }
     reset();
-  }, [reset]);
+  }, [reset, state]);
 
   const fieldsEdited = useCallback(() => {
     if (!draft || !originalDraft) return [];

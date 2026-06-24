@@ -18,7 +18,7 @@ export function AIMarketCreatorPanel() {
   }
 
   function handleTrendSelect(trend) {
-    generate(trend.title);
+    generate(trend.title, { seededFromTrend: true });
   }
 
   return (

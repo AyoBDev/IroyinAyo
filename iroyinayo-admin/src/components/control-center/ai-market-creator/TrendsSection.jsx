@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cc } from '@/lib/api';
+import { track } from '@/lib/telemetry';
 import { ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 
 export function TrendsSection({ onSelectTrend, disabled }) {
@@ -19,6 +20,7 @@ export function TrendsSection({ onSelectTrend, disabled }) {
       const result = await cc.getAIMarketTrends();
       setTrends(result.trends || []);
       setFetchedAt(result.fetchedAt);
+      track('cc_ai_trend_refresh', { result_count: (result.trends || []).length, partial_failure: !!result.partialFailure, latency_ms: result.latencyMs, cached: !!result.cached });
     } catch (err) {
       setError(err.message || 'Failed to load trends');
     } finally {
@@ -62,7 +64,7 @@ export function TrendsSection({ onSelectTrend, disabled }) {
             <Card key={`${t.url}-${idx}`} className="p-2">
               <div className="text-sm">{t.title}</div>
               <div className="text-xs text-muted-foreground">{t.source} · {t.category}</div>
-              <Button size="sm" variant="secondary" className="mt-2" disabled={disabled} onClick={() => onSelectTrend(t)}>
+              <Button size="sm" variant="secondary" className="mt-2" disabled={disabled} onClick={() => { track('cc_ai_trend_tapped', { trend_index: idx, category: t.category }); onSelectTrend(t); }}>
                 Use this
               </Button>
             </Card>
