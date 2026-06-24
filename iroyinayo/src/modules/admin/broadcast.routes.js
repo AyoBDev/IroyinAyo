@@ -5,8 +5,7 @@ const { authenticate } = require('../../middleware/auth');
 const { requireRole } = require('../../middleware/adminRole');
 const { ValidationError } = require('../../utils/errors');
 
-// Accept up to ~15 MB JSON to allow a base64-encoded poster image.
-const jsonParser = express.json({ limit: '15mb' });
+// Body parsing happens upstream in app.js (15 MB limit scoped to this prefix).
 
 function decodeImage(imageBase64) {
   if (!imageBase64) return null;
@@ -14,7 +13,7 @@ function decodeImage(imageBase64) {
   return Buffer.from(cleaned, 'base64');
 }
 
-router.post('/test', jsonParser, authenticate, requireRole('super_admin'), async (req, res, next) => {
+router.post('/test', authenticate, requireRole('super_admin'), async (req, res, next) => {
   try {
     const { phone, caption, imageBase64 } = req.body || {};
     if (!phone) throw new ValidationError('phone is required');
@@ -27,7 +26,7 @@ router.post('/test', jsonParser, authenticate, requireRole('super_admin'), async
   }
 });
 
-router.post('/', jsonParser, authenticate, requireRole('super_admin'), async (req, res, next) => {
+router.post('/', authenticate, requireRole('super_admin'), async (req, res, next) => {
   try {
     const { caption, imageBase64, confirm } = req.body || {};
     if (confirm !== 'YES_SEND_TO_ALL') {
