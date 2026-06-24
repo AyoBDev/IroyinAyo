@@ -3,3 +3,4 @@ worktrees/
 .gstack/
 .superpowers/
 .claude/
+docker-compose.override.yml

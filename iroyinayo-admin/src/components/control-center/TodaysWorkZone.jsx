@@ -3,7 +3,7 @@ import { ResolveMarketsPanel } from './ResolveMarketsPanel';
 import { PendingUserMarketsPanel } from './PendingUserMarketsPanel';
 import { PendingContentPanel } from './PendingContentPanel';
 import { PendingRedemptionsPanel } from './PendingRedemptionsPanel';
-import { AIMarketCreatorPanel } from './AIMarketCreatorPanel';
+import { AIMarketCreatorPanel } from './ai-market-creator/AIMarketCreatorPanel';
 
 export function TodaysWorkZone() {
   return (

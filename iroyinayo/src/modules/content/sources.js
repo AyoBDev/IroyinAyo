@@ -86,6 +86,26 @@ const SOURCES = [
     type: 'rss',
     url: 'https://punchng.com/topics/education/feed/',
   },
+
+  // AI Market Creator additions
+  {
+    name: 'Goal Nigeria',
+    category: 'sports',
+    type: 'rss',
+    url: 'https://www.goal.com/feeds/en/news?fmt=rss&ICID=AR',
+  },
+  {
+    name: 'Premium Times Politics',
+    category: 'politics',
+    type: 'rss',
+    url: 'https://www.premiumtimesng.com/category/news/top-news/feed',
+  },
+  {
+    name: 'Pulse Nigeria Entertainment',
+    category: 'entertainment',
+    type: 'rss',
+    url: 'https://www.pulse.ng/entertainment/rss',
+  },
 ];
 
 // --- Fetchers ---

@@ -47,6 +47,10 @@ export const api = {
   delete: (path) => request(path, { method: 'DELETE' }),
 };
 
+export const apiWithSignal = {
+  post: (path, body, signal) => request(path, { method: 'POST', body: JSON.stringify(body), signal }),
+};
+
 // Control center helpers
 export const cc = {
   getSummary: () => api.get('/admin/control-center/summary'),
@@ -71,4 +75,8 @@ export const cc = {
   getSimulationAlerts: () => api.get('/admin/simulation/alerts?status=pending'),
   updateSimulationAlert: (id, body) => api.patch(`/admin/simulation/alerts/${id}`, body),
   unbanStudent: (studentId) => api.post(`/admin/students/${studentId}/unban`, {}),
+  // AI Market Creator helpers
+  getAIMarketDraft: (prompt, { signal } = {}) => apiWithSignal.post('/admin/ai-market/draft', { prompt }, signal),
+  getAIMarketTrends: () => api.post('/admin/ai-market/trends', {}),
+  publishAIMarket: (payload) => api.post('/admin/ai-market/publish', payload),
 };
