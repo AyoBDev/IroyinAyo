@@ -21,13 +21,12 @@ export async function captureFile(element, { fileName = 'iroyinmarket.png', back
 
 // Must be called synchronously from a user gesture on mobile (especially iOS Safari).
 // Pass a pre-captured File so navigator.share fires without any awaits in between.
-// Note: when sharing a file we omit `text` to avoid WhatsApp/etc duplicating the URL
-// the caller already baked into the caption. Pass `text` only as a fallback when no file.
+// Callers bake the URL into `text`; we never pass a separate `url` field because
+// WhatsApp/iOS append it to the text and produce a duplicated link.
 export function shareFile({ file, text, title }) {
   const canShareFiles = file && navigator.share && navigator.canShare?.({ files: [file] });
-  console.info('[share] file?', !!file, 'size?', file?.size, 'canShareFiles?', canShareFiles);
   if (canShareFiles) {
-    return navigator.share({ title, files: [file] }).catch((err) => {
+    return navigator.share({ title, text, files: [file] }).catch((err) => {
       if (err?.name === 'AbortError') return;
       console.warn('navigator.share with file failed:', err);
       throw err;
