@@ -5,7 +5,7 @@ const contentService = require('../../modules/content/content.service');
 const db = require('../../config/database');
 const { bold } = require('../formatters');
 
-async function handleAdminCommand(sock, jid, text) {
+async function handleAdminCommand(sock, jid, text, msg) {
   const parts = text.trim().split(/\s+/);
   const command = parts[0].toLowerCase();
 
@@ -14,7 +14,10 @@ async function handleAdminCommand(sock, jid, text) {
       await handleStats(sock, jid);
       break;
     case '/broadcast':
-      await handleBroadcast(sock, jid, text.slice('/broadcast'.length).trim());
+      await handleBroadcast(sock, jid, text.slice('/broadcast'.length).trim(), msg);
+      break;
+    case '/broadcast-test':
+      await handleBroadcastTest(sock, jid, parts[1], text.split(/\s+/).slice(2).join(' '), msg);
       break;
     case '/approve':
       await handleApproveMarket(sock, jid, parts[1]);
@@ -33,7 +36,8 @@ async function handleAdminCommand(sock, jid, text) {
         text: [
           `${bold('Admin Commands:')}`,
           '/stats — Quick engagement summary',
-          '/broadcast [message] — Send to all students',
+          '/broadcast [message] — Send to all students (attach an image to send image+caption)',
+          '/broadcast-test [phone] [message] — Dry-run to one phone (attach image to test image+caption)',
           '/approve [market-id] — Approve a market',
           '/resolve [market-id] [yes/no] — Resolve a market',
           '/ban [phone] — Ban a student',
@@ -58,27 +62,80 @@ async function handleStats(sock, jid) {
   });
 }
 
-async function handleBroadcast(sock, jid, message) {
-  if (!message) {
-    await sock.sendMessage(jid, { text: 'Usage: /broadcast [message]' });
+async function extractImageBuffer(msg) {
+  if (!msg?.message?.imageMessage) return null;
+  try {
+    const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+    return await downloadMediaMessage(msg, 'buffer', {});
+  } catch (err) {
+    console.error('Failed to download attached image:', err);
+    return null;
+  }
+}
+
+async function sendBroadcastPayload(sock, recipientJid, message, imageBuffer) {
+  if (imageBuffer) {
+    await sock.sendMessage(recipientJid, {
+      image: imageBuffer,
+      caption: message || undefined,
+    });
+  } else {
+    await sock.sendMessage(recipientJid, {
+      text: `📢 ${bold('Announcement')}\n\n${message}`,
+    });
+  }
+}
+
+async function handleBroadcast(sock, jid, message, msg) {
+  const imageBuffer = await extractImageBuffer(msg);
+
+  if (!message && !imageBuffer) {
+    await sock.sendMessage(jid, { text: 'Usage: /broadcast [message] — or attach an image with /broadcast as the caption.' });
     return;
   }
 
   const students = await db('students').where({ is_banned: false }).select('phone_number');
   let sent = 0;
+  let failed = 0;
 
   for (const student of students) {
     try {
-      await sock.sendMessage(`${student.phone_number}@s.whatsapp.net`, {
-        text: `📢 ${bold('Announcement')}\n\n${message}`,
-      });
+      await sendBroadcastPayload(sock, `${student.phone_number}@s.whatsapp.net`, message, imageBuffer);
       sent++;
     } catch (err) {
-      // Skip failed sends
+      failed++;
     }
   }
 
-  await sock.sendMessage(jid, { text: `✅ Broadcast sent to ${sent}/${students.length} students.` });
+  const kind = imageBuffer ? 'image broadcast' : 'broadcast';
+  await sock.sendMessage(jid, { text: `✅ ${kind} sent to ${sent}/${students.length} students${failed ? ` (${failed} failed)` : ''}.` });
+}
+
+async function handleBroadcastTest(sock, jid, phone, message, msg) {
+  if (!phone) {
+    await sock.sendMessage(jid, { text: 'Usage: /broadcast-test [phone] [message] — attach an image to test image+caption.' });
+    return;
+  }
+
+  const cleanPhone = phone.replace(/[^\d]/g, '');
+  if (!cleanPhone) {
+    await sock.sendMessage(jid, { text: 'Invalid phone number.' });
+    return;
+  }
+
+  const imageBuffer = await extractImageBuffer(msg);
+
+  if (!message && !imageBuffer) {
+    await sock.sendMessage(jid, { text: 'Provide a message or attach an image.' });
+    return;
+  }
+
+  try {
+    await sendBroadcastPayload(sock, `${cleanPhone}@s.whatsapp.net`, message, imageBuffer);
+    await sock.sendMessage(jid, { text: `✅ Test broadcast sent to ${cleanPhone}. Review it before running /broadcast.` });
+  } catch (err) {
+    await sock.sendMessage(jid, { text: `❌ Test send failed: ${err.message}` });
+  }
 }
 
 async function handleApproveMarket(sock, jid, marketIdPrefix) {
