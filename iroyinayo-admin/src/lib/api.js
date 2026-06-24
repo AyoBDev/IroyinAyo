@@ -79,4 +79,7 @@ export const cc = {
   getAIMarketDraft: (prompt, { signal } = {}) => apiWithSignal.post('/admin/ai-market/draft', { prompt }, signal),
   getAIMarketTrends: () => api.post('/admin/ai-market/trends', {}),
   publishAIMarket: (payload) => api.post('/admin/ai-market/publish', payload),
+  // Broadcast helpers
+  broadcastTest: (payload) => api.post('/admin/broadcast/test', payload),
+  broadcastAll: (payload) => api.post('/admin/broadcast', payload),
 };
