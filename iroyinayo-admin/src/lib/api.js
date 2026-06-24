@@ -82,4 +82,7 @@ export const cc = {
   // Broadcast helpers
   broadcastTest: (payload) => api.post('/admin/broadcast/test', payload),
   broadcastAll: (payload) => api.post('/admin/broadcast', payload),
+  // Bot session helpers
+  getBotQr: () => api.get('/bot/qr'),
+  resetBotSession: () => api.post('/admin/bot/reset-session', { confirm: 'YES_RESET_SESSION' }),
 };
