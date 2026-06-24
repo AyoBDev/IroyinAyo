@@ -86,6 +86,19 @@ async function sendBroadcastPayload(sock, recipientJid, message, imageBuffer) {
   }
 }
 
+// Randomized 3–8s delay between sends + a 30–60s cool-down every 50 messages.
+// WhatsApp flags bursty automation — jitter + chunked pacing keeps the bot under the radar.
+const SEND_DELAY_MIN_MS = 3000;
+const SEND_DELAY_MAX_MS = 8000;
+const CHUNK_SIZE = 50;
+const CHUNK_PAUSE_MIN_MS = 30000;
+const CHUNK_PAUSE_MAX_MS = 60000;
+
+function randomDelay(minMs, maxMs) {
+  const ms = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function handleBroadcast(sock, jid, message, msg) {
   const imageBuffer = await extractImageBuffer(msg);
 
@@ -95,19 +108,36 @@ async function handleBroadcast(sock, jid, message, msg) {
   }
 
   const students = await db('students').where({ is_banned: false }).select('phone_number');
+  const kind = imageBuffer ? 'image broadcast' : 'broadcast';
+
+  const estMinSec = Math.round((students.length * SEND_DELAY_MIN_MS + Math.floor(students.length / CHUNK_SIZE) * CHUNK_PAUSE_MIN_MS) / 1000);
+  const estMaxSec = Math.round((students.length * SEND_DELAY_MAX_MS + Math.floor(students.length / CHUNK_SIZE) * CHUNK_PAUSE_MAX_MS) / 1000);
+  await sock.sendMessage(jid, {
+    text: `⏳ Starting ${kind} to ${students.length} students. Estimated time: ${Math.round(estMinSec / 60)}–${Math.round(estMaxSec / 60)} min. I'll report when done.`,
+  });
+
   let sent = 0;
   let failed = 0;
 
-  for (const student of students) {
+  for (let i = 0; i < students.length; i++) {
+    const student = students[i];
     try {
       await sendBroadcastPayload(sock, `${student.phone_number}@s.whatsapp.net`, message, imageBuffer);
       sent++;
     } catch (err) {
       failed++;
     }
+
+    if (i < students.length - 1) {
+      const isChunkBoundary = (i + 1) % CHUNK_SIZE === 0;
+      if (isChunkBoundary) {
+        await randomDelay(CHUNK_PAUSE_MIN_MS, CHUNK_PAUSE_MAX_MS);
+      } else {
+        await randomDelay(SEND_DELAY_MIN_MS, SEND_DELAY_MAX_MS);
+      }
+    }
   }
 
-  const kind = imageBuffer ? 'image broadcast' : 'broadcast';
   await sock.sendMessage(jid, { text: `✅ ${kind} sent to ${sent}/${students.length} students${failed ? ` (${failed} failed)` : ''}.` });
 }
 
