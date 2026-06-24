@@ -55,6 +55,17 @@ export function useDraftRequest() {
     setDraft((d) => (d ? { ...d, [field]: value } : d));
   }, []);
 
+  const fieldsEdited = useCallback(() => {
+    if (!draft || !originalDraft) return [];
+    const changed = [];
+    for (const key of Object.keys(draft)) {
+      if (JSON.stringify(draft[key]) !== JSON.stringify(originalDraft[key])) {
+        changed.push(key);
+      }
+    }
+    return changed;
+  }, [draft, originalDraft]);
+
   const publish = useCallback(async () => {
     if (!draft) return null;
     setState('publishing');
@@ -83,17 +94,6 @@ export function useDraftRequest() {
     }
     reset();
   }, [reset, state]);
-
-  const fieldsEdited = useCallback(() => {
-    if (!draft || !originalDraft) return [];
-    const changed = [];
-    for (const key of Object.keys(draft)) {
-      if (JSON.stringify(draft[key]) !== JSON.stringify(originalDraft[key])) {
-        changed.push(key);
-      }
-    }
-    return changed;
-  }, [draft, originalDraft]);
 
   return { state, draft, error, latencyMs, generate, edit, publish, cancel, discard, fieldsEdited };
 }

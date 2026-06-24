@@ -74,7 +74,9 @@ function validateDraft(draft) {
 
 function validateTrendSuggestion(s) {
   if (!s || typeof s !== 'object') return { ok: false, error: 'suggestion must be an object' };
-  if (typeof s.title !== 'string' || s.title.trim().length < TITLE_MIN || s.title.length > TITLE_MAX) {
+  if (typeof s.title !== 'string') return { ok: false, error: 'invalid title' };
+  const trimmedTitle = s.title.trim();
+  if (trimmedTitle.length < TITLE_MIN || trimmedTitle.length > TITLE_MAX) {
     return { ok: false, error: 'invalid title' };
   }
   if (typeof s.source !== 'string' || s.source.trim().length === 0) {

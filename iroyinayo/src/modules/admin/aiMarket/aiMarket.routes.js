@@ -13,9 +13,11 @@ function mapErrorToResponse(err, res) {
     return res.status(400).json({ error: err.code, message: err.message, field: err.details?.field });
   }
   if (err.code === 'groq_not_configured') {
+    console.error('aiMarket route: groq_not_configured', err);
     return res.status(500).json({ error: 'groq_not_configured', message: err.message });
   }
   if (err.code === 'groq_unavailable' || err.code === 'ai_returned_invalid_response' || err.code === 'ai_returned_invalid_draft') {
+    console.error(`aiMarket route: ${err.code}`, err);
     return res.status(502).json({ error: err.code, message: err.message, field: err.details?.field });
   }
   return null;

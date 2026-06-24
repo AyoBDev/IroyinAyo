@@ -69,19 +69,28 @@ async function publishMarket(draft) {
   }
 
   const market = await multiMarkets.createMarket(draft.title, null, null);
-  await db('multi_markets').where({ id: market.id }).update({
-    category: draft.category,
-    description: draft.description || null,
-    closes_at: new Date(draft.closesAt),
-  });
+  try {
+    await db('multi_markets').where({ id: market.id }).update({
+      category: draft.category,
+      description: draft.description || null,
+      closes_at: new Date(draft.closesAt),
+    });
 
-  for (const label of draft.outcomes) {
-    if (label.trim()) {
-      await multiMarkets.addOutcome(market.id, label.trim());
+    for (const label of draft.outcomes) {
+      if (label.trim()) {
+        await multiMarkets.addOutcome(market.id, label.trim());
+      }
     }
-  }
 
-  await multiMarkets.seedMarketLiquidity(market.id);
+    await multiMarkets.seedMarketLiquidity(market.id);
+  } catch (err) {
+    // Roll back the orphan market row so consumers never see a half-built market.
+    // FK cascade removes any outcomes that were added before failure.
+    await db('multi_markets').where({ id: market.id }).del().catch((delErr) => {
+      console.error('aiMarket.publishMarket: rollback delete failed', delErr);
+    });
+    throw err;
+  }
 
   return { marketId: market.id, title: draft.title, status: 'open' };
 }
@@ -100,6 +109,7 @@ async function getTrends({ adminId, callJSONFn, fetchAllNewsFn }) {
   try {
     allNews = await fetchFn();
   } catch (err) {
+    console.error('aiMarket.getTrends: fetchAllNews failed', err);
     partialFailure = true;
     allNews = {};
   }
@@ -117,7 +127,6 @@ async function getTrends({ adminId, callJSONFn, fetchAllNewsFn }) {
 
   if (headlines.length === 0) {
     const result = { trends: [], fetchedAt: new Date().toISOString(), latencyMs: 0, partialFailure: true };
-    trendCache.set(adminId, result);
     return { ...result, cached: false };
   }
 
