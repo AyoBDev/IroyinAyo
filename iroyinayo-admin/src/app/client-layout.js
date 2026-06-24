@@ -16,6 +16,7 @@ import {
   Clock,
   Megaphone,
   Gauge,
+  Smartphone,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -30,6 +31,7 @@ const NAV_ITEMS = [
   { href: '/ambassadors', label: 'Ambassadors', icon: Megaphone },
   { href: '/broadcast', label: 'Broadcast', icon: Megaphone },
   { href: '/rewards', label: 'Rewards', icon: Gift },
+  { href: '/bot-settings', label: 'Bot Settings', icon: Smartphone },
 ];
 
 function Sidebar() {

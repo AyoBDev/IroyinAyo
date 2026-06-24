@@ -101,11 +101,29 @@ setupExpressRequestContext(posthog, app);
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 const { authenticate } = require('./middleware/auth');
-app.get('/api/bot/qr', authenticate, (req, res) => {
+app.get('/api/bot/qr', authenticate, async (req, res) => {
   const { getLatestQR } = require('./bot/connection');
+  const { getBotSocket } = require('./bot/botSocket');
+  const QRCode = require('qrcode');
+
   const qr = getLatestQR();
-  if (!qr) return res.json({ status: 'connected_or_waiting', qr: null });
-  res.json({ status: 'needs_pairing', qr });
+  const connected = !!getBotSocket();
+
+  if (!qr) {
+    return res.json({
+      status: connected ? 'connected' : 'waiting',
+      qr: null,
+      qrDataUrl: null,
+    });
+  }
+
+  try {
+    const qrDataUrl = await QRCode.toDataURL(qr, { width: 320, margin: 1 });
+    res.json({ status: 'needs_pairing', qr, qrDataUrl });
+  } catch (err) {
+    console.error('[bot/qr] QR render failed:', err);
+    res.json({ status: 'needs_pairing', qr, qrDataUrl: null });
+  }
 });
 
 app.use('/api/students', studentRoutes);
