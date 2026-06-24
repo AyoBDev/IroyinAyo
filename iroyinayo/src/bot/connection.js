@@ -85,21 +85,29 @@ async function createConnection(messageHandler) {
     for (const msg of messages) {
       if (!msg.key.fromMe && msg.message) {
         const jid = msg.key.remoteJid;
+        const altJid = msg.key.remoteJidAlt;
         const text =
           msg.message.conversation ||
           msg.message.extendedTextMessage?.text ||
           msg.message.imageMessage?.caption ||
           '';
 
-        if (text && (jid.endsWith('@s.whatsapp.net') || jid.endsWith('@lid'))) {
-          try {
-            await messageHandler(sock, jid, text.trim(), msg);
-          } catch (err) {
-            console.error(`Error handling message from ${jid}:`, err);
-            await sock.sendMessage(jid, {
-              text: '⚠ Something went wrong. Please try again.',
-            });
-          }
+        const previewText = text ? text.slice(0, 60).replace(/\n/g, ' ') : '(no text — non-text msg type)';
+        console.log(`[incoming] jid=${jid} alt=${altJid || '-'} type=${type} text="${previewText}"`);
+
+        if (!text) continue;
+        if (!(jid.endsWith('@s.whatsapp.net') || jid.endsWith('@lid') || jid.endsWith('@c.us') || jid.endsWith('@hosted') || jid.endsWith('@hosted.lid'))) {
+          console.log(`[incoming] dropped — unsupported jid server: ${jid}`);
+          continue;
+        }
+
+        try {
+          await messageHandler(sock, jid, text.trim(), msg);
+        } catch (err) {
+          console.error(`Error handling message from ${jid}:`, err);
+          await sock.sendMessage(jid, {
+            text: '⚠ Something went wrong. Please try again.',
+          });
         }
       }
     }
