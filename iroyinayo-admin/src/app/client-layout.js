@@ -28,6 +28,7 @@ const NAV_ITEMS = [
   { href: '/markets', label: 'Markets', icon: TrendingUp },
   { href: '/schedules', label: 'Schedules', icon: Clock },
   { href: '/ambassadors', label: 'Ambassadors', icon: Megaphone },
+  { href: '/broadcast', label: 'Broadcast', icon: Megaphone },
   { href: '/rewards', label: 'Rewards', icon: Gift },
 ];
 
