@@ -62,6 +62,8 @@ function resolveSenderPhone(jid, msg) {
 
 async function handleMessage(sock, jid, text, msg) {
   const phone = resolveSenderPhone(jid, msg);
+  const charCodes = Array.from(text).slice(0, 8).map((c) => c.charCodeAt(0)).join(',');
+  console.log(`[handleMessage] phone=${phone || '(none)'} text="${text}" len=${text.length} firstCharCodes=${charCodes} startsWithSlash=${text.startsWith('/')} adminMatch=${ADMIN_NUMBERS.includes(phone)} adminList=[${ADMIN_NUMBERS.join(',')}]`);
 
   // Admin commands start with /
   if (text.startsWith('/')) {
