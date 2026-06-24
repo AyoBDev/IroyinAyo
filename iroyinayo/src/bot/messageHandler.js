@@ -31,15 +31,45 @@ function clearState(jid) {
   conversationState.delete(jid);
 }
 
-const ADMIN_NUMBERS = (process.env.ADMIN_NUMBERS || '').split(',').filter(Boolean);
+// Strip everything but digits so "+234 705 ..." or "234705...:5" all normalize the same.
+function normalizePhone(value) {
+  return (value || '').replace(/\D/g, '');
+}
+
+const ADMIN_NUMBERS = (process.env.ADMIN_NUMBERS || '')
+  .split(',')
+  .map(normalizePhone)
+  .filter(Boolean);
+
+// Pull the phone digits from a WhatsApp JID. Returns '' for @lid JIDs since
+// those are opaque linked-device IDs, not phone numbers.
+function phoneFromJid(jid) {
+  if (!jid) return '';
+  if (jid.endsWith('@lid')) return '';
+  const user = jid.split('@')[0] || '';
+  const withoutDevice = user.split(':')[0];
+  return normalizePhone(withoutDevice);
+}
+
+// Try the main JID first, then fall back to remoteJidAlt (Baileys exposes the
+// phone-format JID there when the primary is @lid, and vice versa).
+function resolveSenderPhone(jid, msg) {
+  const fromJid = phoneFromJid(jid);
+  if (fromJid) return fromJid;
+  const altJid = msg?.key?.remoteJidAlt;
+  return phoneFromJid(altJid);
+}
 
 async function handleMessage(sock, jid, text, msg) {
-  const phone = jid.replace('@s.whatsapp.net', '').replace('@lid', '');
+  const phone = resolveSenderPhone(jid, msg);
 
   // Admin commands start with /
-  if (text.startsWith('/') && ADMIN_NUMBERS.includes(phone)) {
-    await handleAdminCommand(sock, jid, text, msg);
-    return;
+  if (text.startsWith('/')) {
+    if (ADMIN_NUMBERS.includes(phone)) {
+      await handleAdminCommand(sock, jid, text, msg);
+      return;
+    }
+    console.log(`[admin] rejected /-command jid=${jid} alt=${msg?.key?.remoteJidAlt || '-'} normalized=${phone || '(none)'} (not in ADMIN_NUMBERS=${ADMIN_NUMBERS.join(',')})`);
   }
 
   // Check if student exists
