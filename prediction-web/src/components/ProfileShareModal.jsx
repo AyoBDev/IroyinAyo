@@ -1,13 +1,14 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import { shareWithImage } from '../shareImage.js';
+import { captureFile, shareFile } from '../shareImage.js';
 import ProfileCard from './ProfileCard.jsx';
 import ShareSheet from './ShareSheet.jsx';
 import { track } from '../utils/telemetry.js';
 
 export default function ProfileShareModal({ data, onClose }) {
   const [showShareSheet, setShowShareSheet] = useState(false);
+  const [shareImageFile, setShareImageFile] = useState(null);
   const cardRef = useRef(null);
 
   useEffect(() => {
@@ -18,6 +19,17 @@ export default function ProfileShareModal({ data, onClose }) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const id = requestAnimationFrame(() => {
+      if (!cardRef.current) return;
+      captureFile(cardRef.current, { fileName: 'profile.png' })
+        .then((file) => { if (!cancelled) setShareImageFile(file); })
+        .catch((err) => console.warn('profile card capture failed:', err));
+    });
+    return () => { cancelled = true; cancelAnimationFrame(id); };
+  }, []);
+
   const shareUrl = data.referralCode
     ? `${window.location.origin}?ref=${data.referralCode}`
     : window.location.origin;
@@ -26,27 +38,31 @@ export default function ProfileShareModal({ data, onClose }) {
     ? `${firstName} is a new caller on IroyinMarket.\n\n${shareUrl}`
     : `${firstName} is ${Math.round(data.accuracy)}% accurate on IroyinMarket.\n\n${shareUrl}`;
 
-  const handleShareImage = useCallback(async () => {
-    if (!cardRef.current) return;
+  const handleShareImage = useCallback(() => {
     track('profile_share_captured', { target_user_id: data.referralCode || 'unknown' });
-    await shareWithImage(cardRef.current, { text: shareText, fileName: 'profile.png' });
+    shareFile({
+      file: shareImageFile,
+      text: shareText,
+      url: shareUrl,
+      title: `${data.name} on IroyinMarket`,
+    });
     setShowShareSheet(false);
-  }, [shareText, data.referralCode]);
+  }, [shareImageFile, shareText, shareUrl, data.name, data.referralCode]);
 
   const handleCopyLink = useCallback(() => {
     navigator.clipboard.writeText(shareUrl);
   }, [shareUrl]);
 
-  const handleShareLink = useCallback(async () => {
+  const handleShareLink = useCallback(() => {
     if (navigator.share) {
-      await navigator.share({
+      navigator.share({
         title: `${data.name} on IroyinMarket`,
         text: shareText,
         url: shareUrl,
-      });
+      }).catch(() => {});
     }
     setShowShareSheet(false);
-  }, [data, shareText, shareUrl]);
+  }, [data.name, shareText, shareUrl]);
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
@@ -98,6 +114,7 @@ export default function ProfileShareModal({ data, onClose }) {
       {showShareSheet && (
         <ShareSheet
           title="Share profile"
+          imageReady={!!shareImageFile}
           onShareImage={handleShareImage}
           onCopyLink={handleCopyLink}
           onShareLink={handleShareLink}

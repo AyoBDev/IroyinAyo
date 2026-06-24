@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Trophy, X, Sparkles, Share2 } from 'lucide-react';
 import { apiFetch, getToken } from '../api.js';
-import { shareWithImage } from '../shareImage.js';
+import { captureFile, shareFile } from '../shareImage.js';
 import ShareSheet from './ShareSheet.jsx';
 
 function Confetti({ canvasRef }) {
@@ -70,6 +70,7 @@ export default function WinPopup() {
   const canvasRef = useRef(null);
   const cardRef = useRef(null);
   const [showShareSheet, setShowShareSheet] = useState(false);
+  const [shareImageFile, setShareImageFile] = useState(null);
 
   useEffect(() => {
     if (!getToken()) return;
@@ -97,23 +98,40 @@ export default function WinPopup() {
   const refParam = win.referral_code ? `?ref=${win.referral_code}` : '';
   const shareText = `I just won +${win.payout} pts on IroyinMarket!\n"${win.market_title}" — picked ${win.outcome_label}\n\nPredict & compete: ${window.location.origin}${refParam}`;
 
-  const handleShareImage = useCallback(async () => {
-    if (!cardRef.current) return;
-    await shareWithImage(cardRef.current, { text: shareText, fileName: 'iroyinmarket-win.png', backgroundColor: '#f4efe6' });
+  useEffect(() => {
+    if (!visible) return;
+    setShareImageFile(null);
+    let cancelled = false;
+    const id = requestAnimationFrame(() => {
+      if (!cardRef.current) return;
+      captureFile(cardRef.current, { fileName: 'iroyinmarket-win.png', backgroundColor: '#f4efe6' })
+        .then((file) => { if (!cancelled) setShareImageFile(file); })
+        .catch((err) => console.warn('win card capture failed:', err));
+    });
+    return () => { cancelled = true; cancelAnimationFrame(id); };
+  }, [visible, currentIndex]);
+
+  const handleShareImage = useCallback(() => {
+    shareFile({
+      file: shareImageFile,
+      text: shareText,
+      url: shareUrl,
+      title: 'I won on IroyinMarket!',
+    });
     setShowShareSheet(false);
-  }, [shareText]);
+  }, [shareImageFile, shareText, shareUrl]);
 
   const handleCopyLink = useCallback(() => {
     navigator.clipboard.writeText(shareUrl);
   }, [shareUrl]);
 
-  const handleShareLink = useCallback(async () => {
+  const handleShareLink = useCallback(() => {
     if (navigator.share) {
-      await navigator.share({
-        title: `I won on IroyinMarket!`,
+      navigator.share({
+        title: 'I won on IroyinMarket!',
         text: shareText,
         url: shareUrl,
-      });
+      }).catch(() => {});
     }
     setShowShareSheet(false);
   }, [shareText, shareUrl]);
@@ -210,6 +228,7 @@ export default function WinPopup() {
       {showShareSheet && (
         <ShareSheet
           title="Share your win"
+          imageReady={!!shareImageFile}
           onShareImage={handleShareImage}
           onCopyLink={handleCopyLink}
           onShareLink={handleShareLink}
