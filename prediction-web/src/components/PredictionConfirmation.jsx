@@ -36,11 +36,10 @@ export default function PredictionConfirmation({ data, onClose }) {
     shareFile({
       file: shareImageFile,
       text: shareText,
-      url: shareUrl,
       title: `I'm calling it: ${data.outcomeLabel}`,
     });
     setShowShareSheet(false);
-  }, [shareImageFile, shareText, shareUrl, data.outcomeLabel]);
+  }, [shareImageFile, shareText, data.outcomeLabel]);
 
   const handleCopyLink = useCallback(() => {
     navigator.clipboard.writeText(shareUrl);

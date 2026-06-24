@@ -43,11 +43,10 @@ export default function ProfileShareModal({ data, onClose }) {
     shareFile({
       file: shareImageFile,
       text: shareText,
-      url: shareUrl,
       title: `${data.name} on IroyinMarket`,
     });
     setShowShareSheet(false);
-  }, [shareImageFile, shareText, shareUrl, data.name, data.referralCode]);
+  }, [shareImageFile, shareText, data.name, data.referralCode]);
 
   const handleCopyLink = useCallback(() => {
     navigator.clipboard.writeText(shareUrl);
