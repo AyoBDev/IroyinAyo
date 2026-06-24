@@ -1,12 +1,16 @@
-import html2canvas from 'html2canvas-pro';
+import { domToBlob } from 'modern-screenshot';
 
 export async function captureElement(element, { backgroundColor = '#fbf7ef' } = {}) {
-  const canvas = await html2canvas(element, {
+  return domToBlob(element, {
     backgroundColor,
     scale: 2,
-    useCORS: true,
+    type: 'image/png',
+    quality: 1,
+    style: {
+      transform: 'none',
+      animation: 'none',
+    },
   });
-  return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
 }
 
 export async function captureFile(element, { fileName = 'iroyinmarket.png', backgroundColor } = {}) {
@@ -17,9 +21,13 @@ export async function captureFile(element, { fileName = 'iroyinmarket.png', back
 
 // Must be called synchronously from a user gesture on mobile (especially iOS Safari).
 // Pass a pre-captured File so navigator.share fires without any awaits in between.
-export function shareFile({ file, text, url, title }) {
-  if (file && navigator.share && navigator.canShare?.({ files: [file] })) {
-    return navigator.share({ text, title, url, files: [file] }).catch((err) => {
+// Note: when sharing a file we omit `text` to avoid WhatsApp/etc duplicating the URL
+// the caller already baked into the caption. Pass `text` only as a fallback when no file.
+export function shareFile({ file, text, title }) {
+  const canShareFiles = file && navigator.share && navigator.canShare?.({ files: [file] });
+  console.info('[share] file?', !!file, 'size?', file?.size, 'canShareFiles?', canShareFiles);
+  if (canShareFiles) {
+    return navigator.share({ title, files: [file] }).catch((err) => {
       if (err?.name === 'AbortError') return;
       console.warn('navigator.share with file failed:', err);
       throw err;
@@ -30,7 +38,7 @@ export function shareFile({ file, text, url, title }) {
     return Promise.resolve();
   }
   if (navigator.share) {
-    return navigator.share({ text, title, url }).catch((err) => {
+    return navigator.share({ text, title }).catch((err) => {
       if (err?.name === 'AbortError') return;
       console.warn('navigator.share text fallback failed:', err);
     });

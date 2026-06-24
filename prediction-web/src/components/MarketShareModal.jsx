@@ -116,11 +116,10 @@ export default function MarketShareModal({ market, onClose }) {
     shareFile({
       file: shareImageFile,
       text: shareText,
-      url: shareUrl,
       title: market.title,
     });
     setShowShareSheet(false);
-  }, [shareImageFile, shareText, shareUrl, market.title]);
+  }, [shareImageFile, shareText, market.title]);
 
   const handleCopyLink = useCallback(() => {
     navigator.clipboard.writeText(shareUrl);

@@ -115,11 +115,10 @@ export default function WinPopup() {
     shareFile({
       file: shareImageFile,
       text: shareText,
-      url: shareUrl,
       title: 'I won on IroyinMarket!',
     });
     setShowShareSheet(false);
-  }, [shareImageFile, shareText, shareUrl]);
+  }, [shareImageFile, shareText]);
 
   const handleCopyLink = useCallback(() => {
     navigator.clipboard.writeText(shareUrl);
