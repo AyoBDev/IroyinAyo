@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Image, Link2, Share2, Check, X } from 'lucide-react';
 
-export default function ShareSheet({ onShareImage, onCopyLink, onShareLink, onClose, title = 'Share' }) {
+export default function ShareSheet({ onShareImage, onCopyLink, onShareLink, onClose, title = 'Share', imageReady = true }) {
   const [copied, setCopied] = useState(false);
   const canNativeShare = typeof navigator !== 'undefined' && !!navigator.share;
 
@@ -31,10 +31,13 @@ export default function ShareSheet({ onShareImage, onCopyLink, onShareLink, onCl
         <div className="flex flex-col gap-2.5">
           <button
             onClick={onShareImage}
-            className="flex items-center gap-3 w-full p-3.5 bg-paper border border-line rounded-xl text-left hover:bg-paper-hover transition-colors"
+            disabled={!imageReady}
+            className="flex items-center gap-3 w-full p-3.5 bg-paper border border-line rounded-xl text-left hover:bg-paper-hover transition-colors disabled:opacity-50"
           >
             <Image size={18} className="text-emerald" />
-            <span className="text-label-sm font-medium text-ink">Share as Image</span>
+            <span className="text-label-sm font-medium text-ink">
+              {imageReady ? 'Share as Image' : 'Preparing image…'}
+            </span>
           </button>
 
           <button

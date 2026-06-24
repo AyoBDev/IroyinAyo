@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect, forwardRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, TrendingUp } from 'lucide-react';
-import { shareWithImage } from '../shareImage.js';
+import { captureFile, shareFile } from '../shareImage.js';
 import ShareSheet from './ShareSheet.jsx';
 
 const MarketShareCard = forwardRef(function MarketShareCard({ market }, cardRef) {
@@ -79,6 +79,7 @@ const MarketShareCard = forwardRef(function MarketShareCard({ market }, cardRef)
 
 export default function MarketShareModal({ market, onClose }) {
   const [showShareSheet, setShowShareSheet] = useState(false);
+  const [shareImageFile, setShareImageFile] = useState(null);
   const cardRef = useRef(null);
 
   useEffect(() => {
@@ -88,6 +89,17 @@ export default function MarketShareModal({ market, onClose }) {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const id = requestAnimationFrame(() => {
+      if (!cardRef.current) return;
+      captureFile(cardRef.current, { fileName: 'market.png' })
+        .then((file) => { if (!cancelled) setShareImageFile(file); })
+        .catch((err) => console.warn('market card capture failed:', err));
+    });
+    return () => { cancelled = true; cancelAnimationFrame(id); };
+  }, []);
 
   const outcomes = market.outcomes || [];
   const sorted = [...outcomes].sort((a, b) => b.price - a.price);
@@ -100,26 +112,30 @@ export default function MarketShareModal({ market, onClose }) {
     ? `${market.winnerLabel || 'Result'} won "${market.title}" on IroyinMarket!\n\nPredict here: ${shareUrl}`
     : `${topOutcome?.label || 'Leading'} leads at ${topPercent}% — "${market.title}" on IroyinMarket\n\nPredict here: ${shareUrl}`;
 
-  const handleShareImage = useCallback(async () => {
-    if (!cardRef.current) return;
-    await shareWithImage(cardRef.current, { text: shareText, fileName: 'market.png' });
+  const handleShareImage = useCallback(() => {
+    shareFile({
+      file: shareImageFile,
+      text: shareText,
+      url: shareUrl,
+      title: market.title,
+    });
     setShowShareSheet(false);
-  }, [shareText]);
+  }, [shareImageFile, shareText, shareUrl, market.title]);
 
   const handleCopyLink = useCallback(() => {
     navigator.clipboard.writeText(shareUrl);
   }, [shareUrl]);
 
-  const handleShareLink = useCallback(async () => {
+  const handleShareLink = useCallback(() => {
     if (navigator.share) {
-      await navigator.share({
+      navigator.share({
         title: market.title,
         text: shareText,
         url: shareUrl,
-      });
+      }).catch(() => {});
     }
     setShowShareSheet(false);
-  }, [market, shareText, shareUrl]);
+  }, [market.title, shareText, shareUrl]);
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
@@ -161,6 +177,7 @@ export default function MarketShareModal({ market, onClose }) {
       {showShareSheet && (
         <ShareSheet
           title="Share market"
+          imageReady={!!shareImageFile}
           onShareImage={handleShareImage}
           onCopyLink={handleCopyLink}
           onShareLink={handleShareLink}

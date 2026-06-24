@@ -1,12 +1,13 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import { shareWithImage } from '../shareImage.js';
+import { captureFile, shareFile } from '../shareImage.js';
 import PredictionCard from './PredictionCard.jsx';
 import ShareSheet from './ShareSheet.jsx';
 
 export default function PredictionConfirmation({ data, onClose }) {
   const [showShareSheet, setShowShareSheet] = useState(false);
+  const [shareImageFile, setShareImageFile] = useState(null);
   const cardRef = useRef(null);
 
   useEffect(() => {
@@ -17,30 +18,44 @@ export default function PredictionConfirmation({ data, onClose }) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const id = requestAnimationFrame(() => {
+      if (!cardRef.current) return;
+      captureFile(cardRef.current, { fileName: 'prediction.png' })
+        .then((file) => { if (!cancelled) setShareImageFile(file); })
+        .catch((err) => console.warn('prediction card capture failed:', err));
+    });
+    return () => { cancelled = true; cancelAnimationFrame(id); };
+  }, []);
+
   const shareUrl = `${window.location.origin}/market/${data.marketId}`;
   const shareText = `I'm calling it: ${data.outcomeLabel}\n${data.marketTitle} — ${Math.round(data.probability * 100)}% confidence\n\nPredict here: ${shareUrl}`;
 
-  const handleShareImage = useCallback(async () => {
-    if (!cardRef.current) return;
+  const handleShareImage = useCallback(() => {
+    shareFile({
+      file: shareImageFile,
+      text: shareText,
+      url: shareUrl,
+      title: `I'm calling it: ${data.outcomeLabel}`,
+    });
     setShowShareSheet(false);
-    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    await shareWithImage(cardRef.current, { text: shareText, fileName: 'prediction.png' });
-  }, [shareText]);
+  }, [shareImageFile, shareText, shareUrl, data.outcomeLabel]);
 
   const handleCopyLink = useCallback(() => {
     navigator.clipboard.writeText(shareUrl);
   }, [shareUrl]);
 
-  const handleShareLink = useCallback(async () => {
+  const handleShareLink = useCallback(() => {
     if (navigator.share) {
-      await navigator.share({
+      navigator.share({
         title: `I'm calling it: ${data.outcomeLabel}`,
         text: shareText,
         url: shareUrl,
-      });
+      }).catch(() => {});
     }
     setShowShareSheet(false);
-  }, [data, shareText, shareUrl]);
+  }, [data.outcomeLabel, shareText, shareUrl]);
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
@@ -91,6 +106,7 @@ export default function PredictionConfirmation({ data, onClose }) {
       {showShareSheet && (
         <ShareSheet
           title="Share prediction"
+          imageReady={!!shareImageFile}
           onShareImage={handleShareImage}
           onCopyLink={handleCopyLink}
           onShareLink={handleShareLink}

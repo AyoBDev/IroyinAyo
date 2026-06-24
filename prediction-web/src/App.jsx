@@ -18,7 +18,6 @@ import ShareCard from './pages/ShareCard.jsx';
 import SharePrediction from './pages/SharePrediction.jsx';
 import Portfolio from './pages/Portfolio.jsx';
 import InstallBanner from './components/InstallBanner.jsx';
-import ShareDebugOverlay from './components/ShareDebugOverlay.jsx';
 
 function TokenExchange() {
   const [searchParams] = useSearchParams();
@@ -97,7 +96,6 @@ function MainApp() {
   return (
     <div className="pt-14">
       <InstallBanner />
-      <ShareDebugOverlay />
       <ResolutionToast />
       <TopBar />
       {showPositions && <MyPositions onClose={() => setShowPositions(false)} />}
