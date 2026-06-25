@@ -470,6 +470,7 @@ function SignOutSection() {
   const handleSignOut = async () => {
     setSigningOut(true);
     try {
+      sessionStorage.removeItem('pinUnlocked');
       await supabase.auth.signOut();
       window.location.reload();
     } catch (err) {
