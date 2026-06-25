@@ -263,3 +263,64 @@ test('bootstrap rejects invalid pin format with 400', async () => {
 
   expect(res.status).toBe(400);
 });
+
+test('bootstrap rejects with 400 when phone_number unique violation', async () => {
+  const token = await signTestJwt({ privateKey, sub: 'user-phone-collide', email: 'pc@b.com' });
+
+  let whereCalls = 0;
+  setDb((table) => {
+    if (table === 'students') {
+      return {
+        where: () => ({
+          first: async () => { whereCalls++; return null; }, // existing check + post-23505 fetch both return null
+        }),
+        insert: () => ({
+          returning: async () => {
+            const err = new Error('duplicate key value violates unique constraint');
+            err.code = '23505';
+            err.detail = 'Key (phone_number)=(2348012345678) already exists.';
+            throw err;
+          },
+        }),
+      };
+    }
+    throw new Error('unexpected table: ' + table);
+  });
+
+  const res = await request(app)
+    .post('/api/auth/bootstrap')
+    .set('Authorization', `Bearer ${token}`)
+    .send({ name: 'X', phoneNumber: '08012345678', pin: '123456' });
+
+  expect(res.status).toBe(400);
+  expect(res.body.error).toMatch(/phone number is already registered/i);
+});
+
+test('bootstrap rejects with 400 when email unique violation', async () => {
+  const token = await signTestJwt({ privateKey, sub: 'user-email-collide', email: 'ec@b.com' });
+
+  setDb((table) => {
+    if (table === 'students') {
+      return {
+        where: () => ({ first: async () => null }),
+        insert: () => ({
+          returning: async () => {
+            const err = new Error('duplicate key value violates unique constraint');
+            err.code = '23505';
+            err.detail = 'Key (email)=(ec@b.com) already exists.';
+            throw err;
+          },
+        }),
+      };
+    }
+    throw new Error('unexpected table: ' + table);
+  });
+
+  const res = await request(app)
+    .post('/api/auth/bootstrap')
+    .set('Authorization', `Bearer ${token}`)
+    .send({ name: 'X', phoneNumber: '08012345678', pin: '123456' });
+
+  expect(res.status).toBe(400);
+  expect(res.body.error).toMatch(/email is already registered/i);
+});

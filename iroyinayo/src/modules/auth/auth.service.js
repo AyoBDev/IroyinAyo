@@ -64,9 +64,20 @@ async function bootstrapStudent({ authUserId, email, name, phoneNumber, pin, ref
     [student] = await db('students').insert(insertData).returning('*');
   } catch (err) {
     if (err && err.code === '23505') {
-      student = await db('students').where({ auth_user_id: authUserId }).first();
-      if (!student) throw err;
-      return { student, isNew: false };
+      const detail = String(err.detail || '');
+      // Same-auth_user_id race: re-fetch and return idempotently.
+      const existing = await db('students').where({ auth_user_id: authUserId }).first();
+      if (existing) return { student: existing, isNew: false };
+      // Phone collision: another student already has this phone.
+      if (detail.includes('phone_number')) {
+        throw new ValidationError('That phone number is already registered. Try a different one or sign in.');
+      }
+      // Email collision: another student already has this email (should be impossible since auth_user_id is unique per Supabase user, but defensively handle).
+      if (detail.includes('email')) {
+        throw new ValidationError('That email is already registered to a different account.');
+      }
+      // Unknown unique violation — fall through to re-throw.
+      throw err;
     }
     throw err;
   }
