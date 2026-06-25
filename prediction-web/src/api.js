@@ -1,35 +1,44 @@
+import { supabase } from './lib/supabase.js';
+
 const BASE = '';
 
-function getToken() {
-  return localStorage.getItem('token');
+class ApiError extends Error {
+  constructor(message, { status, code } = {}) {
+    super(message);
+    this.status = status;
+    this.code = code;
+  }
 }
 
-function setToken(token) {
-  localStorage.setItem('token', token);
-}
-
-function clearToken() {
-  localStorage.removeItem('token');
+async function getAccessToken() {
+  const { data } = await supabase.auth.getSession();
+  return data.session ? data.session.access_token : null;
 }
 
 async function apiFetch(path, options = {}) {
-  const token = getToken();
-  const headers = { 'Content-Type': 'application/json', ...options.headers };
+  const token = await getAccessToken();
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(`${BASE}${path}`, { ...options, headers });
+
   if (res.status === 401) {
-    if (getToken()) {
-      clearToken();
-      window.location.reload();
+    let body = null;
+    try { body = await res.json(); } catch { /* not JSON */ }
+    const code = body && body.code;
+    if (code === 'BOOTSTRAP_REQUIRED') {
+      throw new ApiError('Bootstrap required', { status: 401, code });
     }
-    return null;
+    // Generic 401 → sign out so the user is shown the auth modal.
+    await supabase.auth.signOut();
+    throw new ApiError('Unauthorized', { status: 401 });
   }
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(err.error || 'Request failed');
+    throw new ApiError(err.error || 'Request failed', { status: res.status });
   }
   return res.json();
 }
 
-export { getToken, setToken, clearToken, apiFetch };
+export { apiFetch, ApiError };
