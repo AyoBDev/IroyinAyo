@@ -84,7 +84,7 @@ export default function WinPopup() {
         }
       })
       .catch(() => {});
-  }, []);
+  }, [user?.id]);
 
   function dismiss() {
     if (currentIndex < wins.length - 1) {
