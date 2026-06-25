@@ -65,9 +65,6 @@ async function handleMessage(sock, jid, text, msg) {
         `3. If you're right, you win more points!`,
         '',
         `${bold('Commands:')}`,
-        `• Send anything to see markets`,
-        `• ${bold('predict [team#] [amount]')} — place a prediction`,
-        `• ${bold('my predictions')} — view your positions`,
         `• ${bold('leaderboard')} — see top predictors`,
         `• ${bold('balance')} — check your points`,
         `• ${bold('web')} — get a link to predict in your browser`,
@@ -97,8 +94,6 @@ async function handleMessage(sock, jid, text, msg) {
         `You have ${bold(bal + ' points')} to predict with.`,
         '',
         `${bold('Commands:')}`,
-        `• ${bold('predict')} — see markets and place predictions`,
-        `• ${bold('my predictions')} — view your positions`,
         `• ${bold('leaderboard')} — see top predictors`,
         `• ${bold('balance')} — check your points`,
         `• ${bold('web')} — predict in your browser`,
@@ -127,7 +122,7 @@ async function handleMessage(sock, jid, text, msg) {
       break;
     default:
       await sock.sendMessage(jid, {
-        text: `I didn't get that. Type ${bold('hi')} for help or ${bold('predict')} to see markets.`,
+        text: `I didn't get that. Type ${bold('hi')} for help.`,
       });
       break;
   }
