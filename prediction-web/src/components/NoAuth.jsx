@@ -5,12 +5,22 @@ import { apiFetch, ApiError } from '../api.js';
 import { markEligible } from '../lib/installPrompt.js';
 import useStore from '../store.js';
 
-export default function AuthModal({ onClose }) {
+function defaultStep(needsBootstrap) {
+  if (typeof window !== 'undefined' && window.sessionStorage?.getItem('forgotPin') === '1') {
+    return 'set-pin';
+  }
+  return needsBootstrap ? 'signup-details' : 'email';
+}
+
+export default function AuthModal({ onClose, initialStep }) {
   const needsBootstrap = useStore((s) => s.needsBootstrap);
-  const [step, setStep] = useState(needsBootstrap ? 'name' : 'email');
+  const [step, setStep] = useState(initialStep || defaultStep(needsBootstrap));
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [pin, setPin] = useState('');
+  const [pinConfirm, setPinConfirm] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -47,14 +57,23 @@ export default function AuthModal({ onClose }) {
       });
       if (error) throw new Error(error.message);
 
-      // Probe to see if this is a new or returning user.
+      // If user came from "Forgot PIN", route to set-pin regardless of has_pin.
+      if (sessionStorage.getItem('forgotPin') === '1') {
+        sessionStorage.removeItem('forgotPin');
+        setStep('set-pin');
+        return;
+      }
+
       try {
-        await apiFetch('/api/multi-markets/me/info');
-        markEligible();
-        window.location.reload();
+        const info = await apiFetch('/api/multi-markets/me/info');
+        if (info && info.has_pin) {
+          setStep('pin');
+          return;
+        }
+        setStep('set-pin');
       } catch (err) {
         if (err instanceof ApiError && err.code === 'BOOTSTRAP_REQUIRED') {
-          setStep('name');
+          setStep('signup-details');
           return;
         }
         throw err;
@@ -66,9 +85,12 @@ export default function AuthModal({ onClose }) {
     }
   }
 
-  async function handleNameSubmit(e) {
+  async function handleSignupDetailsSubmit(e) {
     e.preventDefault();
     if (!name.trim()) return;
+    if (!phone.trim()) { setError('Phone number is required'); return; }
+    if (!/^\d{6}$/.test(pin)) { setError('PIN must be 6 digits'); return; }
+    if (pin !== pinConfirm) { setError('PINs do not match'); return; }
     setLoading(true);
     setError('');
     try {
@@ -76,9 +98,12 @@ export default function AuthModal({ onClose }) {
         method: 'POST',
         body: JSON.stringify({
           name: name.trim(),
+          phoneNumber: phone.trim(),
+          pin,
           referralCode: referralCode.trim().toUpperCase() || undefined,
         }),
       });
+      sessionStorage.setItem('pinUnlocked', '1');
       markEligible();
       window.location.reload();
     } catch (err) {
@@ -86,6 +111,61 @@ export default function AuthModal({ onClose }) {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handlePinSubmit(e) {
+    e.preventDefault();
+    if (pin.length !== 6) return;
+    setLoading(true);
+    setError('');
+    try {
+      await apiFetch('/api/auth/verify-pin', {
+        method: 'POST',
+        body: JSON.stringify({ pin }),
+      });
+      sessionStorage.setItem('pinUnlocked', '1');
+      window.location.reload();
+    } catch (err) {
+      if (err instanceof ApiError && err.code === 'PIN_LOCKED') {
+        await supabase.auth.signOut();
+        window.location.reload();
+        return;
+      }
+      if (err instanceof ApiError && err.code === 'PIN_INVALID') {
+        const remaining = err.attemptsRemaining ?? '';
+        setError(remaining !== '' ? `Wrong PIN. ${remaining} attempts left.` : 'Wrong PIN');
+        return;
+      }
+      setError(err.message || 'Could not verify PIN');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSetPinSubmit(e) {
+    e.preventDefault();
+    if (!/^\d{6}$/.test(pin)) { setError('PIN must be 6 digits'); return; }
+    if (pin !== pinConfirm) { setError('PINs do not match'); return; }
+    setLoading(true);
+    setError('');
+    try {
+      await apiFetch('/api/auth/set-pin', {
+        method: 'POST',
+        body: JSON.stringify({ pin }),
+      });
+      sessionStorage.setItem('pinUnlocked', '1');
+      window.location.reload();
+    } catch (err) {
+      setError(err.message || 'Could not save PIN');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleForgotPin() {
+    sessionStorage.setItem('forgotPin', '1');
+    await supabase.auth.signOut();
+    window.location.reload();
   }
 
   function handleGoogle() {
@@ -121,9 +201,7 @@ export default function AuthModal({ onClose }) {
         <div className="bg-paper rounded-2xl py-7 px-9 border border-line text-center max-w-[360px] w-full mx-auto">
           {step === 'email' && (
             <form onSubmit={handleEmailSubmit}>
-              <p className="text-ink-muted text-[13px] font-semibold mb-4">
-                Sign in with email
-              </p>
+              <p className="text-ink-muted text-[13px] font-semibold mb-4">Sign in with email</p>
               <input
                 type="email"
                 value={email}
@@ -162,12 +240,8 @@ export default function AuthModal({ onClose }) {
 
           {step === 'code' && (
             <form onSubmit={handleCodeSubmit}>
-              <p className="text-ink-muted text-[13px] font-semibold mb-2">
-                Enter verification code
-              </p>
-              <p className="text-ink-muted text-[11px] mb-4">
-                Check your email for a 6-digit code
-              </p>
+              <p className="text-ink-muted text-[13px] font-semibold mb-2">Enter verification code</p>
+              <p className="text-ink-muted text-[11px] mb-4">Check your email for a 6-digit code</p>
               <input
                 type="text"
                 inputMode="numeric"
@@ -199,14 +273,10 @@ export default function AuthModal({ onClose }) {
             </form>
           )}
 
-          {step === 'name' && (
-            <form onSubmit={handleNameSubmit}>
-              <p className="text-ink-muted text-[13px] font-semibold mb-2">
-                Almost there!
-              </p>
-              <p className="text-ink-muted text-[11px] mb-4">
-                Tell us your name. An invite code is optional.
-              </p>
+          {step === 'signup-details' && (
+            <form onSubmit={handleSignupDetailsSubmit}>
+              <p className="text-ink-muted text-[13px] font-semibold mb-2">Almost there!</p>
+              <p className="text-ink-muted text-[11px] mb-4">Set up your account.</p>
               <input
                 type="text"
                 value={name}
@@ -214,6 +284,32 @@ export default function AuthModal({ onClose }) {
                 placeholder="Your name"
                 maxLength={30}
                 className="w-full py-3 px-4 rounded-xl border border-line bg-bone text-ink text-base text-center outline-none mb-3 placeholder:text-ink-muted"
+              />
+              <input
+                type="tel"
+                inputMode="numeric"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Phone (e.g. 08012345678)"
+                className="w-full py-3 px-4 rounded-xl border border-line bg-bone text-ink text-base text-center outline-none mb-3 placeholder:text-ink-muted"
+              />
+              <input
+                type="password"
+                inputMode="numeric"
+                maxLength={6}
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/[^0-9]/g, ''))}
+                placeholder="Create 6-digit PIN"
+                className="w-full py-3 px-4 rounded-xl border border-line bg-bone text-ink text-base text-center outline-none mb-3 tracking-widest placeholder:text-ink-muted placeholder:tracking-normal"
+              />
+              <input
+                type="password"
+                inputMode="numeric"
+                maxLength={6}
+                value={pinConfirm}
+                onChange={(e) => setPinConfirm(e.target.value.replace(/[^0-9]/g, ''))}
+                placeholder="Confirm PIN"
+                className="w-full py-3 px-4 rounded-xl border border-line bg-bone text-ink text-base text-center outline-none mb-3 tracking-widest placeholder:text-ink-muted placeholder:tracking-normal"
               />
               <input
                 type="text"
@@ -226,14 +322,83 @@ export default function AuthModal({ onClose }) {
               {error && <p className="text-accent-red text-xs mb-3">{error}</p>}
               <button
                 type="submit"
-                disabled={loading || !name.trim()}
+                disabled={loading || !name.trim() || !phone.trim() || pin.length !== 6 || pinConfirm.length !== 6}
                 className={`flex items-center justify-center gap-2 py-3 px-6 rounded-full text-sm font-bold bg-emerald text-bone w-full ${
-                  loading || !name.trim() ? 'opacity-60' : 'hover:bg-emerald-deep'
+                  loading ? 'opacity-60' : 'hover:bg-emerald-deep'
                 }`}
               >
                 {loading ? <Loader2 size={16} className="animate-spin" /> : null}
                 Start Predicting
                 {!loading && <ArrowRight size={14} />}
+              </button>
+            </form>
+          )}
+
+          {step === 'pin' && (
+            <form onSubmit={handlePinSubmit}>
+              <p className="text-ink-muted text-[13px] font-semibold mb-4">Enter your PIN to unlock</p>
+              <input
+                type="password"
+                inputMode="numeric"
+                maxLength={6}
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/[^0-9]/g, ''))}
+                placeholder="000000"
+                className="w-full py-3.5 px-4 rounded-xl border border-line bg-bone text-ink text-2xl text-center tracking-[8px] outline-none mb-3 font-bold placeholder:text-ink-muted"
+              />
+              {error && <p className="text-accent-red text-xs mb-3">{error}</p>}
+              <button
+                type="submit"
+                disabled={loading || pin.length !== 6}
+                className={`flex items-center justify-center gap-2 py-3 px-6 rounded-full text-sm font-bold bg-emerald text-bone w-full ${
+                  loading || pin.length !== 6 ? 'opacity-60' : 'hover:bg-emerald-deep'
+                }`}
+              >
+                {loading ? <Loader2 size={16} className="animate-spin" /> : null}
+                Unlock
+              </button>
+              <button
+                type="button"
+                onClick={handleForgotPin}
+                className="text-ink-muted text-xs underline mt-3"
+              >
+                Forgot PIN?
+              </button>
+            </form>
+          )}
+
+          {step === 'set-pin' && (
+            <form onSubmit={handleSetPinSubmit}>
+              <p className="text-ink-muted text-[13px] font-semibold mb-2">Create your PIN</p>
+              <p className="text-ink-muted text-[11px] mb-4">A 6-digit PIN to unlock the app.</p>
+              <input
+                type="password"
+                inputMode="numeric"
+                maxLength={6}
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/[^0-9]/g, ''))}
+                placeholder="New 6-digit PIN"
+                className="w-full py-3 px-4 rounded-xl border border-line bg-bone text-ink text-base text-center outline-none mb-3 tracking-widest placeholder:text-ink-muted placeholder:tracking-normal"
+              />
+              <input
+                type="password"
+                inputMode="numeric"
+                maxLength={6}
+                value={pinConfirm}
+                onChange={(e) => setPinConfirm(e.target.value.replace(/[^0-9]/g, ''))}
+                placeholder="Confirm PIN"
+                className="w-full py-3 px-4 rounded-xl border border-line bg-bone text-ink text-base text-center outline-none mb-3 tracking-widest placeholder:text-ink-muted placeholder:tracking-normal"
+              />
+              {error && <p className="text-accent-red text-xs mb-3">{error}</p>}
+              <button
+                type="submit"
+                disabled={loading || pin.length !== 6 || pinConfirm.length !== 6}
+                className={`flex items-center justify-center gap-2 py-3 px-6 rounded-full text-sm font-bold bg-emerald text-bone w-full ${
+                  loading ? 'opacity-60' : 'hover:bg-emerald-deep'
+                }`}
+              >
+                {loading ? <Loader2 size={16} className="animate-spin" /> : null}
+                Save PIN
               </button>
             </form>
           )}

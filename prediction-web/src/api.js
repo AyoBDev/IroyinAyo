@@ -3,10 +3,11 @@ import { supabase } from './lib/supabase.js';
 const BASE = '';
 
 class ApiError extends Error {
-  constructor(message, { status, code } = {}) {
+  constructor(message, { status, code, attemptsRemaining } = {}) {
     super(message);
     this.status = status;
     this.code = code;
+    if (typeof attemptsRemaining === 'number') this.attemptsRemaining = attemptsRemaining;
   }
 }
 
@@ -26,8 +27,12 @@ async function apiFetch(path, options = {}) {
     let body = null;
     try { body = await res.json(); } catch { /* not JSON */ }
     const code = body && body.code;
-    if (code === 'BOOTSTRAP_REQUIRED') {
-      throw new ApiError('Bootstrap required', { status: 401, code });
+    if (code === 'BOOTSTRAP_REQUIRED' || code === 'PIN_INVALID' || code === 'PIN_LOCKED' || code === 'NO_PIN') {
+      throw new ApiError(code, {
+        status: 401,
+        code,
+        attemptsRemaining: body && typeof body.attempts_remaining === 'number' ? body.attempts_remaining : undefined,
+      });
     }
     // Generic 401 → sign out so the user is shown the auth modal.
     await supabase.auth.signOut();
