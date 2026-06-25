@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useSearchParams, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { connectSocket } from './socket.js';
 import useStore from './store.js';
@@ -17,33 +17,6 @@ import ShareCard from './pages/ShareCard.jsx';
 import SharePrediction from './pages/SharePrediction.jsx';
 import Portfolio from './pages/Portfolio.jsx';
 import InstallBanner from './components/InstallBanner.jsx';
-
-function TokenExchange() {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const tokenParam = searchParams.get('t');
-    if (tokenParam) {
-      window.history.replaceState({}, '', window.location.pathname);
-      fetch('/api/auth/exchange-token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ urlToken: tokenParam }),
-      })
-        .then(r => r.ok ? r.json() : null)
-        .then(data => {
-          if (data && data.token) {
-            setToken(data.token);
-            window.location.reload();
-          }
-        })
-        .catch(() => {});
-    }
-  }, []);
-
-  return null;
-}
 
 function MainApp() {
   const [showPositions, setShowPositions] = useState(false);
@@ -118,7 +91,6 @@ function MainApp() {
 export default function App() {
   return (
     <BrowserRouter>
-      <TokenExchange />
       <Routes>
         <Route path="/share/:marketId" element={<ShareCard />} />
         <Route path="/share/prediction/:positionId" element={<SharePrediction />} />

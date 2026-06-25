@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { apiFetch } from './api.js';
+import { apiFetch, ApiError } from './api.js';
 import { supabase } from './lib/supabase.js';
 
 const useStore = create((set, get) => ({
@@ -12,6 +12,7 @@ const useStore = create((set, get) => ({
   loading: true,
   error: null,
   showAuthModal: false,
+  needsBootstrap: false,
   openAuthModal: () => set({ showAuthModal: true }),
   closeAuthModal: () => set({ showAuthModal: false }),
   tutorialRunRequested: false,
@@ -30,14 +31,18 @@ const useStore = create((set, get) => ({
   fetchUser: async () => {
     const { data } = await supabase.auth.getSession();
     if (!data.session) {
-      set({ user: null });
+      set({ user: null, needsBootstrap: false });
       return;
     }
     try {
       const user = await apiFetch('/api/multi-markets/me/info');
-      set({ user });
+      set({ user, needsBootstrap: false });
     } catch (err) {
-      set({ user: null });
+      if (err instanceof ApiError && err.code === 'BOOTSTRAP_REQUIRED') {
+        set({ user: null, needsBootstrap: true, showAuthModal: true });
+        return;
+      }
+      set({ user: null, needsBootstrap: false });
     }
   },
 
