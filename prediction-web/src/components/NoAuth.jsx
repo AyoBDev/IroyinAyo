@@ -1,44 +1,32 @@
 import { useState } from 'react';
 import { TrendingUp, ArrowRight, Loader2, X } from 'lucide-react';
-import { setToken, apiFetch } from '../api.js';
+import { supabase } from '../lib/supabase.js';
+import { apiFetch, ApiError } from '../api.js';
 import { markEligible } from '../lib/installPrompt.js';
 
 export default function AuthModal({ onClose }) {
-  const [step, setStep] = useState('phone'); // 'phone' | 'code' | 'name'
-  const [phone, setPhone] = useState('');
+  const [step, setStep] = useState('email');
+  const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [referralCode, setReferralCode] = useState('');
-  const [isReturning, setIsReturning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  async function handlePhoneSubmit(e) {
+  async function handleEmailSubmit(e) {
     e.preventDefault();
-    if (!phone.trim()) return;
+    if (!email.trim()) return;
     setLoading(true);
     setError('');
     try {
-      const result = await apiFetch('/api/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ phoneNumber: phone.trim() }),
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: { shouldCreateUser: true },
       });
-      if (result.returning) {
-        setIsReturning(true);
-        setStep('code');
-      } else {
-        try {
-          await apiFetch('/api/auth/send-code', {
-            method: 'POST',
-            body: JSON.stringify({ phoneNumber: phone.trim() }),
-          });
-        } catch {
-          // OTP send failed — user can still skip
-        }
-        setStep('code');
-      }
+      if (error) throw new Error(error.message);
+      setStep('code');
     } catch (err) {
-      setError(err.message || 'Something went wrong');
+      setError(err.message || 'Could not send code');
     } finally {
       setLoading(false);
     }
@@ -47,49 +35,62 @@ export default function AuthModal({ onClose }) {
   async function handleCodeSubmit(e) {
     e.preventDefault();
     if (code.length !== 6) return;
-    if (isReturning) {
-      setLoading(true);
-      setError('');
-      try {
-        const result = await apiFetch('/api/auth/verify', {
-          method: 'POST',
-          body: JSON.stringify({ phoneNumber: phone.trim(), code: code.trim(), name: '_returning' }),
-        });
-        setToken(result.token);
-        markEligible();
-        window.location.reload();
-      } catch (err) {
-        setError(err.message || 'Verification failed');
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
-    setStep('name');
-  }
-
-  async function handleNameSubmit(e) {
-    e.preventDefault();
-    if (!name.trim() || !referralCode.trim()) return;
     setLoading(true);
     setError('');
     try {
-      const endpoint = code ? '/api/auth/verify' : '/api/auth/quick-join';
-      const body = code
-        ? { phoneNumber: phone.trim(), code: code.trim(), name: name.trim(), referralCode: referralCode.trim().toUpperCase() }
-        : { phoneNumber: phone.trim(), name: name.trim(), referralCode: referralCode.trim().toUpperCase() };
-      const result = await apiFetch(endpoint, {
-        method: 'POST',
-        body: JSON.stringify(body),
+      const { error } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: code,
+        type: 'email',
       });
-      setToken(result.token);
-      markEligible();
-      window.location.reload();
+      if (error) throw new Error(error.message);
+
+      // Probe to see if this is a new or returning user.
+      try {
+        await apiFetch('/api/multi-markets/me/info');
+        markEligible();
+        window.location.reload();
+      } catch (err) {
+        if (err instanceof ApiError && err.code === 'BOOTSTRAP_REQUIRED') {
+          setStep('name');
+          return;
+        }
+        throw err;
+      }
     } catch (err) {
       setError(err.message || 'Verification failed');
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleNameSubmit(e) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setLoading(true);
+    setError('');
+    try {
+      await apiFetch('/api/auth/bootstrap', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: name.trim(),
+          referralCode: referralCode.trim().toUpperCase() || undefined,
+        }),
+      });
+      markEligible();
+      window.location.reload();
+    } catch (err) {
+      setError(err.message || 'Could not complete signup');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleGoogle() {
+    supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    });
   }
 
   return (
@@ -104,6 +105,7 @@ export default function AuthModal({ onClose }) {
         <button
           onClick={onClose}
           className="absolute top-3 right-3 text-ink-muted p-1"
+          aria-label="Close"
         >
           <X size={20} />
         </button>
@@ -115,34 +117,43 @@ export default function AuthModal({ onClose }) {
         </p>
 
         <div className="bg-paper rounded-2xl py-7 px-9 border border-line text-center max-w-[360px] w-full mx-auto">
-          {step === 'phone' && (
-            <form onSubmit={handlePhoneSubmit}>
+          {step === 'email' && (
+            <form onSubmit={handleEmailSubmit}>
               <p className="text-ink-muted text-[13px] font-semibold mb-4">
-                Enter your phone number to get started
+                Sign in with email
               </p>
               <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="08012345678"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your.email@example.com"
                 className="w-full py-3 px-4 rounded-xl border border-line bg-bone text-ink text-base text-center outline-none mb-3 placeholder:text-ink-muted"
               />
-              <p className="text-ink-muted text-[11px] mb-4">
-                Returning users log in instantly. New users get a WhatsApp code.
-              </p>
-              {error && (
-                <p className="text-accent-red text-xs mb-3">{error}</p>
-              )}
+              {error && <p className="text-accent-red text-xs mb-3">{error}</p>}
               <button
                 type="submit"
-                disabled={loading || !phone.trim()}
+                disabled={loading || !email.trim()}
                 className={`flex items-center justify-center gap-2 py-3 px-6 rounded-full text-sm font-bold bg-emerald text-bone w-full ${
-                  loading || !phone.trim() ? 'opacity-60' : 'hover:bg-emerald-deep'
+                  loading || !email.trim() ? 'opacity-60' : 'hover:bg-emerald-deep'
                 }`}
               >
                 {loading ? <Loader2 size={16} className="animate-spin" /> : null}
                 Continue
                 {!loading && <ArrowRight size={14} />}
+              </button>
+
+              <div className="flex items-center gap-3 my-5">
+                <div className="h-px bg-line flex-1" />
+                <span className="text-ink-muted text-xs">or</span>
+                <div className="h-px bg-line flex-1" />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGoogle}
+                className="flex items-center justify-center gap-2 py-3 px-6 rounded-full text-sm font-semibold border border-line bg-bone text-ink w-full"
+              >
+                Continue with Google
               </button>
             </form>
           )}
@@ -153,7 +164,7 @@ export default function AuthModal({ onClose }) {
                 Enter verification code
               </p>
               <p className="text-ink-muted text-[11px] mb-4">
-                Check your WhatsApp for a 6-digit code
+                Check your email for a 6-digit code
               </p>
               <input
                 type="text"
@@ -164,55 +175,25 @@ export default function AuthModal({ onClose }) {
                 placeholder="000000"
                 className="w-full py-3.5 px-4 rounded-xl border border-line bg-bone text-ink text-2xl text-center tracking-[8px] outline-none mb-3 font-bold placeholder:text-ink-muted"
               />
-              {error && (
-                <p className="text-accent-red text-xs mb-3">{error}</p>
-              )}
+              {error && <p className="text-accent-red text-xs mb-3">{error}</p>}
               <button
                 type="submit"
-                disabled={code.length !== 6}
+                disabled={loading || code.length !== 6}
                 className={`flex items-center justify-center gap-2 py-3 px-6 rounded-full text-sm font-bold bg-emerald text-bone w-full ${
-                  code.length !== 6 ? 'opacity-60' : 'hover:bg-emerald-deep'
+                  loading || code.length !== 6 ? 'opacity-60' : 'hover:bg-emerald-deep'
                 }`}
               >
+                {loading ? <Loader2 size={16} className="animate-spin" /> : null}
                 Next
-                <ArrowRight size={14} />
+                {!loading && <ArrowRight size={14} />}
               </button>
-              <div className="flex justify-between mt-3">
-                <button
-                  type="button"
-                  onClick={() => { setStep('phone'); setCode(''); setError(''); }}
-                  className="text-ink-muted text-xs underline"
-                >
-                  Different number
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (isReturning) {
-                      setLoading(true);
-                      setError('');
-                      try {
-                        await apiFetch('/api/auth/send-code', {
-                          method: 'POST',
-                          body: JSON.stringify({ phoneNumber: phone.trim() }),
-                        });
-                        setError('');
-                        alert('A new code has been sent to your WhatsApp.');
-                      } catch (err) {
-                        setError(err.message || 'Could not resend code');
-                      } finally {
-                        setLoading(false);
-                      }
-                    } else {
-                      setCode('');
-                      setStep('name');
-                    }
-                  }}
-                  className="text-emerald text-xs font-semibold"
-                >
-                  {isReturning ? 'Resend code' : "Didn't get code? Skip"}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => { setStep('email'); setCode(''); setError(''); }}
+                className="text-ink-muted text-xs underline mt-3"
+              >
+                Different email
+              </button>
             </form>
           )}
 
@@ -222,7 +203,7 @@ export default function AuthModal({ onClose }) {
                 Almost there!
               </p>
               <p className="text-ink-muted text-[11px] mb-4">
-                IroyinMarket is invite-only. Enter your name and the code from whoever invited you.
+                Tell us your name. An invite code is optional.
               </p>
               <input
                 type="text"
@@ -236,18 +217,16 @@ export default function AuthModal({ onClose }) {
                 type="text"
                 value={referralCode}
                 onChange={(e) => setReferralCode(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
-                placeholder="Invite code (e.g. AYOB3K9F)"
+                placeholder="Invite code (optional)"
                 maxLength={12}
                 className="w-full py-3 px-4 rounded-xl border border-line bg-bone text-ink text-base text-center outline-none mb-3 uppercase tracking-widest placeholder:text-ink-muted placeholder:normal-case placeholder:tracking-normal"
               />
-              {error && (
-                <p className="text-accent-red text-xs mb-3">{error}</p>
-              )}
+              {error && <p className="text-accent-red text-xs mb-3">{error}</p>}
               <button
                 type="submit"
-                disabled={loading || !name.trim() || !referralCode.trim()}
+                disabled={loading || !name.trim()}
                 className={`flex items-center justify-center gap-2 py-3 px-6 rounded-full text-sm font-bold bg-emerald text-bone w-full ${
-                  loading || !name.trim() || !referralCode.trim() ? 'opacity-60' : 'hover:bg-emerald-deep'
+                  loading || !name.trim() ? 'opacity-60' : 'hover:bg-emerald-deep'
                 }`}
               >
                 {loading ? <Loader2 size={16} className="animate-spin" /> : null}
