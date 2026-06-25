@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TrendingUp, TrendingDown, ChartLine, Loader2 } from 'lucide-react';
-import { apiFetch, getToken } from '../api.js';
+import useStore from '../store.js';
+import { apiFetch } from '../api.js';
 import { connectSocket } from '../socket.js';
 
 export default function Portfolio() {
   const navigate = useNavigate();
+  const user = useStore((s) => s.user);
   const [portfolio, setPortfolio] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!getToken()) {
+    if (!user) {
       navigate('/');
       return;
     }

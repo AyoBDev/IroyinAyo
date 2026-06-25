@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { apiFetch, getToken } from './api.js';
+import { apiFetch } from './api.js';
+import { supabase } from './lib/supabase.js';
 
 const useStore = create((set, get) => ({
   markets: [],
@@ -27,7 +28,8 @@ const useStore = create((set, get) => ({
   },
 
   fetchUser: async () => {
-    if (!getToken()) {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
       set({ user: null });
       return;
     }
@@ -40,7 +42,8 @@ const useStore = create((set, get) => ({
   },
 
   fetchPositions: async () => {
-    if (!getToken()) {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
       set({ positions: [] });
       return;
     }

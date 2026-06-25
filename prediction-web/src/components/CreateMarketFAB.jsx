@@ -1,8 +1,9 @@
 import { Plus } from 'lucide-react';
-import { getToken } from '../api.js';
+import useStore from '../store.js';
 
 export default function CreateMarketFAB({ onClick }) {
-  if (!getToken()) return null;
+  const user = useStore((s) => s.user);
+  if (!user) return null;
 
   return (
     <button

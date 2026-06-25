@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useSearchParams, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-import { getToken, setToken } from './api.js';
 import { connectSocket } from './socket.js';
 import useStore from './store.js';
 import TopBar from './components/TopBar.jsx';

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, Target, Flame, Award, ArrowUpRight, ArrowDownRight, Share2, Copy, Check, Gift, Sun, Moon, Wallet, Star, History, Trophy, MessageCircle } from 'lucide-react';
-import { apiFetch, getToken } from '../api.js';
+import { apiFetch } from '../api.js';
 import useStore from '../store.js';
 import { getTheme, toggleTheme } from '../theme.js';
 import ProfileShareModal from '../components/ProfileShareModal.jsx';
@@ -199,9 +199,10 @@ function ThemeToggle() {
 }
 
 export default function Profile() {
+  const user = useStore((s) => s.user);
   const openAuthModal = useStore((s) => s.openAuthModal);
 
-  if (!getToken()) {
+  if (!user) {
     return (
       <div className="py-[60px] px-6 text-center">
         <p className="text-ink-muted text-sm mb-4">
@@ -220,7 +221,6 @@ export default function Profile() {
     );
   }
 
-  const user = useStore((s) => s.user);
   const positions = useStore((s) => s.positions);
 
   if (!user) {

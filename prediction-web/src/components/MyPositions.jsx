@@ -1,9 +1,9 @@
 import { X, TrendingUp, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import useStore from '../store.js';
-import { getToken } from '../api.js';
 
 export default function MyPositions({ onClose }) {
-  if (!getToken()) return null;
+  const user = useStore((s) => s.user);
+  if (!user) return null;
 
   const positions = useStore((s) => s.positions);
 

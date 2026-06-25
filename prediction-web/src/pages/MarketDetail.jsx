@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Share2, Clock, Users, MessageSquare, TrendingUp, Trophy, Flag } from 'lucide-react';
 import useStore from '../store.js';
-import { apiFetch, getToken } from '../api.js';
+import { apiFetch } from '../api.js';
 import PredictSlip from '../components/PredictSlip.jsx';
 import PublicChat from '../components/PublicChat.jsx';
 import MarketShareModal from '../components/MarketShareModal.jsx';
