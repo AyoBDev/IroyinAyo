@@ -22,23 +22,36 @@ export default function Portfolio() {
       .catch(() => {})
       .finally(() => setLoading(false));
 
-    const socket = connectSocket();
-    const handleOddsUpdate = ({ marketId, outcomes }) => {
-      setPortfolio(prev => {
-        if (!prev) return prev;
-        const updatedOpen = prev.open.map(pos => {
-          if (pos.market_id !== marketId) return pos;
-          const updated = outcomes.find(o => o.id === pos.outcome_id);
-          if (!updated) return pos;
-          const newPnl = (updated.price * pos.shares) - pos.amount;
-          return { ...pos, current_price: updated.price, unrealized_pnl: Math.round(newPnl * 100) / 100 };
-        });
-        return { ...prev, open: updatedOpen };
-      });
-    };
+    let socket;
+    let cancelled = false;
 
-    socket.on('odds:update', handleOddsUpdate);
-    return () => { socket.off('odds:update', handleOddsUpdate); };
+    (async () => {
+      socket = await connectSocket();
+      if (cancelled) return;
+
+      const handleOddsUpdate = ({ marketId, outcomes }) => {
+        setPortfolio(prev => {
+          if (!prev) return prev;
+          const updatedOpen = prev.open.map(pos => {
+            if (pos.market_id !== marketId) return pos;
+            const updated = outcomes.find(o => o.id === pos.outcome_id);
+            if (!updated) return pos;
+            const newPnl = (updated.price * pos.shares) - pos.amount;
+            return { ...pos, current_price: updated.price, unrealized_pnl: Math.round(newPnl * 100) / 100 };
+          });
+          return { ...prev, open: updatedOpen };
+        });
+      };
+
+      socket.on('odds:update', handleOddsUpdate);
+    })();
+
+    return () => {
+      cancelled = true;
+      if (socket) {
+        socket.off('odds:update');
+      }
+    };
   }, []);
 
   if (loading) {

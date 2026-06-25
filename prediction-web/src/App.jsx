@@ -28,29 +28,38 @@ function MainApp() {
     fetchPositions();
     fetchLeaderboard();
 
-    const socket = connectSocket();
+    let socket;
+    let cancelled = false;
 
-    socket.on('odds:update', ({ marketId, outcomes }) => {
-      updateOdds(marketId, outcomes);
-    });
+    (async () => {
+      socket = await connectSocket();
+      if (cancelled) return;
 
-    socket.on('prediction:placed', ({ marketId, outcomeLabel, amount }) => {
-      addFeedItem({ marketId, outcomeLabel, amount });
-    });
+      socket.on('odds:update', ({ marketId, outcomes }) => {
+        updateOdds(marketId, outcomes);
+      });
 
-    socket.on('balance:update', ({ balance }) => {
-      updateBalance(balance);
-    });
+      socket.on('prediction:placed', ({ marketId, outcomeLabel, amount }) => {
+        addFeedItem({ marketId, outcomeLabel, amount });
+      });
 
-    socket.on('market:resolved', ({ marketId, winnerLabel, winnerId }) => {
-      resolveMarket(marketId, winnerLabel, winnerId);
-    });
+      socket.on('balance:update', ({ balance }) => {
+        updateBalance(balance);
+      });
+
+      socket.on('market:resolved', ({ marketId, winnerLabel, winnerId }) => {
+        resolveMarket(marketId, winnerLabel, winnerId);
+      });
+    })();
 
     return () => {
-      socket.off('odds:update');
-      socket.off('prediction:placed');
-      socket.off('balance:update');
-      socket.off('market:resolved');
+      cancelled = true;
+      if (socket) {
+        socket.off('odds:update');
+        socket.off('prediction:placed');
+        socket.off('balance:update');
+        socket.off('market:resolved');
+      }
     };
   }, []);
 
