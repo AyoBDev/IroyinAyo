@@ -6,7 +6,6 @@ const { handleQuiz, handleQuizAnswer } = require('./handlers/quiz');
 const { handlePoints } = require('./handlers/points');
 const { handleLeaderboard } = require('./handlers/leaderboard');
 const { handleInterests, handleInterestsSelection } = require('./handlers/interests');
-const { handlePredict, handlePredictAction } = require('./handlers/predict');
 const { handleRedeem, handleRedeemSelection } = require('./handlers/redeem');
 const { handleHelp } = require('./handlers/help');
 const { handleInfo } = require('./handlers/info');
@@ -105,9 +104,6 @@ async function handleMessage(sock, jid, text, msg) {
       case 'quiz':
         await handleQuizAnswer(sock, jid, text, student, state, setState, clearState);
         return;
-      case 'predict':
-        await handlePredictAction(sock, jid, text, student, state, setState, clearState);
-        return;
       case 'redeem':
         await handleRedeemSelection(sock, jid, text, student, state, setState, clearState);
         return;
@@ -135,13 +131,6 @@ async function handleMessage(sock, jid, text, msg) {
       break;
     case 'interests':
       await handleInterests(sock, jid, student, setState);
-      break;
-    case 'predict':
-      await handlePredict(sock, jid, student, setState);
-      break;
-    case 'my predictions':
-      const { handleMyPredictions } = require('./handlers/predict');
-      await handleMyPredictions(sock, jid, student);
       break;
     case 'redeem':
       await handleRedeem(sock, jid, student, setState);

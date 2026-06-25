@@ -1,6 +1,5 @@
 const db = require('../config/database');
 const gamificationService = require('../modules/gamification/gamification.service');
-const { handleMultiPredict, handleMultiPredictAction, handleMyPredictions } = require('./handlers/multiPredict');
 const { handleHackathonAdmin } = require('./admin/hackathonAdmin');
 const { formatLeaderboard, formatPoints, bold } = require('./formatters');
 
@@ -84,11 +83,6 @@ async function handleMessage(sock, jid, text, msg) {
     await db('students').where({ id: student.id }).update({ whatsapp_jid: jid });
   }
 
-  const state = getState(jid);
-  if (state && state.flow === 'predict') {
-    await handleMultiPredictAction(sock, jid, text, student, state, setState, clearState);
-    return;
-  }
 
   const command = text.toLowerCase().trim();
   const greetings = ['hi', 'hello', 'hey', 'start', 'menu', 'help', 'sup', 'yo'];
@@ -121,12 +115,6 @@ async function handleMessage(sock, jid, text, msg) {
       const entries = await gamificationService.getLeaderboard('weekly', 10);
       await sock.sendMessage(jid, { text: formatLeaderboard(entries) });
       break;
-    case 'my bets':
-    case 'mybets':
-    case 'my predictions':
-    case 'mypredictions':
-      await handleMyPredictions(sock, jid, student);
-      break;
     case 'balance':
     case 'points':
       const updated = await db('students').where({ id: student.id }).first();
@@ -136,10 +124,6 @@ async function handleMessage(sock, jid, text, msg) {
     case 'link':
       const webUrl = process.env.WEB_URL || 'https://iroyinayo-production.up.railway.app';
       await sock.sendMessage(jid, { text: `📱 Predict on the web:\n${webUrl}` });
-      break;
-    case 'predict':
-    case 'markets':
-      await handleMultiPredict(sock, jid, student, setState);
       break;
     default:
       await sock.sendMessage(jid, {
