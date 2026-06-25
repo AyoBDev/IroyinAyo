@@ -121,7 +121,7 @@ async function notifyNewMarket(marketId) {
   const moreText = outcomes.length > 5 ? `\n...and ${outcomes.length - 5} more` : '';
 
   const students = await db('students')
-    .where({ is_verified: true })
+    .whereNotNull('phone_number')
     .where('is_system', false)
     .select('phone_number');
 
