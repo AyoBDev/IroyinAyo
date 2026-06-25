@@ -58,4 +58,31 @@ router.post('/set-pin', async (req, res, next) => {
   }
 });
 
+router.post('/verify-pin', async (req, res, next) => {
+  try {
+    let auth;
+    try {
+      auth = await verifySupabaseToken(req.headers.authorization);
+    } catch (err) {
+      if (err instanceof UnauthorizedError) throw err;
+      throw new UnauthorizedError('Invalid or expired token');
+    }
+
+    const { pin } = req.body || {};
+    const result = await verifyPin({ authUserId: auth.authUserId, pin });
+
+    if (result.ok) {
+      return res.json({ ok: true });
+    }
+
+    const body = { code: result.code };
+    if (typeof result.attemptsRemaining === 'number') {
+      body.attempts_remaining = result.attemptsRemaining;
+    }
+    return res.status(401).json(body);
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
