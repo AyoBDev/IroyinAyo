@@ -67,6 +67,13 @@ function MainApp() {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // The AuthModal sets this flag right before its own intentional signOut
+      // (PIN_LOCKED bounce, Forgot PIN reset). In those cases we transition
+      // inline and don't want the listener to reload out from under us.
+      if (sessionStorage.getItem('inlineSignOut') === '1') {
+        sessionStorage.removeItem('inlineSignOut');
+        return;
+      }
       if (event === 'SIGNED_OUT') {
         window.location.reload();
       }

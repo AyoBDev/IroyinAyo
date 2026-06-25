@@ -57,6 +57,23 @@ export default function AuthModal({ onClose, initialStep, dismissable = true }) 
       });
       if (error) throw new Error(error.message);
 
+      // Email OTP proves identity — clear any PIN lockout the user might have hit.
+      // Fire-and-forget; we bypass apiFetch to avoid its generic-401 sign-out path,
+      // which could race with Supabase's session persistence and silently log the
+      // user back out.
+      (async () => {
+        try {
+          const { data } = await supabase.auth.getSession();
+          const tok = data.session?.access_token;
+          if (!tok) return;
+          await fetch('/api/auth/clear-pin-lockout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tok}` },
+            body: '{}',
+          });
+        } catch { /* best effort */ }
+      })();
+
       // If user came from "Forgot PIN", route to set-pin regardless of has_pin.
       if (sessionStorage.getItem('forgotPin') === '1') {
         sessionStorage.removeItem('forgotPin');
@@ -67,7 +84,11 @@ export default function AuthModal({ onClose, initialStep, dismissable = true }) 
       try {
         const info = await apiFetch('/api/multi-markets/me/info');
         if (info && info.has_pin) {
-          setStep('pin');
+          // Returning user just completed OTP — that's proof of identity for this session.
+          // Skip the PIN screen on this tab; PIN re-asserts on close-and-reopen.
+          sessionStorage.setItem('pinUnlocked', '1');
+          markEligible();
+          window.location.reload();
           return;
         }
         setStep('set-pin');
@@ -127,8 +148,13 @@ export default function AuthModal({ onClose, initialStep, dismissable = true }) 
       window.location.reload();
     } catch (err) {
       if (err instanceof ApiError && err.code === 'PIN_LOCKED') {
+        sessionStorage.removeItem('pinUnlocked');
+        sessionStorage.setItem('inlineSignOut', '1');
         await supabase.auth.signOut();
-        window.location.reload();
+        setPin('');
+        setPinConfirm('');
+        setError('Too many wrong attempts. Sign in again with email to continue.');
+        setStep('email');
         return;
       }
       if (err instanceof ApiError && err.code === 'PIN_INVALID') {
@@ -164,8 +190,13 @@ export default function AuthModal({ onClose, initialStep, dismissable = true }) 
 
   async function handleForgotPin() {
     sessionStorage.setItem('forgotPin', '1');
+    sessionStorage.removeItem('pinUnlocked');
+    sessionStorage.setItem('inlineSignOut', '1');
     await supabase.auth.signOut();
-    window.location.reload();
+    setPin('');
+    setPinConfirm('');
+    setError('');
+    setStep('email');
   }
 
   function handleGoogle() {

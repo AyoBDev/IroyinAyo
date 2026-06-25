@@ -43,8 +43,10 @@ test('email submit calls signInWithOtp and shows the code step', async () => {
   expect(await screen.findByText(/verification code/i)).toBeInTheDocument();
 });
 
-test('returning user with PIN shows pin step', async () => {
+test('returning user with PIN: OTP success unlocks tab and reloads (skips pin step)', async () => {
   apiFetch.mockResolvedValue({ id: 'student-1', name: 'Tunde', has_pin: true });
+  const reload = vi.fn();
+  Object.defineProperty(window, 'location', { value: { reload }, writable: true });
 
   render(<AuthModal onClose={() => {}} />);
   fireEvent.change(screen.getByPlaceholderText(/email/i), { target: { value: 'a@b.com' } });
@@ -57,8 +59,9 @@ test('returning user with PIN shows pin step', async () => {
 
   await waitFor(() => {
     expect(supabase.auth.verifyOtp).toHaveBeenCalled();
+    expect(reload).toHaveBeenCalled();
   });
-  expect(await screen.findByText(/enter your pin to unlock/i)).toBeInTheDocument();
+  expect(sessionStorage.getItem('pinUnlocked')).toBe('1');
 });
 
 
@@ -198,13 +201,12 @@ test('pin step shows attempts_remaining on PIN_INVALID', async () => {
   expect(await screen.findByText(/2 attempts left/i)).toBeInTheDocument();
 });
 
-test('PIN_LOCKED signs out and reloads', async () => {
+test('PIN_LOCKED signs out and transitions to email step (no reload)', async () => {
   apiFetch.mockImplementation(() => {
     const err = new ApiError('locked', { code: 'PIN_LOCKED', status: 401 });
     throw err;
   });
-  const reload = vi.fn();
-  Object.defineProperty(window, 'location', { value: { reload }, writable: true });
+  sessionStorage.setItem('pinUnlocked', '1');
 
   render(<AuthModal initialStep="pin" onClose={() => {}} />);
   fireEvent.change(await screen.findByPlaceholderText(/000000/), { target: { value: '999999' } });
@@ -212,22 +214,21 @@ test('PIN_LOCKED signs out and reloads', async () => {
 
   await waitFor(() => {
     expect(supabase.auth.signOut).toHaveBeenCalled();
-    expect(reload).toHaveBeenCalled();
   });
+  expect(sessionStorage.getItem('pinUnlocked')).toBeNull();
+  expect(await screen.findByPlaceholderText(/your.email@example.com/i)).toBeInTheDocument();
+  expect(screen.getByText(/too many wrong attempts/i)).toBeInTheDocument();
 });
 
-test('Forgot PIN signs out, sets forgotPin flag, reloads', async () => {
-  const reload = vi.fn();
-  Object.defineProperty(window, 'location', { value: { reload }, writable: true });
-
+test('Forgot PIN signs out, sets forgotPin flag, transitions to email step (no reload)', async () => {
   render(<AuthModal initialStep="pin" onClose={() => {}} />);
   fireEvent.click(screen.getByRole('button', { name: /forgot pin/i }));
 
   await waitFor(() => {
     expect(sessionStorage.getItem('forgotPin')).toBe('1');
     expect(supabase.auth.signOut).toHaveBeenCalled();
-    expect(reload).toHaveBeenCalled();
   });
+  expect(await screen.findByPlaceholderText(/your.email@example.com/i)).toBeInTheDocument();
 });
 
 test('set-pin step calls /api/auth/set-pin and reloads on success', async () => {
