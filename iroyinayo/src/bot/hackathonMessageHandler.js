@@ -1,6 +1,6 @@
 const db = require('../config/database');
 const gamificationService = require('../modules/gamification/gamification.service');
-const { generateStudentToken, generateUrlToken } = require('../middleware/studentAuth');
+const { generateUrlToken } = require('../utils/tokenGeneration');
 const { handleMultiPredict, handleMultiPredictAction, handleMyPredictions } = require('./handlers/multiPredict');
 const { handleHackathonAdmin } = require('./admin/hackathonAdmin');
 const { formatLeaderboard, formatPoints, bold } = require('./formatters');
