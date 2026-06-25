@@ -3,9 +3,11 @@ import { TrendingUp, ArrowRight, Loader2, X } from 'lucide-react';
 import { supabase } from '../lib/supabase.js';
 import { apiFetch, ApiError } from '../api.js';
 import { markEligible } from '../lib/installPrompt.js';
+import useStore from '../store.js';
 
 export default function AuthModal({ onClose }) {
-  const [step, setStep] = useState('email');
+  const needsBootstrap = useStore((s) => s.needsBootstrap);
+  const [step, setStep] = useState(needsBootstrap ? 'name' : 'email');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
