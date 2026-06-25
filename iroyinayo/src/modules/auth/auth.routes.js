@@ -3,6 +3,7 @@ const router = express.Router();
 const authService = require('./auth.service');
 const { UnauthorizedError } = require('../../utils/errors');
 const { verifySupabaseToken } = require('../../middleware/verifySupabaseToken');
+const { setPin, verifyPin } = require('./pin.service');
 
 router.post('/bootstrap', async (req, res, next) => {
   try {
@@ -34,6 +35,24 @@ router.post('/bootstrap', async (req, res, next) => {
         campus: student.campus,
       },
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/set-pin', async (req, res, next) => {
+  try {
+    let auth;
+    try {
+      auth = await verifySupabaseToken(req.headers.authorization);
+    } catch (err) {
+      if (err instanceof UnauthorizedError) throw err;
+      throw new UnauthorizedError('Invalid or expired token');
+    }
+
+    const { pin } = req.body || {};
+    await setPin({ authUserId: auth.authUserId, pin });
+    res.json({ ok: true });
   } catch (err) {
     next(err);
   }
