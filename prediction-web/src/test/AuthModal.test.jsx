@@ -250,3 +250,21 @@ test('set-pin step calls /api/auth/set-pin and reloads on success', async () => 
   });
   expect(sessionStorage.getItem('pinUnlocked')).toBe('1');
 });
+
+test('dismissable=false hides X button and disables backdrop click', () => {
+  const onClose = vi.fn();
+  const { container } = render(<AuthModal onClose={onClose} dismissable={false} />);
+
+  // X button (aria-label "Close") should be absent.
+  expect(screen.queryByRole('button', { name: /close/i })).not.toBeInTheDocument();
+
+  // Backdrop click should not call onClose.
+  fireEvent.click(container.firstChild);
+  expect(onClose).not.toHaveBeenCalled();
+});
+
+test('dismissable=true (default) renders X button and backdrop click closes', () => {
+  const onClose = vi.fn();
+  render(<AuthModal onClose={onClose} />);
+  expect(screen.getByRole('button', { name: /close/i })).toBeInTheDocument();
+});

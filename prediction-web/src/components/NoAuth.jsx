@@ -12,7 +12,7 @@ function defaultStep(needsBootstrap) {
   return needsBootstrap ? 'signup-details' : 'email';
 }
 
-export default function AuthModal({ onClose, initialStep }) {
+export default function AuthModal({ onClose, initialStep, dismissable = true }) {
   const needsBootstrap = useStore((s) => s.needsBootstrap);
   const [step, setStep] = useState(initialStep || defaultStep(needsBootstrap));
   const [email, setEmail] = useState('');
@@ -177,20 +177,22 @@ export default function AuthModal({ onClose, initialStep }) {
 
   return (
     <div
-      onClick={onClose}
+      onClick={dismissable ? onClose : undefined}
       className="fixed inset-0 bg-black/70 flex items-center justify-center z-[1000] p-4"
     >
       <div
         onClick={(e) => e.stopPropagation()}
         className="bg-bone rounded-2xl p-8 max-w-[420px] w-full text-center relative shadow-float-lg"
       >
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 text-ink-muted p-1"
-          aria-label="Close"
-        >
-          <X size={20} />
-        </button>
+        {dismissable && (
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 text-ink-muted p-1"
+            aria-label="Close"
+          >
+            <X size={20} />
+          </button>
+        )}
 
         <TrendingUp size={40} className="text-accent-green mb-5" strokeWidth={2.5} />
         <h1 className="font-serif text-2xl text-ink mb-2 tracking-tight">IroyinMarket</h1>

@@ -10,9 +10,9 @@ export default function PinGate({ children }) {
     if (typeof window !== 'undefined' && window.sessionStorage?.getItem('pinUnlocked') === '1') {
       return children;
     }
-    return <AuthModal initialStep="pin" onClose={() => {}} />;
+    return <AuthModal initialStep="pin" onClose={() => {}} dismissable={false} />;
   }
 
   // user.has_pin === false → need to set a PIN
-  return <AuthModal initialStep="set-pin" onClose={() => {}} />;
+  return <AuthModal initialStep="set-pin" onClose={() => {}} dismissable={false} />;
 }

@@ -54,6 +54,7 @@ test('renders pin modal when user has_pin: true and no pinUnlocked', () => {
   render(<PinGate><div>child</div></PinGate>);
   expect(screen.queryByText('child')).not.toBeInTheDocument();
   expect(screen.getByText(/enter your pin/i)).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /close/i })).not.toBeInTheDocument();
 });
 
 test('renders set-pin modal when user has_pin: false', () => {
