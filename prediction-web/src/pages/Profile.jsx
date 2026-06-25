@@ -202,6 +202,7 @@ function ThemeToggle() {
 export default function Profile() {
   const user = useStore((s) => s.user);
   const openAuthModal = useStore((s) => s.openAuthModal);
+  const positions = useStore((s) => s.positions);
 
   if (!user) {
     return (
@@ -218,16 +219,6 @@ export default function Profile() {
         <div className="max-w-[400px] mx-auto mt-6">
           <ThemeToggle />
         </div>
-      </div>
-    );
-  }
-
-  const positions = useStore((s) => s.positions);
-
-  if (!user) {
-    return (
-      <div className="py-10 px-4 text-center">
-        <p className="text-ink-muted">Loading profile...</p>
       </div>
     );
   }
