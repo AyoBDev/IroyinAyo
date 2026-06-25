@@ -529,9 +529,31 @@ async function resolveUserMarket(marketId, outcomeId, studentId) {
 }
 
 async function getHouseAccountId() {
-  const house = await db('students').where({ is_system: true }).first();
-  if (!house) throw new Error('House account not found. Run migrations.');
-  return house.id;
+  return db.transaction(async (trx) => {
+    const flagged = await trx('students').where({ is_system: true }).first();
+    if (flagged) return flagged.id;
+
+    // The is_system row is missing. It may have been deleted, or migration 021
+    // never ran. Reclaim the legacy 'system' phone row if it still exists,
+    // otherwise create a fresh one.
+    const legacy = await trx('students').where({ phone_number: 'system' }).first();
+    if (legacy) {
+      await trx('students').where({ id: legacy.id }).update({ is_system: true });
+      return legacy.id;
+    }
+
+    const [created] = await trx('students')
+      .insert({
+        name: 'IroyinMarket',
+        phone_number: 'system',
+        is_system: true,
+        points_balance: 999999,
+        is_onboarded: true,
+        is_banned: false,
+      })
+      .returning('id');
+    return created.id;
+  });
 }
 
 async function seedMarketLiquidity(marketId) {
