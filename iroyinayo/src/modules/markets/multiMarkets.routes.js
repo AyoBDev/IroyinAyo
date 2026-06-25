@@ -163,6 +163,7 @@ router.get('/me/info', authenticateStudent, lastAppOpenMiddleware, async (req, r
       referral_code: referralStats.code,
       referral_count: referralStats.referralCount,
       referred_by_name: referredByName,
+      has_pin: !!req.student.pin_hash,
     });
   } catch (err) { next(err); }
 });
