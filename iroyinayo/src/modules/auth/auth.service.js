@@ -1,6 +1,10 @@
+const bcrypt = require('bcrypt');
 const db = require('../../config/database');
 const { ValidationError } = require('../../utils/errors');
 const posthog = require('../../utils/posthog');
+const { normalizePhone, isValidNigerianNumber } = require('./phone');
+
+const PIN_REGEX = /^\d{6}$/;
 
 function generateReferralCode() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -9,9 +13,19 @@ function generateReferralCode() {
   return out;
 }
 
-async function bootstrapStudent({ authUserId, email, name, referralCode }) {
+async function bootstrapStudent({ authUserId, email, name, phoneNumber, pin, referralCode }) {
   if (!name || typeof name !== 'string' || !name.trim()) {
     throw new ValidationError('name is required');
+  }
+  if (!phoneNumber || typeof phoneNumber !== 'string') {
+    throw new ValidationError('phoneNumber is required');
+  }
+  const normalizedPhone = normalizePhone(phoneNumber);
+  if (!isValidNigerianNumber(normalizedPhone)) {
+    throw new ValidationError('Please enter a valid Nigerian phone number');
+  }
+  if (typeof pin !== 'string' || !PIN_REGEX.test(pin)) {
+    throw new ValidationError('pin must be 6 digits');
   }
 
   const existing = await db('students').where({ auth_user_id: authUserId }).first();
@@ -19,7 +33,6 @@ async function bootstrapStudent({ authUserId, email, name, referralCode }) {
     return { student: existing, isNew: false };
   }
 
-  // Validate referral code (if provided) before inserting.
   let referrer = null;
   if (referralCode && referralCode.trim()) {
     referrer = await db('students')
@@ -30,10 +43,15 @@ async function bootstrapStudent({ authUserId, email, name, referralCode }) {
     }
   }
 
+  const pinHash = await bcrypt.hash(pin, 10);
+
   const insertData = {
     auth_user_id: authUserId,
     email,
     name: name.trim(),
+    phone_number: normalizedPhone,
+    pin_hash: pinHash,
+    pin_failed_attempts: 0,
     points_balance: 100,
     is_banned: false,
     campus: 'unilorin',
@@ -45,10 +63,9 @@ async function bootstrapStudent({ authUserId, email, name, referralCode }) {
   try {
     [student] = await db('students').insert(insertData).returning('*');
   } catch (err) {
-    // Handle race condition: concurrent bootstraps on same auth_user_id
     if (err && err.code === '23505') {
       student = await db('students').where({ auth_user_id: authUserId }).first();
-      if (!student) throw err; // unique violation but no row — re-throw
+      if (!student) throw err;
       return { student, isNew: false };
     }
     throw err;

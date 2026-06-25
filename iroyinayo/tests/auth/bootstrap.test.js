@@ -56,7 +56,7 @@ test('first call with valid JWT creates a student row', async () => {
   const res = await request(app)
     .post('/api/auth/bootstrap')
     .set('Authorization', `Bearer ${token}`)
-    .send({ name: 'Tunde' });
+    .send({ name: 'Tunde', phoneNumber: '08012345678', pin: '123456' });
 
   expect(res.status).toBe(200);
   expect(res.body.student.name).toBe('Tunde');
@@ -85,7 +85,7 @@ test('second call with same JWT is idempotent (returns existing row)', async () 
   const res = await request(app)
     .post('/api/auth/bootstrap')
     .set('Authorization', `Bearer ${token}`)
-    .send({ name: 'Tunde' });
+    .send({ name: 'Tunde', phoneNumber: '08012345678', pin: '123456' });
 
   expect(res.status).toBe(200);
   expect(res.body.student.id).toBe('student-2');
@@ -123,7 +123,7 @@ test('invalid referralCode (non-empty, no match) → 400', async () => {
   const res = await request(app)
     .post('/api/auth/bootstrap')
     .set('Authorization', `Bearer ${token}`)
-    .send({ name: 'X', referralCode: 'BAD-CODE' });
+    .send({ name: 'X', referralCode: 'BAD-CODE', phoneNumber: '08012345678', pin: '123456' });
   expect(res.status).toBe(400);
 });
 
@@ -175,9 +175,91 @@ test('concurrent bootstrap race (23505 unique violation) → 200 with existing r
   const res = await request(app)
     .post('/api/auth/bootstrap')
     .set('Authorization', `Bearer ${token}`)
-    .send({ name: 'Tunde' });
+    .send({ name: 'Tunde', phoneNumber: '08012345678', pin: '123456' });
 
   expect(res.status).toBe(200);
   expect(res.body.student.id).toBe('student-5');
   expect(res.body.student.name).toBe('Existing');
+});
+
+const bcrypt = require('bcrypt');
+
+test('bootstrap with phone and pin populates phone_number and pin_hash', async () => {
+  const token = await signTestJwt({ privateKey, sub: 'user-phone-1', email: 'p@b.com' });
+
+  let inserted;
+  setDb((table) => {
+    if (table === 'students') {
+      return {
+        where: () => ({ first: async () => null }),
+        insert: (data) => ({
+          returning: async () => {
+            inserted = { id: 'student-phone-1', referral_code: 'AAA111', ...data };
+            return [inserted];
+          },
+        }),
+      };
+    }
+    throw new Error('unexpected table: ' + table);
+  });
+
+  const res = await request(app)
+    .post('/api/auth/bootstrap')
+    .set('Authorization', `Bearer ${token}`)
+    .send({ name: 'Tunde', phoneNumber: '08012345678', pin: '123456' });
+
+  expect(res.status).toBe(200);
+  expect(inserted.phone_number).toBe('2348012345678');
+  expect(inserted.pin_hash).toMatch(/^\$2[aby]\$/);
+  expect(inserted.pin_failed_attempts).toBe(0);
+  const pinMatches = await bcrypt.compare('123456', inserted.pin_hash);
+  expect(pinMatches).toBe(true);
+});
+
+test('bootstrap rejects missing phoneNumber with 400', async () => {
+  const token = await signTestJwt({ privateKey, sub: 'user-phone-2', email: 'p2@b.com' });
+  setDb(() => ({ where: () => ({ first: async () => null }) }));
+
+  const res = await request(app)
+    .post('/api/auth/bootstrap')
+    .set('Authorization', `Bearer ${token}`)
+    .send({ name: 'X', pin: '123456' });
+
+  expect(res.status).toBe(400);
+});
+
+test('bootstrap rejects invalid phoneNumber with 400', async () => {
+  const token = await signTestJwt({ privateKey, sub: 'user-phone-3', email: 'p3@b.com' });
+  setDb(() => ({ where: () => ({ first: async () => null }) }));
+
+  const res = await request(app)
+    .post('/api/auth/bootstrap')
+    .set('Authorization', `Bearer ${token}`)
+    .send({ name: 'X', phoneNumber: '14155551234', pin: '123456' });
+
+  expect(res.status).toBe(400);
+});
+
+test('bootstrap rejects missing pin with 400', async () => {
+  const token = await signTestJwt({ privateKey, sub: 'user-phone-4', email: 'p4@b.com' });
+  setDb(() => ({ where: () => ({ first: async () => null }) }));
+
+  const res = await request(app)
+    .post('/api/auth/bootstrap')
+    .set('Authorization', `Bearer ${token}`)
+    .send({ name: 'X', phoneNumber: '08012345678' });
+
+  expect(res.status).toBe(400);
+});
+
+test('bootstrap rejects invalid pin format with 400', async () => {
+  const token = await signTestJwt({ privateKey, sub: 'user-phone-5', email: 'p5@b.com' });
+  setDb(() => ({ where: () => ({ first: async () => null }) }));
+
+  const res = await request(app)
+    .post('/api/auth/bootstrap')
+    .set('Authorization', `Bearer ${token}`)
+    .send({ name: 'X', phoneNumber: '08012345678', pin: 'abcdef' });
+
+  expect(res.status).toBe(400);
 });

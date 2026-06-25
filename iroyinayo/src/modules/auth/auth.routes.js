@@ -14,11 +14,13 @@ router.post('/bootstrap', async (req, res, next) => {
       throw new UnauthorizedError('Invalid or expired token');
     }
 
-    const { name, referralCode } = req.body || {};
+    const { name, phoneNumber, pin, referralCode } = req.body || {};
     const { student } = await authService.bootstrapStudent({
       authUserId: auth.authUserId,
       email: auth.email,
       name,
+      phoneNumber,
+      pin,
       referralCode,
     });
 
