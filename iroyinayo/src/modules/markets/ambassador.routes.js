@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../../config/database');
 const multiMarkets = require('./multiMarkets.service');
 const gamificationService = require('../gamification/gamification.service');
-const { authenticateStudent } = require('../../middleware/studentAuth');
+const { requireSupabaseUser: authenticateStudent } = require('../../middleware/requireSupabaseUser');
 const { ValidationError } = require('../../utils/errors');
 
 const MARKET_CREATION_BONUS = 25;
