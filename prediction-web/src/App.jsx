@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { connectSocket } from './socket.js';
 import useStore from './store.js';
+import { supabase } from './lib/supabase.js';
 import TopBar from './components/TopBar.jsx';
 import BottomNav from './components/BottomNav.jsx';
 import MyPositions from './components/MyPositions.jsx';
@@ -61,6 +62,18 @@ function MainApp() {
         socket.off('market:resolved');
       }
     };
+  }, []);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        window.location.reload();
+      }
+      if (event === 'SIGNED_IN' && !session) {
+        window.location.reload();
+      }
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   if (loading) {
