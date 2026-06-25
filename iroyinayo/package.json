@@ -37,6 +37,7 @@
     "express-rate-limit": "^8.4.1",
     "groq-sdk": "^1.1.2",
     "helmet": "^8.1.0",
+    "jose": "^5.10.0",
     "jsonwebtoken": "^9.0.3",
     "knex": "^3.2.9",
     "node-cron": "^4.2.1",

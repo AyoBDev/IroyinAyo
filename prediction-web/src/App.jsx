@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useSearchParams, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-import { getToken, setToken } from './api.js';
 import { connectSocket } from './socket.js';
 import useStore from './store.js';
+import { supabase } from './lib/supabase.js';
 import TopBar from './components/TopBar.jsx';
 import BottomNav from './components/BottomNav.jsx';
 import MyPositions from './components/MyPositions.jsx';
 import AuthModal from './components/NoAuth.jsx';
+import PinGate from './components/PinGate.jsx';
 import Markets from './pages/Markets.jsx';
 import LeaderboardPage from './pages/LeaderboardPage.jsx';
 import Profile from './pages/Profile.jsx';
@@ -19,33 +20,6 @@ import SharePrediction from './pages/SharePrediction.jsx';
 import Portfolio from './pages/Portfolio.jsx';
 import InstallBanner from './components/InstallBanner.jsx';
 
-function TokenExchange() {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const tokenParam = searchParams.get('t');
-    if (tokenParam) {
-      window.history.replaceState({}, '', window.location.pathname);
-      fetch('/api/auth/exchange-token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ urlToken: tokenParam }),
-      })
-        .then(r => r.ok ? r.json() : null)
-        .then(data => {
-          if (data && data.token) {
-            setToken(data.token);
-            window.location.reload();
-          }
-        })
-        .catch(() => {});
-    }
-  }, []);
-
-  return null;
-}
-
 function MainApp() {
   const [showPositions, setShowPositions] = useState(false);
   const { loading, showAuthModal, closeAuthModal, fetchMarkets, fetchUser, fetchPositions, fetchLeaderboard, updateOdds, addFeedItem, updateBalance, resolveMarket } = useStore();
@@ -56,30 +30,58 @@ function MainApp() {
     fetchPositions();
     fetchLeaderboard();
 
-    const socket = connectSocket();
+    let socket;
+    let cancelled = false;
 
-    socket.on('odds:update', ({ marketId, outcomes }) => {
-      updateOdds(marketId, outcomes);
-    });
+    (async () => {
+      socket = await connectSocket();
+      if (cancelled) return;
 
-    socket.on('prediction:placed', ({ marketId, outcomeLabel, amount }) => {
-      addFeedItem({ marketId, outcomeLabel, amount });
-    });
+      socket.on('odds:update', ({ marketId, outcomes }) => {
+        updateOdds(marketId, outcomes);
+      });
 
-    socket.on('balance:update', ({ balance }) => {
-      updateBalance(balance);
-    });
+      socket.on('prediction:placed', ({ marketId, outcomeLabel, amount }) => {
+        addFeedItem({ marketId, outcomeLabel, amount });
+      });
 
-    socket.on('market:resolved', ({ marketId, winnerLabel, winnerId }) => {
-      resolveMarket(marketId, winnerLabel, winnerId);
-    });
+      socket.on('balance:update', ({ balance }) => {
+        updateBalance(balance);
+      });
+
+      socket.on('market:resolved', ({ marketId, winnerLabel, winnerId }) => {
+        resolveMarket(marketId, winnerLabel, winnerId);
+      });
+    })();
 
     return () => {
-      socket.off('odds:update');
-      socket.off('prediction:placed');
-      socket.off('balance:update');
-      socket.off('market:resolved');
+      cancelled = true;
+      if (socket) {
+        socket.off('odds:update');
+        socket.off('prediction:placed');
+        socket.off('balance:update');
+        socket.off('market:resolved');
+      }
     };
+  }, []);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // The AuthModal sets this flag right before its own intentional signOut
+      // (PIN_LOCKED bounce, Forgot PIN reset). In those cases we transition
+      // inline and don't want the listener to reload out from under us.
+      if (sessionStorage.getItem('inlineSignOut') === '1') {
+        sessionStorage.removeItem('inlineSignOut');
+        return;
+      }
+      if (event === 'SIGNED_OUT') {
+        window.location.reload();
+      }
+      if (event === 'SIGNED_IN' && !session) {
+        window.location.reload();
+      }
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   if (loading) {
@@ -94,32 +96,33 @@ function MainApp() {
   }
 
   return (
-    <div className="pt-14">
-      <InstallBanner />
-      <ResolutionToast />
-      <TopBar />
-      {showPositions && <MyPositions onClose={() => setShowPositions(false)} />}
+    <PinGate>
+      <div className="pt-14">
+        <InstallBanner />
+        <ResolutionToast />
+        <TopBar />
+        {showPositions && <MyPositions onClose={() => setShowPositions(false)} />}
 
-      <Routes>
-        <Route path="/" element={<Markets />} />
-        <Route path="/market/:marketId" element={<MarketDetail />} />
-        <Route path="/portfolio" element={<Portfolio />} />
-        <Route path="/leaderboard" element={<LeaderboardPage />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+        <Routes>
+          <Route path="/" element={<Markets />} />
+          <Route path="/market/:marketId" element={<MarketDetail />} />
+          <Route path="/portfolio" element={<Portfolio />} />
+          <Route path="/leaderboard" element={<LeaderboardPage />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
 
-      <BottomNav />
-      {showAuthModal && <AuthModal onClose={closeAuthModal} />}
-      <WinPopup />
-    </div>
+        <BottomNav />
+        {showAuthModal && <AuthModal onClose={closeAuthModal} />}
+        <WinPopup />
+      </div>
+    </PinGate>
   );
 }
 
 export default function App() {
   return (
     <BrowserRouter>
-      <TokenExchange />
       <Routes>
         <Route path="/share/:marketId" element={<ShareCard />} />
         <Route path="/share/prediction/:positionId" element={<SharePrediction />} />

@@ -1,272 +1,107 @@
+const bcrypt = require('bcrypt');
 const db = require('../../config/database');
-const { getBotSocket } = require('../../bot/botSocket');
-const { generateStudentToken } = require('../../middleware/studentAuth');
 const { ValidationError } = require('../../utils/errors');
 const posthog = require('../../utils/posthog');
+const { normalizePhone, isValidNigerianNumber } = require('./phone');
 
-function generateCode() {
-  return String(Math.floor(100000 + Math.random() * 900000));
+const PIN_REGEX = /^\d{6}$/;
+
+function generateReferralCode() {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let out = '';
+  for (let i = 0; i < 8; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return out;
 }
 
-function normalizePhone(phone) {
-  let cleaned = phone.replace(/[^0-9]/g, '');
-  if (cleaned.startsWith('0')) {
-    cleaned = '234' + cleaned.slice(1);
+async function bootstrapStudent({ authUserId, email, name, phoneNumber, pin, referralCode }) {
+  if (!name || typeof name !== 'string' || !name.trim()) {
+    throw new ValidationError('name is required');
   }
-  if (!cleaned.startsWith('234')) {
-    cleaned = '234' + cleaned;
+  if (!phoneNumber || typeof phoneNumber !== 'string') {
+    throw new ValidationError('phoneNumber is required');
   }
-  return cleaned;
-}
-
-function isValidNigerianNumber(normalizedPhone) {
-  if (normalizedPhone.length !== 13) return false;
-  if (!normalizedPhone.startsWith('234')) return false;
-  const firstDigitAfterPrefix = normalizedPhone[3];
-  return ['7', '8', '9'].includes(firstDigitAfterPrefix);
-}
-
-async function sendWhatsAppOTP(phone, message) {
-  const jid = `${phone}@s.whatsapp.net`;
-  const maxRetries = 3;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    const sock = getBotSocket();
-    if (!sock) {
-      console.error(`[OTP] No bot socket available (attempt ${attempt}/${maxRetries})`);
-      if (attempt < maxRetries) {
-        await new Promise(r => setTimeout(r, 1000 * attempt));
-        continue;
-      }
-      return false;
-    }
-
-    try {
-      await sock.sendMessage(jid, { text: message });
-      console.log(`[OTP] Delivered to ${phone} (attempt ${attempt})`);
-      return true;
-    } catch (err) {
-      console.error(`[OTP] Send failed for ${phone} (attempt ${attempt}/${maxRetries}): ${err.message}`);
-      if (attempt < maxRetries) {
-        await new Promise(r => setTimeout(r, 1000 * attempt));
-      }
-    }
+  const normalizedPhone = normalizePhone(phoneNumber);
+  if (!isValidNigerianNumber(normalizedPhone)) {
+    throw new ValidationError('Please enter a valid Nigerian phone number');
+  }
+  if (typeof pin !== 'string' || !PIN_REGEX.test(pin)) {
+    throw new ValidationError('pin must be 6 digits');
   }
 
-  return false;
-}
-
-async function sendCode(phoneNumber) {
-  const phone = normalizePhone(phoneNumber);
-
-  if (!isValidNigerianNumber(phone)) {
-    throw new ValidationError('Please enter a valid Nigerian phone number (e.g. 08012345678).');
-  }
-
-  // If a code was sent in the last 30 seconds (e.g. by login), skip sending another
-  const veryRecent = await db('verification_codes')
-    .where({ phone_number: phone, used: false })
-    .where('created_at', '>', new Date(Date.now() - 30 * 1000))
-    .first();
-
-  if (veryRecent) {
-    return { sent: true };
-  }
-
-  const recentCodes = await db('verification_codes')
-    .where({ phone_number: phone })
-    .where('created_at', '>', new Date(Date.now() - 10 * 60 * 1000))
-    .count('id as count')
-    .first();
-
-  if (parseInt(recentCodes.count, 10) >= 5) {
-    throw new ValidationError('Too many attempts. Please wait 10 minutes.');
-  }
-
-  const code = generateCode();
-  const expires_at = new Date(Date.now() + 5 * 60 * 1000);
-
-  await db('verification_codes').insert({ phone_number: phone, code, expires_at });
-
-  const delivered = await sendWhatsAppOTP(
-    phone,
-    `Your IroyinMarket verification code is: *${code}*\n\nThis code expires in 5 minutes. Do not share it with anyone.`
-  );
-
-  if (!delivered) {
-    throw new ValidationError('Could not deliver code via WhatsApp. Make sure your number is on WhatsApp and try again.');
-  }
-
-  return { sent: true };
-}
-
-async function verifyCode(phoneNumber, code, name, referralCode) {
-  const phone = normalizePhone(phoneNumber);
-
-  const { student: result, isNew } = await db.transaction(async (trx) => {
-    const record = await trx('verification_codes')
-      .where({ phone_number: phone, code, used: false })
-      .where('expires_at', '>', new Date())
-      .orderBy('created_at', 'desc')
-      .forUpdate()
-      .first();
-
-    if (!record) {
-      throw new ValidationError('Invalid or expired code.');
-    }
-
-    await trx('verification_codes').where({ id: record.id }).update({ used: true });
-
-    let student = await trx('students').where({ phone_number: phone }).first();
-    let isNew = false;
-    if (!student) {
-      isNew = true;
-      const insertData = { phone_number: phone, name, points_balance: 100, is_verified: true, campus: 'unilorin' };
-
-      if (referralCode) {
-        const referrer = await trx('students').where({ referral_code: referralCode }).first();
-        if (referrer) {
-          insertData.referred_by = referrer.id;
-        }
-      }
-
-      [student] = await trx('students').insert(insertData).returning('*');
-
-      if (referralCode && insertData.referred_by) {
-        const { applyReferral } = require('../referrals/referrals.service');
-        applyReferral(student.id, referralCode).catch(() => {});
-      }
-    } else {
-      const updateFields = { is_verified: true };
-      if (name && name !== '_returning') updateFields.name = name;
-      [student] = await trx('students')
-        .where({ id: student.id })
-        .update(updateFields)
-        .returning('*');
-    }
-
-    return { student, isNew };
-  });
-
-  const distinctId = String(result.id);
-
-  posthog.identify({
-    distinctId,
-    properties: {
-      $set: { name: result.name, campus: result.campus, is_ambassador: result.is_ambassador },
-      $set_once: { first_seen: result.created_at },
-    },
-  });
-
-  if (isNew) {
-    posthog.capture({
-      distinctId,
-      event: 'user_signed_up',
-      properties: {
-        name: result.name,
-        campus: result.campus,
-        had_referral: !!(referralCode),
-      },
-    });
-  } else {
-    posthog.capture({
-      distinctId,
-      event: 'user_logged_in',
-      properties: {
-        name: result.name,
-        campus: result.campus,
-      },
-    });
-  }
-
-  const token = generateStudentToken(result.id);
-  return { token, student: { id: result.id, name: result.name, points_balance: result.points_balance } };
-}
-
-async function login(phoneNumber) {
-  const phone = normalizePhone(phoneNumber);
-
-  if (!isValidNigerianNumber(phone)) {
-    throw new ValidationError('Please enter a valid Nigerian phone number (e.g. 08012345678).');
-  }
-
-  const student = await db('students').where({ phone_number: phone, is_verified: true }).first();
-  if (!student) {
-    return { codeSent: true, returning: false };
-  }
-
-  const recentCodes = await db('verification_codes')
-    .where({ phone_number: phone })
-    .where('created_at', '>', new Date(Date.now() - 10 * 60 * 1000))
-    .count('id as count')
-    .first();
-
-  if (parseInt(recentCodes.count, 10) >= 5) {
-    throw new ValidationError('Too many attempts. Please wait 10 minutes.');
-  }
-
-  const code = generateCode();
-  const expires_at = new Date(Date.now() + 5 * 60 * 1000);
-  await db('verification_codes').insert({ phone_number: phone, code, expires_at });
-
-  const delivered = await sendWhatsAppOTP(
-    phone,
-    `Your IroyinMarket login code is: *${code}*\n\nThis code expires in 5 minutes.`
-  );
-
-  if (!delivered) {
-    throw new ValidationError('Could not deliver code via WhatsApp. Make sure your number is on WhatsApp and try again.');
-  }
-
-  return { codeSent: true, returning: true };
-}
-
-async function quickJoin(phoneNumber, name, referralCode) {
-  const phone = normalizePhone(phoneNumber);
-
-  const existing = await db('students').where({ phone_number: phone }).first();
+  const existing = await db('students').where({ auth_user_id: authUserId }).first();
   if (existing) {
-    throw new ValidationError('This number is already registered. Please use the verification code sent to your WhatsApp.');
+    return { student: existing, isNew: false };
   }
 
-  const insertData = { phone_number: phone, name, points_balance: 100, is_verified: false, campus: 'unilorin' };
-
-  if (referralCode) {
-    const referrer = await db('students').where({ referral_code: referralCode }).first();
-    if (referrer) {
-      insertData.referred_by = referrer.id;
+  let referrer = null;
+  if (referralCode && referralCode.trim()) {
+    referrer = await db('students')
+      .where({ referral_code: referralCode.trim().toUpperCase() })
+      .first();
+    if (!referrer) {
+      throw new ValidationError('Invalid referral code');
     }
   }
 
-  let [student] = await db('students').insert(insertData).returning('*');
+  const pinHash = await bcrypt.hash(pin, 10);
 
-  if (referralCode && insertData.referred_by) {
-    const { applyReferral } = require('../referrals/referrals.service');
-    applyReferral(student.id, referralCode).catch(() => {});
+  const insertData = {
+    auth_user_id: authUserId,
+    email,
+    name: name.trim(),
+    phone_number: normalizedPhone,
+    pin_hash: pinHash,
+    pin_failed_attempts: 0,
+    points_balance: 100,
+    is_banned: false,
+    campus: 'unilorin',
+    referral_code: generateReferralCode(),
+    referred_by: referrer ? referrer.id : null,
+  };
+
+  let student;
+  try {
+    [student] = await db('students').insert(insertData).returning('*');
+  } catch (err) {
+    if (err && err.code === '23505') {
+      const detail = String(err.detail || '');
+      // Same-auth_user_id race: re-fetch and return idempotently.
+      const existing = await db('students').where({ auth_user_id: authUserId }).first();
+      if (existing) return { student: existing, isNew: false };
+      // Phone collision: another student already has this phone.
+      if (detail.includes('phone_number')) {
+        throw new ValidationError('That phone number is already registered. Try a different one or sign in.');
+      }
+      // Email collision: another student already has this email (should be impossible since auth_user_id is unique per Supabase user, but defensively handle).
+      if (detail.includes('email')) {
+        throw new ValidationError('That email is already registered to a different account.');
+      }
+      // Unknown unique violation — fall through to re-throw.
+      throw err;
+    }
+    throw err;
   }
 
-  const distinctId = String(student.id);
+  if (referrer) {
+    const { applyReferral } = require('../referrals/referrals.service');
+    applyReferral(student.id, referralCode.trim().toUpperCase()).catch(() => {});
+  }
 
   posthog.identify({
-    distinctId,
+    distinctId: String(student.id),
     properties: {
-      $set: { name: student.name, campus: student.campus },
+      $set: { name: student.name, campus: student.campus, email: student.email },
       $set_once: { first_seen: student.created_at },
     },
   });
 
   posthog.capture({
-    distinctId,
-    event: 'quick_join_completed',
-    properties: {
-      name: student.name,
-      campus: student.campus,
-      had_referral: !!(referralCode && insertData.referred_by),
-    },
+    distinctId: String(student.id),
+    event: 'user_signed_up',
+    properties: { name: student.name, campus: student.campus, had_referral: !!referrer },
   });
 
-  const token = generateStudentToken(student.id);
-  return { token, student: { id: student.id, name: student.name, points_balance: student.points_balance } };
+  return { student, isNew: true };
 }
 
-module.exports = { sendCode, verifyCode, login, quickJoin, normalizePhone };
+module.exports = { bootstrapStudent };

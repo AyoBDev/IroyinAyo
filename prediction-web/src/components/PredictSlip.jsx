@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { X, ArrowRight, Users, Copy, Check } from 'lucide-react';
 import useStore from '../store.js';
-import { getToken } from '../api.js';
 import PredictionConfirmation from './PredictionConfirmation.jsx';
 import { useDeepLinkRef, buildSourceRef } from '../hooks/useDeepLinkRef.js';
 import { markEligible } from '../lib/installPrompt.js';
@@ -40,7 +39,7 @@ export default function PredictSlip({ market, outcome, onClose }) {
   const fetchPositions = useStore((s) => s.fetchPositions);
   const user = useStore((s) => s.user);
   const openAuthModal = useStore((s) => s.openAuthModal);
-  const isAuthenticated = !!getToken();
+  const isAuthenticated = !!user;
   const classes = getSlipClasses(outcome.label);
   const [confirmationData, setConfirmationData] = useState(null);
   const deepLink = useDeepLinkRef();

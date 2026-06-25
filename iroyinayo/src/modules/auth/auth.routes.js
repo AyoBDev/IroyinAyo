@@ -1,72 +1,104 @@
 const express = require('express');
 const router = express.Router();
 const authService = require('./auth.service');
-const { ValidationError } = require('../../utils/errors');
-const {
-  sendCodeLimiter,
-  verifyLimiter,
-  quickJoinLimiter,
-  exchangeTokenLimiter,
-  otpIpBurstLimiter,
-} = require('../../middleware/rateLimiter');
+const { UnauthorizedError } = require('../../utils/errors');
+const { verifySupabaseToken } = require('../../middleware/verifySupabaseToken');
+const { setPin, verifyPin, clearPinLockout } = require('./pin.service');
 
-router.post('/send-code', otpIpBurstLimiter, sendCodeLimiter, async (req, res, next) => {
+router.post('/bootstrap', async (req, res, next) => {
   try {
-    const { phoneNumber } = req.body;
-    if (typeof phoneNumber !== 'string' || !phoneNumber) {
-      throw new ValidationError('phoneNumber is required');
+    let auth;
+    try {
+      auth = await verifySupabaseToken(req.headers.authorization);
+    } catch (err) {
+      if (err instanceof UnauthorizedError) throw err;
+      throw new UnauthorizedError('Invalid or expired token');
     }
-    const result = await authService.sendCode(phoneNumber);
-    res.json(result);
-  } catch (err) { next(err); }
-});
 
-router.post('/verify', otpIpBurstLimiter, verifyLimiter, async (req, res, next) => {
-  try {
-    const { phoneNumber, code, name, referralCode } = req.body;
-    if (typeof phoneNumber !== 'string' || !phoneNumber || typeof code !== 'string' || !code || typeof name !== 'string' || !name) {
-      throw new ValidationError('phoneNumber, code, and name are required');
-    }
-    const result = await authService.verifyCode(phoneNumber, code, name, referralCode);
-    res.json(result);
-  } catch (err) { next(err); }
-});
+    const { name, phoneNumber, pin, referralCode } = req.body || {};
+    const { student } = await authService.bootstrapStudent({
+      authUserId: auth.authUserId,
+      email: auth.email,
+      name,
+      phoneNumber,
+      pin,
+      referralCode,
+    });
 
-router.post('/login', otpIpBurstLimiter, sendCodeLimiter, async (req, res, next) => {
-  try {
-    const { phoneNumber } = req.body;
-    if (typeof phoneNumber !== 'string' || !phoneNumber) {
-      throw new ValidationError('phoneNumber is required');
-    }
-    const result = await authService.login(phoneNumber);
-    res.json(result);
-  } catch (err) { next(err); }
-});
-
-router.post('/quick-join', quickJoinLimiter, async (req, res, next) => {
-  try {
-    const { phoneNumber, name, referralCode } = req.body;
-    if (typeof phoneNumber !== 'string' || !phoneNumber || typeof name !== 'string' || !name) {
-      throw new ValidationError('phoneNumber and name are required');
-    }
-    const result = await authService.quickJoin(phoneNumber, name, referralCode);
-    res.json(result);
-  } catch (err) { next(err); }
-});
-
-router.post('/exchange-token', exchangeTokenLimiter, async (req, res, next) => {
-  try {
-    const { urlToken } = req.body;
-    if (!urlToken) throw new ValidationError('urlToken is required');
-    const { verifyUrlToken, generateStudentToken } = require('../../middleware/studentAuth');
-    const decoded = verifyUrlToken(urlToken);
-    const db = require('../../config/database');
-    const student = await db('students').where({ id: decoded.studentId }).first();
-    if (!student) throw new ValidationError('Invalid token');
-    const token = generateStudentToken(student.id);
-    res.json({ token, student: { id: student.id, name: student.name, points_balance: student.points_balance } });
+    res.json({
+      student: {
+        id: student.id,
+        name: student.name,
+        points_balance: student.points_balance,
+        referral_code: student.referral_code,
+        email: student.email,
+        campus: student.campus,
+      },
+    });
   } catch (err) {
-    next(new ValidationError('Invalid or expired link. Please request a new one.'));
+    next(err);
+  }
+});
+
+router.post('/set-pin', async (req, res, next) => {
+  try {
+    let auth;
+    try {
+      auth = await verifySupabaseToken(req.headers.authorization);
+    } catch (err) {
+      if (err instanceof UnauthorizedError) throw err;
+      throw new UnauthorizedError('Invalid or expired token');
+    }
+
+    const { pin } = req.body || {};
+    await setPin({ authUserId: auth.authUserId, pin });
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/verify-pin', async (req, res, next) => {
+  try {
+    let auth;
+    try {
+      auth = await verifySupabaseToken(req.headers.authorization);
+    } catch (err) {
+      if (err instanceof UnauthorizedError) throw err;
+      throw new UnauthorizedError('Invalid or expired token');
+    }
+
+    const { pin } = req.body || {};
+    const result = await verifyPin({ authUserId: auth.authUserId, pin });
+
+    if (result.ok) {
+      return res.json({ ok: true });
+    }
+
+    const body = { code: result.code };
+    if (typeof result.attemptsRemaining === 'number') {
+      body.attempts_remaining = result.attemptsRemaining;
+    }
+    return res.status(401).json(body);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/clear-pin-lockout', async (req, res, next) => {
+  try {
+    let auth;
+    try {
+      auth = await verifySupabaseToken(req.headers.authorization);
+    } catch (err) {
+      if (err instanceof UnauthorizedError) throw err;
+      throw new UnauthorizedError('Invalid or expired token');
+    }
+
+    await clearPinLockout({ authUserId: auth.authUserId });
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
   }
 });
 

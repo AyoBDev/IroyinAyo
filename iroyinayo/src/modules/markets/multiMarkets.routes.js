@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multiMarkets = require('./multiMarkets.service');
 const gamificationService = require('../gamification/gamification.service');
-const { authenticateStudent } = require('../../middleware/studentAuth');
+const { requireSupabaseUser: authenticateStudent } = require('../../middleware/requireSupabaseUser');
 const { authenticate } = require('../../middleware/auth');
 const { requireRole } = require('../../middleware/adminRole');
 const { ValidationError } = require('../../utils/errors');
@@ -163,6 +163,7 @@ router.get('/me/info', authenticateStudent, lastAppOpenMiddleware, async (req, r
       referral_code: referralStats.code,
       referral_count: referralStats.referralCount,
       referred_by_name: referredByName,
+      has_pin: !!req.student.pin_hash,
     });
   } catch (err) { next(err); }
 });

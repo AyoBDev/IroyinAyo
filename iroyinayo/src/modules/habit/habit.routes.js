@@ -1,6 +1,6 @@
 const express = require('express');
 const db = require('../../config/database');
-const { authenticateStudent } = require('../../middleware/studentAuth');
+const { requireSupabaseUser: authenticateStudent } = require('../../middleware/requireSupabaseUser');
 const { computeAccuracy, computeCategoryAccuracy, computeAccuracyRank } = require('./accuracy');
 
 const router = express.Router();

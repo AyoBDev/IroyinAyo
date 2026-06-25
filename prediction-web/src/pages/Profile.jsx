@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, Target, Flame, Award, ArrowUpRight, ArrowDownRight, Share2, Copy, Check, Gift, Sun, Moon, Wallet, Star, History, Trophy, MessageCircle } from 'lucide-react';
-import { apiFetch, getToken } from '../api.js';
+import { apiFetch } from '../api.js';
 import useStore from '../store.js';
 import { getTheme, toggleTheme } from '../theme.js';
 import ProfileShareModal from '../components/ProfileShareModal.jsx';
 import ProfileAccuracyHeader from '../components/ProfileAccuracyHeader.jsx';
+import { supabase } from '../lib/supabase.js';
 
 function MyMarkets() {
   const [markets, setMarkets] = useState([]);
@@ -199,9 +200,11 @@ function ThemeToggle() {
 }
 
 export default function Profile() {
+  const user = useStore((s) => s.user);
   const openAuthModal = useStore((s) => s.openAuthModal);
+  const positions = useStore((s) => s.positions);
 
-  if (!getToken()) {
+  if (!user) {
     return (
       <div className="py-[60px] px-6 text-center">
         <p className="text-ink-muted text-sm mb-4">
@@ -216,17 +219,6 @@ export default function Profile() {
         <div className="max-w-[400px] mx-auto mt-6">
           <ThemeToggle />
         </div>
-      </div>
-    );
-  }
-
-  const user = useStore((s) => s.user);
-  const positions = useStore((s) => s.positions);
-
-  if (!user) {
-    return (
-      <div className="py-10 px-4 text-center">
-        <p className="text-ink-muted">Loading profile...</p>
       </div>
     );
   }
@@ -453,6 +445,40 @@ export default function Profile() {
 
       {/* Share Profile */}
       <ShareProfileButton user={user} accuracy={accuracy} streak={streak} winRate={winRate} totalPredictions={positions.length} />
+
+      {/* Sign Out */}
+      <SignOutSection />
+    </div>
+  );
+}
+
+function SignOutSection() {
+  const user = useStore((s) => s.user);
+  const [signingOut, setSigningOut] = useState(false);
+
+  if (!user) return null;
+
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    try {
+      sessionStorage.removeItem('pinUnlocked');
+      await supabase.auth.signOut();
+      window.location.reload();
+    } catch (err) {
+      console.error('Sign out error:', err);
+      setSigningOut(false);
+    }
+  };
+
+  return (
+    <div className="bg-paper rounded-2xl border border-line p-4 mt-6">
+      <button
+        onClick={handleSignOut}
+        disabled={signingOut}
+        className="w-full py-3 rounded-xl border border-line text-accent-red text-sm font-semibold bg-transparent disabled:opacity-60"
+      >
+        {signingOut ? 'Signing out...' : 'Sign Out'}
+      </button>
     </div>
   );
 }

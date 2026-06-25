@@ -1,12 +1,14 @@
 import { io } from 'socket.io-client';
-import { getToken } from './api.js';
+import { supabase } from './lib/supabase.js';
 
 let socket = null;
 
-function connectSocket() {
+async function connectSocket() {
   if (socket) return socket;
 
-  const token = getToken();
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token || null;
+
   socket = io('/', {
     auth: { token },
     transports: ['websocket', 'polling'],

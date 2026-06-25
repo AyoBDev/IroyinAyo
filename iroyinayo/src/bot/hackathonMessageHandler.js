@@ -1,7 +1,5 @@
 const db = require('../config/database');
 const gamificationService = require('../modules/gamification/gamification.service');
-const { generateStudentToken, generateUrlToken } = require('../middleware/studentAuth');
-const { handleMultiPredict, handleMultiPredictAction, handleMyPredictions } = require('./handlers/multiPredict');
 const { handleHackathonAdmin } = require('./admin/hackathonAdmin');
 const { formatLeaderboard, formatPoints, bold } = require('./formatters');
 
@@ -55,7 +53,6 @@ async function handleMessage(sock, jid, text, msg) {
   if (!student) {
     student = await autoRegister(phone, jid);
     const webUrl = process.env.WEB_URL || 'https://iroyinayo-production.up.railway.app';
-    const token = generateUrlToken(student.id);
     await sock.sendMessage(jid, {
       text: [
         `${bold('Welcome to IroyinMarket! 🎯')}`,
@@ -68,15 +65,12 @@ async function handleMessage(sock, jid, text, msg) {
         `3. If you're right, you win more points!`,
         '',
         `${bold('Commands:')}`,
-        `• Send anything to see markets`,
-        `• ${bold('predict [team#] [amount]')} — place a prediction`,
-        `• ${bold('my predictions')} — view your positions`,
         `• ${bold('leaderboard')} — see top predictors`,
         `• ${bold('balance')} — check your points`,
         `• ${bold('web')} — get a link to predict in your browser`,
         '',
         `📱 You can also predict from your browser:`,
-        `${webUrl}?t=${token}`,
+        `${webUrl}`,
       ].join('\n'),
     });
     return;
@@ -86,18 +80,12 @@ async function handleMessage(sock, jid, text, msg) {
     await db('students').where({ id: student.id }).update({ whatsapp_jid: jid });
   }
 
-  const state = getState(jid);
-  if (state && state.flow === 'predict') {
-    await handleMultiPredictAction(sock, jid, text, student, state, setState, clearState);
-    return;
-  }
 
   const command = text.toLowerCase().trim();
   const greetings = ['hi', 'hello', 'hey', 'start', 'menu', 'help', 'sup', 'yo'];
 
   if (greetings.includes(command)) {
     const webUrl = process.env.WEB_URL || 'https://iroyinayo-production.up.railway.app';
-    const token = generateUrlToken(student.id);
     const bal = student.points_balance;
     await sock.sendMessage(jid, {
       text: [
@@ -106,14 +94,12 @@ async function handleMessage(sock, jid, text, msg) {
         `You have ${bold(bal + ' points')} to predict with.`,
         '',
         `${bold('Commands:')}`,
-        `• ${bold('predict')} — see markets and place predictions`,
-        `• ${bold('my predictions')} — view your positions`,
         `• ${bold('leaderboard')} — see top predictors`,
         `• ${bold('balance')} — check your points`,
         `• ${bold('web')} — predict in your browser`,
         '',
         `📱 Browser link:`,
-        `${webUrl}?t=${token}`,
+        `${webUrl}`,
       ].join('\n'),
     });
     return;
@@ -124,12 +110,6 @@ async function handleMessage(sock, jid, text, msg) {
       const entries = await gamificationService.getLeaderboard('weekly', 10);
       await sock.sendMessage(jid, { text: formatLeaderboard(entries) });
       break;
-    case 'my bets':
-    case 'mybets':
-    case 'my predictions':
-    case 'mypredictions':
-      await handleMyPredictions(sock, jid, student);
-      break;
     case 'balance':
     case 'points':
       const updated = await db('students').where({ id: student.id }).first();
@@ -138,16 +118,11 @@ async function handleMessage(sock, jid, text, msg) {
     case 'web':
     case 'link':
       const webUrl = process.env.WEB_URL || 'https://iroyinayo-production.up.railway.app';
-      const webToken = generateUrlToken(student.id);
-      await sock.sendMessage(jid, { text: `📱 Predict on the web:\n${webUrl}?t=${webToken}` });
-      break;
-    case 'predict':
-    case 'markets':
-      await handleMultiPredict(sock, jid, student, setState);
+      await sock.sendMessage(jid, { text: `📱 Predict on the web:\n${webUrl}` });
       break;
     default:
       await sock.sendMessage(jid, {
-        text: `I didn't get that. Type ${bold('hi')} for help or ${bold('predict')} to see markets.`,
+        text: `I didn't get that. Type ${bold('hi')} for help.`,
       });
       break;
   }

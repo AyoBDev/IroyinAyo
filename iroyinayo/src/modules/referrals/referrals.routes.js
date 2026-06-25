@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const referrals = require('./referrals.service');
-const { authenticateStudent } = require('../../middleware/studentAuth');
+const { requireSupabaseUser: authenticateStudent } = require('../../middleware/requireSupabaseUser');
 
 router.get('/me', authenticateStudent, async (req, res, next) => {
   try {

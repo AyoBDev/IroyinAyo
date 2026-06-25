@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Trophy, X, Sparkles, Share2 } from 'lucide-react';
-import { apiFetch, getToken } from '../api.js';
+import useStore from '../store.js';
+import { apiFetch } from '../api.js';
 import { captureFile, shareFile } from '../shareImage.js';
 import ShareSheet from './ShareSheet.jsx';
 
@@ -64,6 +65,7 @@ function Confetti({ canvasRef }) {
 }
 
 export default function WinPopup() {
+  const user = useStore((s) => s.user);
   const [wins, setWins] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [visible, setVisible] = useState(false);
@@ -73,7 +75,7 @@ export default function WinPopup() {
   const [shareImageFile, setShareImageFile] = useState(null);
 
   useEffect(() => {
-    if (!getToken()) return;
+    if (!user) return;
     apiFetch('/api/multi-markets/me/wins')
       .then((data) => {
         if (data && data.length > 0) {

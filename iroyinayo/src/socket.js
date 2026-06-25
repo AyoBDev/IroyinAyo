@@ -1,8 +1,6 @@
 const { Server } = require('socket.io');
-const jwt = require('jsonwebtoken');
 const db = require('./config/database');
-
-const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'test' ? 'test-secret' : (() => { throw new Error('JWT_SECRET env var is required in production'); })());
+const { verifySupabaseToken } = require('./middleware/verifySupabaseToken');
 
 let io = null;
 const chatHistory = [];
@@ -21,7 +19,7 @@ function createSocketServer(httpServer) {
     },
   });
 
-  io.on('connection', (socket) => {
+  io.on('connection', async (socket) => {
     let studentId = null;
     let studentName = null;
     let lastChatTime = 0;
@@ -29,18 +27,15 @@ function createSocketServer(httpServer) {
     const token = socket.handshake.auth.token;
     if (token) {
       try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        if (decoded.purpose) {
-          // URL exchange tokens are not valid for socket auth
-        } else {
-          studentId = decoded.studentId;
+        const { authUserId } = await verifySupabaseToken(`Bearer ${token}`);
+        const student = await db('students').where({ auth_user_id: authUserId }).first();
+        if (student && !student.is_banned) {
+          studentId = student.id;
+          studentName = student.name;
           socket.join(`student:${studentId}`);
-          db('students').where({ id: studentId }).first().then((student) => {
-            if (student) studentName = student.name;
-          });
         }
       } catch (err) {
-        // Anonymous connection
+        // Anonymous connection — token invalid or no student row yet
       }
     }
 

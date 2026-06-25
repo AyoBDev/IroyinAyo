@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { apiFetch, getToken } from './api.js';
+import { apiFetch, ApiError } from './api.js';
+import { supabase } from './lib/supabase.js';
 
 const useStore = create((set, get) => ({
   markets: [],
@@ -11,6 +12,7 @@ const useStore = create((set, get) => ({
   loading: true,
   error: null,
   showAuthModal: false,
+  needsBootstrap: false,
   openAuthModal: () => set({ showAuthModal: true }),
   closeAuthModal: () => set({ showAuthModal: false }),
   tutorialRunRequested: false,
@@ -27,20 +29,26 @@ const useStore = create((set, get) => ({
   },
 
   fetchUser: async () => {
-    if (!getToken()) {
-      set({ user: null });
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
+      set({ user: null, needsBootstrap: false });
       return;
     }
     try {
       const user = await apiFetch('/api/multi-markets/me/info');
-      set({ user });
+      set({ user, needsBootstrap: false });
     } catch (err) {
-      set({ user: null });
+      if (err instanceof ApiError && err.code === 'BOOTSTRAP_REQUIRED') {
+        set({ user: null, needsBootstrap: true, showAuthModal: true });
+        return;
+      }
+      set({ user: null, needsBootstrap: false });
     }
   },
 
   fetchPositions: async () => {
-    if (!getToken()) {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
       set({ positions: [] });
       return;
     }

@@ -1,6 +1,5 @@
 import { TrendingUp, Crown, User, ChartLine } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getToken } from '../api.js';
 import useStore from '../store.js';
 
 const tabs = [
@@ -13,6 +12,7 @@ const tabs = [
 export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
+  const user = useStore((s) => s.user);
   const openAuthModal = useStore((s) => s.openAuthModal);
 
   return (
@@ -25,7 +25,7 @@ export default function BottomNav() {
             key={tab.path}
             data-tutorial={tab.path === '/leaderboard' ? 'leaderboard-tab' : undefined}
             onClick={() => {
-              if (tab.requiresAuth && !getToken()) {
+              if (tab.requiresAuth && !user) {
                 openAuthModal();
               } else {
                 navigate(tab.path);
