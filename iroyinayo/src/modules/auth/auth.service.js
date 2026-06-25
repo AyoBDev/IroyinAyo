@@ -41,7 +41,18 @@ async function bootstrapStudent({ authUserId, email, name, referralCode }) {
     referred_by: referrer ? referrer.id : null,
   };
 
-  const [student] = await db('students').insert(insertData).returning('*');
+  let student;
+  try {
+    [student] = await db('students').insert(insertData).returning('*');
+  } catch (err) {
+    // Handle race condition: concurrent bootstraps on same auth_user_id
+    if (err && err.code === '23505') {
+      student = await db('students').where({ auth_user_id: authUserId }).first();
+      if (!student) throw err; // unique violation but no row — re-throw
+      return { student, isNew: false };
+    }
+    throw err;
+  }
 
   if (referrer) {
     const { applyReferral } = require('../referrals/referrals.service');

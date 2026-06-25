@@ -133,3 +133,51 @@ test('no Authorization header → 401', async () => {
     .send({ name: 'X' });
   expect(res.status).toBe(401);
 });
+
+test('concurrent bootstrap race (23505 unique violation) → 200 with existing row', async () => {
+  const token = await signTestJwt({ privateKey, sub: 'user-5', email: 'e@b.com' });
+
+  const existingRow = {
+    id: 'student-5',
+    auth_user_id: 'user-5',
+    email: 'e@b.com',
+    name: 'Existing',
+    points_balance: 100,
+    referral_code: 'RACE123',
+  };
+
+  let whereCalls = 0;
+  setDb((table) => {
+    if (table === 'students') {
+      return {
+        where: (cond) => ({
+          first: async () => {
+            // First call (initial check) returns null, second call (after 23505 catch) returns existing row
+            whereCalls++;
+            if (whereCalls === 1 && cond.auth_user_id === 'user-5') return null;
+            if (whereCalls === 2 && cond.auth_user_id === 'user-5') return existingRow;
+            return null;
+          },
+        }),
+        insert: () => ({
+          returning: async () => {
+            // Simulate unique violation on insert
+            const err = new Error('duplicate key value violates unique constraint');
+            err.code = '23505';
+            throw err;
+          },
+        }),
+      };
+    }
+    throw new Error('unexpected table: ' + table);
+  });
+
+  const res = await request(app)
+    .post('/api/auth/bootstrap')
+    .set('Authorization', `Bearer ${token}`)
+    .send({ name: 'Tunde' });
+
+  expect(res.status).toBe(200);
+  expect(res.body.student.id).toBe('student-5');
+  expect(res.body.student.name).toBe('Existing');
+});
