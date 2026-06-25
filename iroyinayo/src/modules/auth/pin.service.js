@@ -47,4 +47,10 @@ async function verifyPin({ authUserId, pin }) {
   return { ok: false, code: 'PIN_INVALID', attemptsRemaining: MAX_ATTEMPTS - newCount };
 }
 
-module.exports = { setPin, verifyPin };
+async function clearPinLockout({ authUserId }) {
+  await db('students')
+    .where({ auth_user_id: authUserId })
+    .update({ pin_failed_attempts: 0 });
+}
+
+module.exports = { setPin, verifyPin, clearPinLockout };
