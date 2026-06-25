@@ -15,7 +15,6 @@ beforeEach(async () => {
       is_system: true,
       points_balance: 999999,
       is_onboarded: true,
-      is_verified: false,
       is_banned: false,
     });
   }

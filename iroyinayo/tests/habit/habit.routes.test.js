@@ -1,17 +1,46 @@
 const request = require('supertest');
-const db = require('../../src/config/database');
-const app = require('../../src/app');
-const { generateStudentToken } = require('../../src/middleware/studentAuth');
 const crypto = require('crypto');
+const db = require('../../src/config/database');
+const { generateKeyPair, signTestJwt } = require('../auth/testJwks');
+
+let mockedPublicKey;
+let privateKey;
+
+// Mock jose so the middleware's createRemoteJWKSet uses our local key.
+jest.mock('jose', () => {
+  const actual = jest.requireActual('jose');
+  return {
+    ...actual,
+    createRemoteJWKSet: jest.fn(() => async () => mockedPublicKey),
+  };
+});
+
+// IMPORTANT: app must be required AFTER jest.mock('jose') so its module
+// graph picks up the mocked createRemoteJWKSet.
+const app = require('../../src/app');
+
+beforeAll(async () => {
+  process.env.SUPABASE_JWKS_URL = 'https://test.supabase.co/auth/v1/.well-known/jwks.json';
+  process.env.SUPABASE_JWT_ISSUER = 'https://test.supabase.co/auth/v1';
+  const kp = await generateKeyPair();
+  privateKey = kp.privateKey;
+  mockedPublicKey = kp.publicKey;
+});
 
 async function makeUserWithToken() {
   const id = crypto.randomUUID();
+  const authUserId = crypto.randomUUID();
   await db('students').insert({
-    id, phone_number: `234${Date.now()}${Math.floor(Math.random()*100000)}`, name: 'T',
-    is_onboarded: true, points_balance: 1000,
+    id,
+    auth_user_id: authUserId,
+    email: `t-${Date.now()}-${Math.floor(Math.random()*100000)}@test.local`,
+    name: 'T',
+    is_onboarded: true,
+    points_balance: 1000,
+    is_banned: false,
   });
-  const token = generateStudentToken(id);
-  return { id, token };
+  const token = await signTestJwt({ privateKey, sub: authUserId, email: 't@test.local' });
+  return { id, authUserId, token };
 }
 
 describe('GET /api/habit/accuracy/:userId', () => {

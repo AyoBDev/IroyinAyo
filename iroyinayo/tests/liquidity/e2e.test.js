@@ -29,14 +29,14 @@ describe('Liquidity Bot E2E', () => {
     const [sys] = await db('students').insert({
       name: 'IroyinMarket', phone_number: 'system',
       is_system: true, points_balance: 999999,
-      is_onboarded: true, is_verified: false, is_banned: false,
+      is_onboarded: true, is_banned: false,
     }).returning('id');
     systemId = sys.id;
 
     const [student] = await db('students').insert({
       name: 'Trader', phone_number: '+2340000000001',
       points_balance: 1000, is_onboarded: true,
-      is_verified: true, is_banned: false,
+      is_banned: false,
     }).returning('id');
     studentId = student.id;
   });

@@ -6,7 +6,6 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   const tables = [
-    'verification_codes',
     'whatsapp_daily_queue',
     'position_triggers',
     'daily_rank_snapshots',
