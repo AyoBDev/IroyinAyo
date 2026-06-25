@@ -108,9 +108,9 @@ export default function AuthModal({ onClose, initialStep, dismissable = true }) 
 
   async function handleSignupDetailsSubmit(e) {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim()) { setError('Please enter your name'); return; }
     if (!phone.trim()) { setError('Phone number is required'); return; }
-    if (!/^\d{6}$/.test(pin)) { setError('PIN must be 6 digits'); return; }
+    if (!/^\d{6}$/.test(pin)) { setError('PIN must be exactly 6 digits'); return; }
     if (pin !== pinConfirm) { setError('PINs do not match'); return; }
     setLoading(true);
     setError('');
@@ -355,7 +355,7 @@ export default function AuthModal({ onClose, initialStep, dismissable = true }) 
               {error && <p className="text-accent-red text-xs mb-3">{error}</p>}
               <button
                 type="submit"
-                disabled={loading || !name.trim() || !phone.trim() || pin.length !== 6 || pinConfirm.length !== 6}
+                disabled={loading}
                 className={`flex items-center justify-center gap-2 py-3 px-6 rounded-full text-sm font-bold bg-emerald text-bone w-full ${
                   loading ? 'opacity-60' : 'hover:bg-emerald-deep'
                 }`}
@@ -425,7 +425,7 @@ export default function AuthModal({ onClose, initialStep, dismissable = true }) 
               {error && <p className="text-accent-red text-xs mb-3">{error}</p>}
               <button
                 type="submit"
-                disabled={loading || pin.length !== 6 || pinConfirm.length !== 6}
+                disabled={loading}
                 className={`flex items-center justify-center gap-2 py-3 px-6 rounded-full text-sm font-bold bg-emerald text-bone w-full ${
                   loading ? 'opacity-60' : 'hover:bg-emerald-deep'
                 }`}
