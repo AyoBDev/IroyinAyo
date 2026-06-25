@@ -18,7 +18,6 @@ import MarketDetail from './pages/MarketDetail.jsx';
 import ShareCard from './pages/ShareCard.jsx';
 import SharePrediction from './pages/SharePrediction.jsx';
 import Portfolio from './pages/Portfolio.jsx';
-import InstallBanner from './components/InstallBanner.jsx';
 
 function MainApp() {
   const [showPositions, setShowPositions] = useState(false);
@@ -98,7 +97,6 @@ function MainApp() {
   return (
     <PinGate>
       <div className="pt-14">
-        <InstallBanner />
         <ResolutionToast />
         <TopBar />
         {showPositions && <MyPositions onClose={() => setShowPositions(false)} />}
