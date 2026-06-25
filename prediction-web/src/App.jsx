@@ -8,6 +8,7 @@ import TopBar from './components/TopBar.jsx';
 import BottomNav from './components/BottomNav.jsx';
 import MyPositions from './components/MyPositions.jsx';
 import AuthModal from './components/NoAuth.jsx';
+import PinGate from './components/PinGate.jsx';
 import Markets from './pages/Markets.jsx';
 import LeaderboardPage from './pages/LeaderboardPage.jsx';
 import Profile from './pages/Profile.jsx';
@@ -88,25 +89,27 @@ function MainApp() {
   }
 
   return (
-    <div className="pt-14">
-      <InstallBanner />
-      <ResolutionToast />
-      <TopBar />
-      {showPositions && <MyPositions onClose={() => setShowPositions(false)} />}
+    <PinGate>
+      <div className="pt-14">
+        <InstallBanner />
+        <ResolutionToast />
+        <TopBar />
+        {showPositions && <MyPositions onClose={() => setShowPositions(false)} />}
 
-      <Routes>
-        <Route path="/" element={<Markets />} />
-        <Route path="/market/:marketId" element={<MarketDetail />} />
-        <Route path="/portfolio" element={<Portfolio />} />
-        <Route path="/leaderboard" element={<LeaderboardPage />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+        <Routes>
+          <Route path="/" element={<Markets />} />
+          <Route path="/market/:marketId" element={<MarketDetail />} />
+          <Route path="/portfolio" element={<Portfolio />} />
+          <Route path="/leaderboard" element={<LeaderboardPage />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
 
-      <BottomNav />
-      {showAuthModal && <AuthModal onClose={closeAuthModal} />}
-      <WinPopup />
-    </div>
+        <BottomNav />
+        {showAuthModal && <AuthModal onClose={closeAuthModal} />}
+        <WinPopup />
+      </div>
+    </PinGate>
   );
 }
 
