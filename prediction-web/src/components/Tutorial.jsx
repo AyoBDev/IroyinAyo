@@ -20,7 +20,7 @@ const steps = [
   {
     target: '[data-tutorial="predict-btn"]',
     title: 'Make your prediction',
-    content: "Tap an outcome and choose how many points to wager. That's it.",
+    content: "Tap an outcome and choose how many points to predict. That's it.",
     skipBeacon: true,
     placement: 'bottom',
   },
