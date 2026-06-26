@@ -490,7 +490,7 @@ router.post('/:id/predict', authenticateStudent, lastAppOpenMiddleware, async (r
       throw new ValidationError('You cannot predict on your own market');
     }
     if (market && market.closes_at && new Date() > new Date(market.closes_at)) {
-      throw new ValidationError('Betting is closed for this market');
+      throw new ValidationError('Predictions are closed for this market');
     }
 
     const validatedRef = (typeof sourceRef === 'string' && SOURCE_REF_RE.test(sourceRef)) ? sourceRef : null;
