@@ -109,7 +109,7 @@ export default function WinPopup() {
     // share image. Wait for the animation to finish before capturing.
     const timer = setTimeout(() => {
       if (cancelled || !cardRef.current) return;
-      captureFile(cardRef.current, { fileName: 'iroyinmarket-win.png', backgroundColor: '#f4efe6' })
+      captureFile(cardRef.current, { fileName: 'iroyinmarket-win.png' })
         .then((file) => { if (!cancelled) setShareImageFile(file); })
         .catch((err) => console.warn('win card capture failed:', err));
     }, 400);
