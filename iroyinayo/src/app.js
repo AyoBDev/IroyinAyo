@@ -25,6 +25,7 @@ const schedulerRoutes = require('./modules/markets/scheduler.routes');
 const liquidityRoutes = require('./modules/liquidity/liquidity.routes');
 const simulationRoutes = require('./modules/simulation/simulation.routes');
 const { router: habitRouter } = require('./modules/habit/habit.routes');
+const refillRoutes = require('./modules/refills/refill.routes');
 const { generalLimiter } = require('./middleware/rateLimiter');
 const { AppError } = require('./utils/errors');
 const posthog = require('./utils/posthog');
@@ -148,6 +149,7 @@ app.use('/api/schedules', schedulerRoutes);
 app.use('/api/admin/liquidity', liquidityRoutes);
 app.use('/api/admin/simulation', simulationRoutes);
 app.use('/api/habit', habitRouter);
+app.use('/api/me', refillRoutes);
 
 
 // OG tags for share pages (crawlers don't run JS)
