@@ -41,7 +41,10 @@ async function apiFetch(path, options = {}) {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Request failed' }));
-    throw new ApiError(err.error || 'Request failed', { status: res.status });
+    throw new ApiError(err.error || 'Request failed', {
+      status: res.status,
+      code: err.code,
+    });
   }
   return res.json();
 }
