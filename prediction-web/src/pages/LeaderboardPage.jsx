@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Crown, Trophy, Target, TrendingUp, Star, ChevronDown } from 'lucide-react';
+import { Crown, Target, TrendingUp, ChevronDown } from 'lucide-react';
 import { apiFetch } from '../api.js';
 import useStore from '../store.js';
 import RecentPayouts from '../components/RecentPayouts.jsx';
@@ -35,9 +35,15 @@ function PodiumUser({ entry, rank, size }) {
       <p className="text-xs font-semibold text-ink text-center max-w-[80px] overflow-hidden text-ellipsis whitespace-nowrap">
         {entry.name}
       </p>
-      <p className="font-mono text-xs font-bold text-accent-green mt-0.5">
-        +{entry.netProfit ?? entry.total_points ?? 0}
-      </p>
+      {(() => {
+        const profit = entry.netProfit ?? entry.total_points ?? 0;
+        const colorClass = profit > 0 ? 'text-accent-green' : profit < 0 ? 'text-accent-red' : 'text-ink-muted';
+        return (
+          <p className={`font-mono text-xs font-bold mt-0.5 ${colorClass}`}>
+            {profit > 0 ? '+' : ''}{profit}
+          </p>
+        );
+      })()}
     </div>
   );
 }
@@ -56,7 +62,6 @@ export default function LeaderboardPage() {
   }, []);
 
   const myEntry = leaderboard.find(e => user && e.id === user.id);
-  const qualified = myEntry ? myEntry.predictions >= 3 : false;
   const top3 = leaderboard.slice(0, 3);
   const rest = leaderboard.slice(3);
 
@@ -81,22 +86,6 @@ export default function LeaderboardPage() {
             {tab}
           </button>
         ))}
-      </div>
-
-      {/* Prize Banner */}
-      <div className="bg-gradient-to-br from-accent-green-bg to-accent-yellow-bg border border-accent-green/30 rounded-2xl px-5 py-4 mb-6 flex items-center gap-3">
-        <Trophy size={20} className="text-accent-yellow" />
-        <div className="flex-1">
-          <p className="text-[13px] font-bold text-ink">Cash Prize This Week</p>
-          <p className="text-[11px] text-ink-muted mt-0.5">
-            Top net profit wins real money every Monday
-          </p>
-        </div>
-        <div className={`px-3 py-1 rounded-full ${qualified ? 'bg-accent-green-bg border border-accent-green/30' : 'bg-paper border border-line'}`}>
-          <span className={`text-[11px] font-semibold ${qualified ? 'text-accent-green' : 'text-ink-muted'}`}>
-            {qualified ? 'Qualified' : `${myEntry?.predictions || 0}/3`}
-          </span>
-        </div>
       </div>
 
       {leaderboard.length === 0 ? (
@@ -160,8 +149,8 @@ export default function LeaderboardPage() {
                             {entry.name}
                             {isMe && <span className="text-emerald ml-1.5 text-[10px] font-semibold">you</span>}
                           </p>
-                          <div className="flex items-center gap-1 mt-0.5">
-                            <Star size={10} className="text-emerald fill-emerald" />
+                          <div className="flex items-center gap-1 mt-0.5 leading-none">
+                            <Target size={11} strokeWidth={2.5} className="text-ink-muted shrink-0" />
                             <span className="text-[10px] text-ink-muted">
                               {entry.predictions || 0} predictions
                             </span>
@@ -201,8 +190,8 @@ export default function LeaderboardPage() {
                     <p className="text-[13px] font-semibold text-emerald">
                       {user.name} (You)
                     </p>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <Star size={10} className="text-emerald fill-emerald" />
+                    <div className="flex items-center gap-1 mt-0.5 leading-none">
+                      <Target size={11} strokeWidth={2.5} className="text-emerald shrink-0" />
                       <span className="text-[10px] text-ink-muted">
                         {myEntry?.predictions || 0} predictions
                       </span>
