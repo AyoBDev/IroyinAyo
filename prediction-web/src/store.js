@@ -72,13 +72,15 @@ const useStore = create((set, get) => ({
   },
 
   placePrediction: async (marketId, outcomeId, amount, sourceRef = null) => {
-    const result = await apiFetch(`/api/multi-markets/${marketId}/predict`, {
+    // Don't update the balance optimistically — the backend emits a
+    // `balance:update` socket event with the authoritative post-trade balance
+    // right before sending the HTTP response, and the existing `updateBalance`
+    // handler in App.jsx applies it. Doing both led to double-deduction races
+    // (optimistic subtract + socket-pushed authoritative subtract).
+    return apiFetch(`/api/multi-markets/${marketId}/predict`, {
       method: 'POST',
       body: JSON.stringify({ outcomeId, amount, sourceRef }),
     });
-    const user = get().user;
-    if (user) set({ user: { ...user, points_balance: user.points_balance - amount } });
-    return result;
   },
 
   updateOdds: (marketId, outcomes) => {
