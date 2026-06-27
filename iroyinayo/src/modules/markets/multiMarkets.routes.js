@@ -64,11 +64,16 @@ router.get('/social-proof', async (req, res, next) => {
 router.get('/leaderboard', async (req, res, next) => {
   try {
     const weeklyLeaderboard = require('../gamification/weeklyLeaderboard');
-    let standings = await weeklyLeaderboard.getCurrentWeekStandings(20);
-    let period = 'weekly';
-    if (standings.length === 0) {
+    const requested = String(req.query.period || 'weekly').toLowerCase();
+    const period = ['weekly', 'monthly', 'all-time'].includes(requested) ? requested : 'weekly';
+
+    let standings;
+    if (period === 'monthly') {
+      standings = await weeklyLeaderboard.getCurrentMonthStandings(20);
+    } else if (period === 'all-time') {
       standings = await weeklyLeaderboard.getAllTimeStandings(20);
-      period = 'all-time';
+    } else {
+      standings = await weeklyLeaderboard.getCurrentWeekStandings(20);
     }
     res.json({ standings, period });
   } catch (err) { next(err); }
@@ -140,7 +145,7 @@ router.get('/me/info', authenticateStudent, lastAppOpenMiddleware, async (req, r
     const weeklyLeaderboard = require('../gamification/weeklyLeaderboard');
     const { getReferralStats } = require('../referrals/referrals.service');
     const stats = await getStudentStats(req.student.id);
-    const weeklyRank = await weeklyLeaderboard.getWeeklyRank(req.student.id);
+    const weeklyStanding = await weeklyLeaderboard.getWeeklyStandingForStudent(req.student.id);
     const referralStats = await getReferralStats(req.student.id);
 
     let referredByName = null;
@@ -159,7 +164,10 @@ router.get('/me/info', authenticateStudent, lastAppOpenMiddleware, async (req, r
       streak: stats.streak,
       totalPredictions: stats.totalPredictions,
       wins: stats.wins,
-      weekly_rank: weeklyRank,
+      weekly_rank: weeklyStanding.rank,
+      weekly_wins: weeklyStanding.wins,
+      weekly_total_won: weeklyStanding.totalWon,
+      weekly_predictions: weeklyStanding.predictions,
       is_ambassador: req.student.is_ambassador || false,
       referral_code: referralStats.code,
       referral_count: referralStats.referralCount,
