@@ -14,6 +14,7 @@ import LeaderboardPage from './pages/LeaderboardPage.jsx';
 import Profile from './pages/Profile.jsx';
 import ResolutionToast from './components/ResolutionToast.jsx';
 import WinPopup from './components/WinPopup.jsx';
+import DailyRefillPopup from './components/DailyRefillPopup.jsx';
 import MarketDetail from './pages/MarketDetail.jsx';
 import ShareCard from './pages/ShareCard.jsx';
 import SharePrediction from './pages/SharePrediction.jsx';
@@ -21,11 +22,12 @@ import Portfolio from './pages/Portfolio.jsx';
 
 function MainApp() {
   const [showPositions, setShowPositions] = useState(false);
-  const { loading, showAuthModal, closeAuthModal, fetchMarkets, fetchUser, fetchPositions, fetchLeaderboard, updateOdds, addFeedItem, updateBalance, resolveMarket } = useStore();
+  const { loading, showAuthModal, closeAuthModal, fetchMarkets, fetchUser, fetchPositions, fetchLeaderboard, fetchPendingRefill, updateOdds, addFeedItem, updateBalance, resolveMarket } = useStore();
 
   useEffect(() => {
     fetchMarkets();
     fetchUser();
+    fetchPendingRefill();
     fetchPositions();
     fetchLeaderboard();
 
@@ -112,6 +114,7 @@ function MainApp() {
 
         <BottomNav />
         {showAuthModal && <AuthModal onClose={closeAuthModal} />}
+        <DailyRefillPopup />
         <WinPopup />
       </div>
     </PinGate>
