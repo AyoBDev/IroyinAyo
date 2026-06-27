@@ -51,6 +51,7 @@ export default function PredictSlip({ market, outcome, onClose }) {
 
   async function handleSubmit() {
     if (amountNum < 1) return;
+    if (submitting) return; // double-tap guard: stale handler reads after async resolve
     setSubmitting(true);
     setError(null);
     try {
@@ -83,7 +84,9 @@ export default function PredictSlip({ market, outcome, onClose }) {
         setError(err.message);
       }
     } finally {
-      setSubmitting(false);
+      // Brief cooldown after resolution to absorb rapid double-taps that
+      // could otherwise sneak through the render gap.
+      setTimeout(() => setSubmitting(false), 800);
     }
   }
 
