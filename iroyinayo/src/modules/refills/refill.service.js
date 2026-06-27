@@ -30,31 +30,44 @@ async function issuePendingRefills() {
     .where({ is_banned: false, points_balance: 0 })
     .select('id');
 
+  if (allStudents.length === 0) {
+    return { issued: 0 };
+  }
+
+  const studentIds = allStudents.map(s => s.id);
+
+  // Batch query 1: Find all students with unclaimed refills
+  const unclaimedRows = await db('pending_refills')
+    .whereIn('student_id', studentIds)
+    .whereRaw('claimed_at IS NULL')
+    .select('student_id');
+
+  const unclaimedSet = new Set(unclaimedRows.map(r => r.student_id));
+
+  // Batch query 2: Find all claimed refills this week for these students
+  const claimedRows = await db('pending_refills')
+    .whereIn('student_id', studentIds)
+    .where({ week_starting: monday })
+    .whereRaw('claimed_at IS NOT NULL')
+    .select('student_id');
+
+  // Count claimed refills per student in JS
+  const claimedMap = new Map();
+  for (const row of claimedRows) {
+    claimedMap.set(row.student_id, (claimedMap.get(row.student_id) || 0) + 1);
+  }
+
+  // Filter eligible students in-memory
+  const eligible = allStudents.filter(s => {
+    if (unclaimedSet.has(s.id)) return false;
+    if ((claimedMap.get(s.id) || 0) >= MAX_ATTEMPTS_PER_WEEK) return false;
+    return true;
+  });
+
+  // Issue refills for eligible students
   let issued = 0;
 
-  for (const student of allStudents) {
-    // Check for unclaimed refills
-    const unclaimedRefill = await db('pending_refills')
-      .where({ student_id: student.id })
-      .whereRaw('claimed_at IS NULL')
-      .first();
-
-    if (unclaimedRefill) {
-      continue; // Skip - has an unclaimed refill
-    }
-
-    // Check claimed refills this week
-    const claimedThisWeek = await db('pending_refills')
-      .where({ student_id: student.id, week_starting: monday })
-      .whereRaw('claimed_at IS NOT NULL')
-      .count('* as count');
-
-    const claimedCount = parseInt(claimedThisWeek[0].count, 10);
-    if (claimedCount >= MAX_ATTEMPTS_PER_WEEK) {
-      continue; // Skip - already at weekly limit
-    }
-
-    // Student is eligible - issue a refill
+  for (const student of eligible) {
     try {
       await db('pending_refills').insert({
         student_id: student.id,
