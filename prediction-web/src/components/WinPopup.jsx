@@ -210,6 +210,11 @@ export default function WinPopup() {
             )}
           </div>
 
+          {/* Username */}
+          <div className="text-center mb-4">
+            <span className="font-mono text-[11px] text-ink-muted">@{user?.name || user?.username || 'you'}</span>
+          </div>
+
           {/* Action buttons */}
           <div className="w-full flex flex-col gap-3">
             <button onClick={() => setShowShareSheet(true)} className="w-full py-3.5 bg-emerald text-bone rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 hover:bg-emerald-deep">
