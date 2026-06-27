@@ -13,6 +13,8 @@ const useStore = create((set, get) => ({
   error: null,
   showAuthModal: false,
   needsBootstrap: false,
+  pendingRefill: null,
+  refillsRemaining: 3,
   openAuthModal: () => set({ showAuthModal: true }),
   closeAuthModal: () => set({ showAuthModal: false }),
   tutorialRunRequested: false,
@@ -113,6 +115,35 @@ const useStore = create((set, get) => ({
       toast: { type: 'resolution', title: market?.title, winner: winnerLabel },
     }));
     setTimeout(() => set({ toast: null }), 5000);
+  },
+
+  fetchPendingRefill: async () => {
+    try {
+      const data = await apiFetch('/api/me/pending-refill');
+      set({ pendingRefill: data.pending, refillsRemaining: data.refillsRemaining });
+    } catch (err) {
+      // Silently ignore — refill UI is optional. Don't break the app on failure.
+    }
+  },
+
+  claimRefill: async (id) => {
+    try {
+      const data = await apiFetch('/api/me/pending-refill/claim', {
+        method: 'POST',
+        body: JSON.stringify({ id }),
+      });
+      const user = get().user;
+      set({
+        pendingRefill: null,
+        user: user ? { ...user, points_balance: user.points_balance + data.amount } : user,
+      });
+    } catch (err) {
+      if (err.code === 'ALREADY_CLAIMED') {
+        set({ pendingRefill: null });
+        return;
+      }
+      throw err;
+    }
   },
 
   dismissToast: () => set({ toast: null }),
