@@ -1,4 +1,5 @@
 const rateLimit = require('express-rate-limit');
+const { ipKeyGenerator } = require('express-rate-limit');
 
 const isTest = process.env.NODE_ENV === 'test';
 const skipInTest = isTest ? () => true : () => false;
@@ -33,8 +34,22 @@ const generalLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Predict — guard against network retries / double-submits. 5 requests per
+// 2 seconds per authenticated student (keyed off req.student.id, set upstream
+// by the auth middleware). Falls back to IP if the auth middleware hasn't run.
+const predictLimiter = rateLimit({
+  windowMs: 2 * 1000,
+  max: 5,
+  skip: skipInTest,
+  keyGenerator: (req, res) => (req.student && req.student.id) || ipKeyGenerator(req, res),
+  message: { error: 'You are placing predictions too quickly. Try again in a moment.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 module.exports = {
   authLimiter,
   aiLimiter,
   generalLimiter,
+  predictLimiter,
 };

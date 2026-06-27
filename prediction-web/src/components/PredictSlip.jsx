@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, ArrowRight, Users, Copy, Check } from 'lucide-react';
 import useStore from '../store.js';
+import { ApiError } from '../api.js';
 import PredictionConfirmation from './PredictionConfirmation.jsx';
 import { useDeepLinkRef, buildSourceRef } from '../hooks/useDeepLinkRef.js';
 import { markEligible } from '../lib/installPrompt.js';
@@ -50,6 +51,7 @@ export default function PredictSlip({ market, outcome, onClose }) {
 
   async function handleSubmit() {
     if (amountNum < 1) return;
+    if (submitting) return; // double-tap guard: stale handler reads after async resolve
     setSubmitting(true);
     setError(null);
     try {
@@ -69,9 +71,22 @@ export default function PredictSlip({ market, outcome, onClose }) {
         timestamp: Date.now(),
       });
     } catch (err) {
-      setError(err.message);
+      if (err instanceof ApiError && err.code === 'INSUFFICIENT_POINTS') {
+        const { refillsRemaining } = useStore.getState();
+        if (user?.points_balance === 0 && refillsRemaining === 0) {
+          setError("You're out of refills this week. Refer friends or wait until Monday.");
+        } else if (user?.points_balance === 0) {
+          setError("You're out of points. Check back tomorrow for your refill.");
+        } else {
+          setError(`Try a smaller amount. You have ${user?.points_balance} pts.`);
+        }
+      } else {
+        setError(err.message);
+      }
     } finally {
-      setSubmitting(false);
+      // Brief cooldown after resolution to absorb rapid double-taps that
+      // could otherwise sneak through the render gap.
+      setTimeout(() => setSubmitting(false), 800);
     }
   }
 

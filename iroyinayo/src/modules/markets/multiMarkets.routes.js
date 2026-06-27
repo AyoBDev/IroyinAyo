@@ -7,6 +7,7 @@ const { authenticate } = require('../../middleware/auth');
 const { requireRole } = require('../../middleware/adminRole');
 const { ValidationError } = require('../../utils/errors');
 const { lastAppOpenMiddleware } = require('../habit/habit.routes');
+const { predictLimiter } = require('../../middleware/rateLimiter');
 const db = require('../../config/database');
 
 // Update students.last_app_open_at on every authenticated request (throttled to 5 min per user).
@@ -477,7 +478,7 @@ router.get('/positions/:positionId/public', async (req, res, next) => {
 
 const SOURCE_REF_RE = /^(wa_daily(:[a-z_]+)?|wa_oneoff(:[a-z_]+)?|in_app_strip|direct|share)$/;
 
-router.post('/:id/predict', authenticateStudent, lastAppOpenMiddleware, async (req, res, next) => {
+router.post('/:id/predict', authenticateStudent, predictLimiter, lastAppOpenMiddleware, async (req, res, next) => {
   try {
     const { outcomeId, sourceRef } = req.body;
     const amount = Math.floor(Number(req.body.amount));

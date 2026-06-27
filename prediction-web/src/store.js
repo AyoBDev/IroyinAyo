@@ -13,6 +13,8 @@ const useStore = create((set, get) => ({
   error: null,
   showAuthModal: false,
   needsBootstrap: false,
+  pendingRefill: null,
+  refillsRemaining: 3,
   openAuthModal: () => set({ showAuthModal: true }),
   closeAuthModal: () => set({ showAuthModal: false }),
   tutorialRunRequested: false,
@@ -70,13 +72,15 @@ const useStore = create((set, get) => ({
   },
 
   placePrediction: async (marketId, outcomeId, amount, sourceRef = null) => {
-    const result = await apiFetch(`/api/multi-markets/${marketId}/predict`, {
+    // Don't update the balance optimistically — the backend emits a
+    // `balance:update` socket event with the authoritative post-trade balance
+    // right before sending the HTTP response, and the existing `updateBalance`
+    // handler in App.jsx applies it. Doing both led to double-deduction races
+    // (optimistic subtract + socket-pushed authoritative subtract).
+    return apiFetch(`/api/multi-markets/${marketId}/predict`, {
       method: 'POST',
       body: JSON.stringify({ outcomeId, amount, sourceRef }),
     });
-    const user = get().user;
-    if (user) set({ user: { ...user, points_balance: user.points_balance - amount } });
-    return result;
   },
 
   updateOdds: (marketId, outcomes) => {
@@ -113,6 +117,37 @@ const useStore = create((set, get) => ({
       toast: { type: 'resolution', title: market?.title, winner: winnerLabel },
     }));
     setTimeout(() => set({ toast: null }), 5000);
+  },
+
+  fetchPendingRefill: async () => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) return;
+    try {
+      const data = await apiFetch('/api/me/pending-refill');
+      set({ pendingRefill: data.pending, refillsRemaining: data.refillsRemaining });
+    } catch (err) {
+      // Silently ignore — refill UI is optional. Don't break the app on failure.
+    }
+  },
+
+  claimRefill: async (id) => {
+    try {
+      const data = await apiFetch('/api/me/pending-refill/claim', {
+        method: 'POST',
+        body: JSON.stringify({ id }),
+      });
+      const user = get().user;
+      set({
+        pendingRefill: null,
+        user: user ? { ...user, points_balance: user.points_balance + data.amount } : user,
+      });
+    } catch (err) {
+      if (err.code === 'ALREADY_CLAIMED') {
+        set({ pendingRefill: null });
+        return;
+      }
+      throw err;
+    }
   },
 
   dismissToast: () => set({ toast: null }),

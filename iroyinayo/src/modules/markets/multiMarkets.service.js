@@ -259,6 +259,20 @@ async function buyPosition(marketId, outcomeId, studentId, amount, sourceRef = n
 
   const shares = calculateSharesForAmount(sharesSold, market.liquidity_b, outcomeIndex, amount);
 
+  if (!isSystemSeed) {
+    const student = await db('students').where({ id: studentId }).first();
+    if (!student) {
+      throw new NotFoundError('Student not found');
+    }
+    if (amount > student.points_balance) {
+      const err = new ValidationError(`Insufficient points. You have ${student.points_balance} pts.`);
+      err.code = 'INSUFFICIENT_POINTS';
+      err.balance = student.points_balance;
+      err.attempted = amount;
+      throw err;
+    }
+  }
+
   const result = await db.transaction(async (trx) => {
     await gamificationService.deductPoints(
       studentId,

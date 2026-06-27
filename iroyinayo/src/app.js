@@ -25,6 +25,7 @@ const schedulerRoutes = require('./modules/markets/scheduler.routes');
 const liquidityRoutes = require('./modules/liquidity/liquidity.routes');
 const simulationRoutes = require('./modules/simulation/simulation.routes');
 const { router: habitRouter } = require('./modules/habit/habit.routes');
+const refillRoutes = require('./modules/refills/refill.routes');
 const { generalLimiter } = require('./middleware/rateLimiter');
 const { AppError } = require('./utils/errors');
 const posthog = require('./utils/posthog');
@@ -148,6 +149,7 @@ app.use('/api/schedules', schedulerRoutes);
 app.use('/api/admin/liquidity', liquidityRoutes);
 app.use('/api/admin/simulation', simulationRoutes);
 app.use('/api/habit', habitRouter);
+app.use('/api/me', refillRoutes);
 
 
 // OG tags for share pages (crawlers don't run JS)
@@ -215,7 +217,11 @@ setupExpressErrorHandler(posthog, app);
 
 app.use((err, req, res, next) => {
   if (err instanceof AppError) {
-    return res.status(err.statusCode).json({ error: err.message });
+    const body = { error: err.message };
+    if (err.code) body.code = err.code;
+    if (typeof err.balance === 'number') body.balance = err.balance;
+    if (typeof err.attempted === 'number') body.attempted = err.attempted;
+    return res.status(err.statusCode).json(body);
   }
   console.error(err);
   res.status(500).json({ error: 'Internal server error' });
