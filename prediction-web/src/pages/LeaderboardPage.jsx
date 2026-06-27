@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Crown, Target, TrendingUp, ChevronDown } from 'lucide-react';
 import { apiFetch } from '../api.js';
 import useStore from '../store.js';
@@ -13,6 +13,9 @@ function PodiumUser({ entry, rank, size }) {
   const borderClass = rank === 1 ? 'border-accent-green/30' : rank === 2 ? 'border-line' : 'border-accent-yellow/30';
   const bgClass = rank === 1 ? 'bg-accent-green-bg' : rank === 2 ? 'bg-paper' : 'bg-accent-yellow-bg';
   const colorClass = rank === 1 ? 'text-accent-green' : rank === 2 ? 'text-ink-muted' : 'text-accent-yellow';
+
+  const totalWon = entry.totalWon ?? 0;
+  const wins = entry.wins ?? 0;
 
   return (
     <div className="flex flex-col items-center">
@@ -34,15 +37,14 @@ function PodiumUser({ entry, rank, size }) {
       <p className="text-xs font-semibold text-ink text-center max-w-[80px] overflow-hidden text-ellipsis whitespace-nowrap">
         {entry.name}
       </p>
-      {(() => {
-        const profit = entry.netProfit ?? entry.total_points ?? 0;
-        const colorClass = profit > 0 ? 'text-accent-green' : profit < 0 ? 'text-accent-red' : 'text-ink-muted';
-        return (
-          <p className={`font-mono text-xs font-bold mt-0.5 ${colorClass}`}>
-            {profit > 0 ? '+' : ''}{profit}
-          </p>
-        );
-      })()}
+      <p className={`font-mono text-xs font-bold mt-0.5 ${wins > 0 ? 'text-accent-green' : 'text-ink-muted'}`}>
+        {wins} {wins === 1 ? 'win' : 'wins'}
+      </p>
+      {totalWon > 0 && (
+        <p className="font-mono text-[10px] text-ink-muted mt-0.5">
+          +{totalWon} pts
+        </p>
+      )}
     </div>
   );
 }
@@ -50,7 +52,6 @@ function PodiumUser({ entry, rank, size }) {
 export default function LeaderboardPage() {
   const leaderboard = useStore((s) => s.leaderboard);
   const user = useStore((s) => s.user);
-  const [activeTab, setActiveTab] = useState('weekly');
   const [pastWeeks, setPastWeeks] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
 
@@ -60,31 +61,24 @@ export default function LeaderboardPage() {
       .catch(() => {});
   }, []);
 
-  const myEntry = leaderboard.find(e => user && e.id === user.id);
+  const myVisibleEntry = leaderboard.find(e => user && e.id === user.id);
+  const myStanding = myVisibleEntry || (user ? {
+    rank: user.weekly_rank,
+    wins: user.weekly_wins ?? 0,
+    totalWon: user.weekly_total_won ?? 0,
+    predictions: user.weekly_predictions ?? 0,
+  } : null);
   const top3 = leaderboard.slice(0, 3);
   const rest = leaderboard.slice(3);
 
   return (
     <div className="p-4 max-w-[700px] mx-auto pb-[100px]">
       {/* Header */}
-      <div className="flex items-baseline justify-between mb-4">
+      <div className="flex items-baseline justify-between mb-6">
         <h2 className="font-serif text-section font-semibold text-ink">Leaderboard</h2>
         <span className="text-[11px] text-ink-muted uppercase tracking-wide">
           Resets Monday
         </span>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex p-1 bg-paper rounded-2xl mb-6">
-        {['weekly', 'monthly', 'all-time'].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-2 text-xs font-semibold rounded-full border-none capitalize ${activeTab === tab ? 'bg-emerald text-bone' : 'bg-transparent text-ink-muted'}`}
-          >
-            {tab}
-          </button>
-        ))}
       </div>
 
       {leaderboard.length === 0 ? (
@@ -121,16 +115,17 @@ export default function LeaderboardPage() {
               <div className="flex items-center px-5 py-2 text-[11px] font-medium text-ink-muted uppercase tracking-wide">
                 <span className="w-7">#</span>
                 <span className="flex-1 ml-3">User</span>
-                <span className="w-[60px] text-right">Accuracy</span>
-                <span className="w-[70px] text-right">Profit</span>
+                <span className="w-[50px] text-right">Wins</span>
+                <span className="w-[80px] text-right">Won</span>
               </div>
 
               <div className="flex flex-col gap-2">
-                {rest.map((entry, i) => {
-                  const rank = i + 4;
+                {rest.map((entry) => {
+                  const rank = entry.rank;
                   const isMe = user && entry.id === user.id;
-                  const profit = entry.netProfit ?? entry.total_points ?? 0;
-                  const accuracy = entry.accuracy ?? (entry.wins && entry.predictions ? Math.round((entry.wins / entry.predictions) * 100) : 0);
+                  const totalWon = entry.totalWon ?? 0;
+                  const wins = entry.wins ?? 0;
+                  const predictions = entry.predictions ?? 0;
 
                   return (
                     <div key={entry.id} className={`flex items-center px-5 py-3 rounded-2xl border ${isMe ? 'bg-accent-green-bg border-emerald/30' : 'bg-paper border-line'}`}>
@@ -151,16 +146,16 @@ export default function LeaderboardPage() {
                           <div className="flex items-center gap-1 mt-0.5 leading-none">
                             <Target size={11} strokeWidth={2.5} className="text-ink-muted shrink-0" />
                             <span className="text-[10px] text-ink-muted">
-                              {entry.predictions || 0} predictions
+                              {predictions} {predictions === 1 ? 'prediction' : 'predictions'}
                             </span>
                           </div>
                         </div>
                       </div>
-                      <span className="font-mono w-[60px] text-right text-xs font-semibold text-ink">
-                        {accuracy}%
+                      <span className={`font-mono w-[50px] text-right text-xs font-semibold ${wins > 0 ? 'text-ink' : 'text-ink-muted'}`}>
+                        {wins}
                       </span>
-                      <span className={`font-mono w-[70px] text-right text-xs font-bold ${profit > 0 ? 'text-accent-green' : profit < 0 ? 'text-accent-red' : 'text-ink-muted'}`}>
-                        {profit > 0 ? '+' : ''}{profit}
+                      <span className={`font-mono w-[80px] text-right text-xs font-bold ${totalWon > 0 ? 'text-accent-green' : 'text-ink-muted'}`}>
+                        {totalWon > 0 ? `+${totalWon}` : '—'}
                       </span>
                     </div>
                   );
@@ -177,7 +172,7 @@ export default function LeaderboardPage() {
               </p>
               <div className="flex items-center px-5 py-4 bg-accent-green-bg border border-emerald/30 rounded-2xl">
                 <span className="w-7 text-xs font-bold text-emerald">
-                  {myEntry ? (leaderboard.indexOf(myEntry) + 1) : '—'}
+                  {myStanding?.rank ?? '—'}
                 </span>
                 <div className="flex-1 flex items-center gap-2.5 ml-3">
                   <div className="w-9 h-9 rounded-full bg-accent-green-bg border-2 border-emerald/30 flex items-center justify-center">
@@ -192,19 +187,23 @@ export default function LeaderboardPage() {
                     <div className="flex items-center gap-1 mt-0.5 leading-none">
                       <Target size={11} strokeWidth={2.5} className="text-emerald shrink-0" />
                       <span className="text-[10px] text-ink-muted">
-                        {myEntry?.predictions || 0} predictions
+                        {myStanding?.predictions || 0} {(myStanding?.predictions || 0) === 1 ? 'prediction' : 'predictions'}
                       </span>
                     </div>
                   </div>
                 </div>
-                <span className="font-mono w-[60px] text-right text-xs font-semibold text-emerald">
-                  {myEntry?.accuracy ?? (myEntry?.wins && myEntry?.predictions ? Math.round((myEntry.wins / myEntry.predictions) * 100) : 0)}%
+                <span className="font-mono w-[50px] text-right text-xs font-semibold text-emerald">
+                  {myStanding?.wins ?? 0}
                 </span>
-                <span className={`font-mono w-[70px] text-right text-xs font-bold ${(myEntry?.netProfit ?? myEntry?.total_points ?? 0) >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
-                  {(myEntry?.netProfit ?? myEntry?.total_points ?? 0) > 0 ? '+' : ''}
-                  {myEntry?.netProfit ?? myEntry?.total_points ?? 0}
+                <span className={`font-mono w-[80px] text-right text-xs font-bold ${(myStanding?.totalWon ?? 0) > 0 ? 'text-accent-green' : 'text-ink-muted'}`}>
+                  {(myStanding?.totalWon ?? 0) > 0 ? `+${myStanding.totalWon}` : '—'}
                 </span>
               </div>
+              {(!myStanding || myStanding.wins === 0) && (
+                <p className="text-[11px] text-ink-muted text-center mt-2">
+                  Make a winning prediction this week to climb the table.
+                </p>
+              )}
             </div>
           )}
         </>

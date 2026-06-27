@@ -30,10 +30,12 @@ async function getCurrentWeekStandings(limit = 20) {
       db.raw('COALESCE(SUM(multi_market_positions.payout - multi_market_positions.amount), 0) as net_profit'),
       db.raw('COALESCE(SUM(multi_market_positions.amount), 0) as total_wagered'),
       db.raw('COUNT(multi_market_positions.id) as predictions'),
-      db.raw('SUM(CASE WHEN multi_market_positions.payout > 0 THEN 1 ELSE 0 END) as wins')
+      db.raw('SUM(CASE WHEN multi_market_positions.payout > 0 THEN 1 ELSE 0 END) as wins'),
+      db.raw('COALESCE(SUM(CASE WHEN multi_market_positions.payout > 0 THEN multi_market_positions.payout ELSE 0 END), 0) as total_won')
     )
-    .orderBy('net_profit', 'desc')
     .orderBy('wins', 'desc')
+    .orderBy('total_won', 'desc')
+    .orderBy('predictions', 'desc')
     .limit(limit);
 
   return standings.map((s, i) => ({
@@ -42,6 +44,7 @@ async function getCurrentWeekStandings(limit = 20) {
     name: s.name,
     netProfit: parseInt(s.net_profit, 10),
     totalWagered: parseInt(s.total_wagered, 10),
+    totalWon: parseInt(s.total_won, 10),
     predictions: parseInt(s.predictions, 10),
     wins: parseInt(s.wins, 10),
   }));
@@ -56,7 +59,7 @@ async function finalizeWeek(weekDate) {
   if (existing) return existing;
 
   const standings = await getCurrentWeekStandings(10);
-  const winner = standings.length > 0 && standings[0].netProfit > 0 ? standings[0] : null;
+  const winner = standings.length > 0 && standings[0].wins > 0 ? standings[0] : null;
 
   const [record] = await db('weekly_leaderboards')
     .insert({
@@ -64,7 +67,7 @@ async function finalizeWeek(weekDate) {
       week_end: weekEnd,
       winner_id: winner?.id || null,
       winner_name: winner?.name || null,
-      winner_profit: winner?.netProfit || 0,
+      winner_profit: winner?.totalWon || 0,
       standings: JSON.stringify(standings),
     })
     .returning('*');
@@ -89,6 +92,20 @@ async function getWeeklyRank(studentId) {
   return entry ? entry.rank : null;
 }
 
+async function getWeeklyStandingForStudent(studentId) {
+  const standings = await getCurrentWeekStandings(1000);
+  const entry = standings.find(s => s.id === studentId);
+  if (!entry) {
+    return { rank: null, wins: 0, totalWon: 0, predictions: 0 };
+  }
+  return {
+    rank: entry.rank,
+    wins: entry.wins,
+    totalWon: entry.totalWon,
+    predictions: entry.predictions,
+  };
+}
+
 async function getAllTimeStandings(limit = 20) {
   const standings = await db('multi_market_positions')
     .join('students', 'multi_market_positions.student_id', 'students.id')
@@ -100,10 +117,12 @@ async function getAllTimeStandings(limit = 20) {
       db.raw('COALESCE(SUM(multi_market_positions.payout - multi_market_positions.amount), 0) as net_profit'),
       db.raw('COALESCE(SUM(multi_market_positions.amount), 0) as total_wagered'),
       db.raw('COUNT(multi_market_positions.id) as predictions'),
-      db.raw('SUM(CASE WHEN multi_market_positions.payout > 0 THEN 1 ELSE 0 END) as wins')
+      db.raw('SUM(CASE WHEN multi_market_positions.payout > 0 THEN 1 ELSE 0 END) as wins'),
+      db.raw('COALESCE(SUM(CASE WHEN multi_market_positions.payout > 0 THEN multi_market_positions.payout ELSE 0 END), 0) as total_won')
     )
-    .orderBy('net_profit', 'desc')
     .orderBy('wins', 'desc')
+    .orderBy('total_won', 'desc')
+    .orderBy('predictions', 'desc')
     .limit(limit);
 
   return standings.map((s, i) => ({
@@ -112,9 +131,10 @@ async function getAllTimeStandings(limit = 20) {
     name: s.name,
     netProfit: parseInt(s.net_profit, 10),
     totalWagered: parseInt(s.total_wagered, 10),
+    totalWon: parseInt(s.total_won, 10),
     predictions: parseInt(s.predictions, 10),
     wins: parseInt(s.wins, 10),
   }));
 }
 
-module.exports = { getWeekBounds, getCurrentWeekStandings, getAllTimeStandings, finalizeWeek, getPastWeeks, getWeeklyRank };
+module.exports = { getWeekBounds, getCurrentWeekStandings, getAllTimeStandings, finalizeWeek, getPastWeeks, getWeeklyRank, getWeeklyStandingForStudent };

@@ -140,7 +140,7 @@ router.get('/me/info', authenticateStudent, lastAppOpenMiddleware, async (req, r
     const weeklyLeaderboard = require('../gamification/weeklyLeaderboard');
     const { getReferralStats } = require('../referrals/referrals.service');
     const stats = await getStudentStats(req.student.id);
-    const weeklyRank = await weeklyLeaderboard.getWeeklyRank(req.student.id);
+    const weeklyStanding = await weeklyLeaderboard.getWeeklyStandingForStudent(req.student.id);
     const referralStats = await getReferralStats(req.student.id);
 
     let referredByName = null;
@@ -159,7 +159,10 @@ router.get('/me/info', authenticateStudent, lastAppOpenMiddleware, async (req, r
       streak: stats.streak,
       totalPredictions: stats.totalPredictions,
       wins: stats.wins,
-      weekly_rank: weeklyRank,
+      weekly_rank: weeklyStanding.rank,
+      weekly_wins: weeklyStanding.wins,
+      weekly_total_won: weeklyStanding.totalWon,
+      weekly_predictions: weeklyStanding.predictions,
       is_ambassador: req.student.is_ambassador || false,
       referral_code: referralStats.code,
       referral_count: referralStats.referralCount,

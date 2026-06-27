@@ -22,7 +22,7 @@ jest.mock('../../src/modules/gamification/titles', () => ({
   }),
 }));
 jest.mock('../../src/modules/gamification/weeklyLeaderboard', () => ({
-  getWeeklyRank: async () => null,
+  getWeeklyStandingForStudent: async () => ({ rank: null, wins: 0, totalWon: 0, predictions: 0 }),
 }));
 jest.mock('../../src/modules/referrals/referrals.service', () => ({
   getReferralStats: async () => ({ code: 'ABC123', referralCount: 0 }),
