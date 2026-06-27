@@ -84,7 +84,7 @@ export default function WinPopup() {
         }
       })
       .catch(() => {});
-  }, []);
+  }, [user?.id]);
 
   function dismiss() {
     if (currentIndex < wins.length - 1) {
@@ -104,13 +104,16 @@ export default function WinPopup() {
     if (!visible) return;
     setShareImageFile(null);
     let cancelled = false;
-    const id = requestAnimationFrame(() => {
-      if (!cardRef.current) return;
+    // The card itself runs `animate-pop-in` (300ms, opacity 0→1). Capturing on
+    // the next frame snapshots a near-transparent state, producing a blank
+    // share image. Wait for the animation to finish before capturing.
+    const timer = setTimeout(() => {
+      if (cancelled || !cardRef.current) return;
       captureFile(cardRef.current, { fileName: 'iroyinmarket-win.png', backgroundColor: '#f4efe6' })
         .then((file) => { if (!cancelled) setShareImageFile(file); })
         .catch((err) => console.warn('win card capture failed:', err));
-    });
-    return () => { cancelled = true; cancelAnimationFrame(id); };
+    }, 400);
+    return () => { cancelled = true; clearTimeout(timer); };
   }, [visible, currentIndex]);
 
   const handleShareImage = useCallback(() => {
