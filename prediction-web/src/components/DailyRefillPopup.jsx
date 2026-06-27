@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Gift, Loader2 } from 'lucide-react';
 import useStore from '../store.js';
+import Confetti from './Confetti.jsx';
 
 export default function DailyRefillPopup() {
   const pendingRefill = useStore((s) => s.pendingRefill);
   const claimRefill = useStore((s) => s.claimRefill);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const canvasRef = useRef(null);
 
   if (!pendingRefill) return null;
 
@@ -29,8 +31,14 @@ export default function DailyRefillPopup() {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[1100] p-4">
-      <div className="bg-bone rounded-2xl p-8 max-w-[360px] w-full text-center shadow-float-lg">
+    <div className="fixed inset-0 flex items-center justify-center z-[1100] p-4">
+      <div className="absolute inset-0 bg-black/70" />
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 pointer-events-none w-full h-full"
+      />
+      <Confetti canvasRef={canvasRef} />
+      <div className="relative bg-bone rounded-2xl p-8 max-w-[360px] w-full text-center shadow-float-lg animate-pop-in">
         <Gift size={40} className="text-accent-green mb-4 mx-auto" strokeWidth={2.5} />
         <p className="font-serif text-section text-ink mb-1">Daily refill</p>
         <p className="font-mono text-[44px] font-extrabold text-emerald my-3 leading-none">
