@@ -30,28 +30,7 @@ async function deductPoints(studentId, amount, type, description, referenceId) {
     }
 
     if (student.points_balance < amount) {
-      const todayRefills = await trx('point_transactions')
-        .where({ student_id: studentId, type: 'auto_refill' })
-        .where('created_at', '>', new Date(Date.now() - 24 * 60 * 60 * 1000))
-        .count('id as count')
-        .first();
-
-      if (parseInt(todayRefills.count, 10) >= 3) {
-        throw new ValidationError('Daily refill limit reached. Come back tomorrow or refer friends for bonus points!');
-      }
-
-      const needed = amount - student.points_balance;
-      const maxRefill = Math.min(200, MAX_POINTS_BALANCE - student.points_balance);
-      const refill = Math.min(Math.max(needed, 100), maxRefill);
-
-      if (refill <= 0 || student.points_balance + refill < amount) {
-        throw new ValidationError(`Insufficient points. You have ${student.points_balance} pts.`);
-      }
-
-      await trx('point_transactions').insert({
-        student_id: studentId, amount: refill, type: 'auto_refill', description: 'Free refill - keep predicting!',
-      });
-      await trx('students').where({ id: studentId }).increment('points_balance', refill);
+      throw new ValidationError(`Insufficient points. You have ${student.points_balance} pts.`);
     }
 
     await trx('point_transactions').insert({
