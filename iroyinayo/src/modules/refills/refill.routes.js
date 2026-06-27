@@ -12,4 +12,17 @@ router.get('/pending-refill', requireSupabaseUser, async (req, res, next) => {
   }
 });
 
+router.post('/pending-refill/claim', requireSupabaseUser, async (req, res, next) => {
+  try {
+    const { id } = req.body || {};
+    const result = await claim({ studentId: req.student.id, refillId: id });
+    if (result.ok) {
+      return res.json(result);
+    }
+    return res.status(400).json({ code: result.code });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
