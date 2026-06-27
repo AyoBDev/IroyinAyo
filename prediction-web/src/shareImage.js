@@ -1,8 +1,15 @@
 import { domToBlob } from 'modern-screenshot';
 
-export async function captureElement(element, { backgroundColor = '#fbf7ef' } = {}) {
+function defaultCaptureBackground() {
+  // Match the app's current theme so captures don't paste a light card on dark
+  // (or vice versa). Reads --bone from the live document.
+  const bone = getComputedStyle(document.documentElement).getPropertyValue('--bone').trim();
+  return bone || '#fbf7ef';
+}
+
+export async function captureElement(element, { backgroundColor } = {}) {
   return domToBlob(element, {
-    backgroundColor,
+    backgroundColor: backgroundColor || defaultCaptureBackground(),
     scale: 2,
     type: 'image/png',
     quality: 1,
