@@ -4,7 +4,6 @@ const gamificationService = require('../gamification/gamification.service');
 const posthog = require('../../utils/posthog');
 
 const REFERRER_BONUS = 50;
-const REFERRED_BONUS = 50;
 const MAX_REFERRALS_PER_DAY = 10;
 
 function generateReferralCode(name) {
@@ -55,14 +54,13 @@ async function applyReferral(referredStudentId, referralCode) {
       referrer_id: referrer.id,
       referred_id: referredStudentId,
       referrer_bonus: REFERRER_BONUS,
-      referred_bonus: REFERRED_BONUS,
+      referred_bonus: 0,
     });
 
     await trx('students').where({ id: referredStudentId }).update({ referred_by: referrer.id });
   });
 
   await gamificationService.addPoints(referrer.id, REFERRER_BONUS, 'referral', 'Referral bonus: new user joined');
-  await gamificationService.addPoints(referredStudentId, REFERRED_BONUS, 'referral', `Welcome bonus: referred by ${referrer.name}`);
 
   posthog.capture({
     distinctId: String(referrer.id),
@@ -71,7 +69,7 @@ async function applyReferral(referredStudentId, referralCode) {
       referred_student_id: String(referredStudentId),
       referral_code: referralCode,
       referrer_bonus: REFERRER_BONUS,
-      referred_bonus: REFERRED_BONUS,
+      referred_bonus: 0,
     },
   });
 
@@ -93,7 +91,7 @@ async function applyReferral(referredStudentId, referralCode) {
     });
   }
 
-  return { referrerBonus: REFERRER_BONUS, referredBonus: REFERRED_BONUS };
+  return { referrerBonus: REFERRER_BONUS, referredBonus: 0 };
 }
 
 async function getReferralStats(studentId) {
