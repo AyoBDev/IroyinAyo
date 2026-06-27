@@ -1,3 +1,7 @@
+const db = require('../../config/database');
+
+const MAX_ATTEMPTS_PER_WEEK = 3;
+
 function getMondayInWAT(now) {
   const ref = now || new Date();
   // Shift the UTC timestamp by +1h to get WAT wall-clock time.
@@ -14,4 +18,59 @@ function getMondayInWAT(now) {
   return `${y}-${m}-${d}`;
 }
 
-module.exports = { getMondayInWAT };
+function rollAmount() {
+  return 50 + Math.floor(Math.random() * 51);
+}
+
+async function issuePendingRefills() {
+  const monday = getMondayInWAT();
+
+  // Find all students meeting the base criteria
+  const allStudents = await db('students')
+    .where({ is_banned: false, points_balance: 0 })
+    .select('id');
+
+  let issued = 0;
+
+  for (const student of allStudents) {
+    // Check for unclaimed refills
+    const unclaimedRefill = await db('pending_refills')
+      .where({ student_id: student.id })
+      .whereRaw('claimed_at IS NULL')
+      .first();
+
+    if (unclaimedRefill) {
+      continue; // Skip - has an unclaimed refill
+    }
+
+    // Check claimed refills this week
+    const claimedThisWeek = await db('pending_refills')
+      .where({ student_id: student.id, week_starting: monday })
+      .whereRaw('claimed_at IS NOT NULL')
+      .count('* as count');
+
+    const claimedCount = parseInt(claimedThisWeek[0].count, 10);
+    if (claimedCount >= MAX_ATTEMPTS_PER_WEEK) {
+      continue; // Skip - already at weekly limit
+    }
+
+    // Student is eligible - issue a refill
+    try {
+      await db('pending_refills').insert({
+        student_id: student.id,
+        amount: rollAmount(),
+        week_starting: monday,
+      });
+      issued += 1;
+    } catch (err) {
+      // Partial unique index can reject a concurrent double-issue; that's fine.
+      if (err.code !== '23505') {
+        console.error('[refill] insert failed for student', student.id, err.message);
+      }
+    }
+  }
+
+  return { issued };
+}
+
+module.exports = { getMondayInWAT, issuePendingRefills };
