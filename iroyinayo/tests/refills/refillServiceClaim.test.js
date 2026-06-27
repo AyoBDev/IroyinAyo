@@ -134,6 +134,20 @@ test('claim clamps amount to MAX_POINTS_BALANCE', async () => {
   expect(db.__data.students[0].points_balance).toBe(2000);
 });
 
+test('claim at MAX_POINTS_BALANCE consumes the row without writing point_transactions or negative credit', async () => {
+  db.__data.students.push({ id: 'stu-1', points_balance: 2000 });
+  db.__data.pending_refills.push({
+    id: 'p1', student_id: 'stu-1', amount: 80, claimed_at: null, week_starting: getMondayInWAT(),
+  });
+  const result = await claim({ studentId: 'stu-1', refillId: 'p1' });
+  expect(result).toEqual({ ok: true, amount: 0, newBalance: 2000 });
+  expect(db.__data.students[0].points_balance).toBe(2000);
+  // No point_transactions row written for a zero-credit claim.
+  expect(db.__data.point_transactions.length).toBe(0);
+  // Refill row consumed.
+  expect(db.__data.pending_refills[0].claimed_at).toBeTruthy();
+});
+
 test('claim returns WEEKLY_CAP_REACHED when already at 3 claims', async () => {
   const monday = getMondayInWAT();
   db.__data.students.push({ id: 'stu-1', points_balance: 0 });

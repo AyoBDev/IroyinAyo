@@ -135,16 +135,17 @@ async function claim({ studentId, refillId }) {
 
     const student = await trx('students').where({ id: studentId }).forUpdate().first();
     const oldBalance = student?.points_balance || 0;
-    const credited = Math.min(row.amount, MAX_POINTS_BALANCE - oldBalance);
+    const credited = Math.max(0, Math.min(row.amount, MAX_POINTS_BALANCE - oldBalance));
 
-    await trx('point_transactions').insert({
-      student_id: studentId,
-      amount: credited,
-      type: 'daily_refill',
-      description: 'Daily refill claimed',
-    });
-
-    await trx('students').where({ id: studentId }).increment('points_balance', credited);
+    if (credited > 0) {
+      await trx('point_transactions').insert({
+        student_id: studentId,
+        amount: credited,
+        type: 'daily_refill',
+        description: 'Daily refill claimed',
+      });
+      await trx('students').where({ id: studentId }).increment('points_balance', credited);
+    }
     await trx('pending_refills').where({ id: refillId }).update({ claimed_at: new Date() });
 
     return { ok: true, amount: credited, newBalance: oldBalance + credited };

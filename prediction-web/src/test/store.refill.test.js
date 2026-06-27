@@ -18,9 +18,11 @@ vi.mock('../api.js', () => ({
 
 import useStore from '../store.js';
 import { apiFetch, ApiError } from '../api.js';
+import { supabase } from '../lib/supabase.js';
 
 beforeEach(() => {
   vi.restoreAllMocks();
+  supabase.auth.getSession.mockResolvedValue({ data: { session: { access_token: 'tok' } } });
   useStore.setState({ user: { id: 'u1', points_balance: 0, has_pin: true }, pendingRefill: null, refillsRemaining: 3 });
 });
 

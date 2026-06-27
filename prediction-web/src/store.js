@@ -118,6 +118,8 @@ const useStore = create((set, get) => ({
   },
 
   fetchPendingRefill: async () => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) return;
     try {
       const data = await apiFetch('/api/me/pending-refill');
       set({ pendingRefill: data.pending, refillsRemaining: data.refillsRemaining });
