@@ -62,6 +62,16 @@ server.listen(PORT, async () => {
       });
     });
     console.log('[CRON] Weekly leaderboard finalize scheduled for Monday 00:00');
+
+    const { issuePendingRefills } = require('./modules/refills/refill.service');
+    cron.schedule('1 0 * * *', () => {
+      issuePendingRefills().then(({ issued }) => {
+        console.log(`[CRON] Daily refills issued: ${issued}`);
+      }).catch(err => {
+        console.error('[CRON] Daily refill issuance failed:', err.message);
+      });
+    }, { timezone: 'Africa/Lagos' });
+    console.log('[CRON] Daily refill issuance scheduled for 00:01 WAT');
   } catch (err) {
     console.error('Scheduler startup failed:', err.message);
   }
