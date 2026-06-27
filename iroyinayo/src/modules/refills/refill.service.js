@@ -86,4 +86,69 @@ async function issuePendingRefills() {
   return { issued };
 }
 
-module.exports = { getMondayInWAT, issuePendingRefills };
+const MAX_POINTS_BALANCE = 2000;
+
+async function getPending({ studentId }) {
+  const monday = getMondayInWAT();
+  const pendingRow = await db('pending_refills')
+    .where({ student_id: studentId, claimed_at: null })
+    .orderBy('issued_at', 'desc')
+    .first();
+
+  const claimedThisWeek = await db('pending_refills')
+    .where({ student_id: studentId, week_starting: monday })
+    .whereNotNull('claimed_at')
+    .count('id as count')
+    .first();
+
+  const count = parseInt(claimedThisWeek?.count || 0, 10);
+  return {
+    pending: pendingRow ? { id: pendingRow.id, amount: pendingRow.amount } : null,
+    refillsRemaining: Math.max(0, 3 - count),
+  };
+}
+
+async function claim({ studentId, refillId }) {
+  return db.transaction(async (trx) => {
+    const row = await trx('pending_refills')
+      .where({ id: refillId, student_id: studentId })
+      .forUpdate()
+      .first();
+
+    if (!row || row.claimed_at) {
+      return { ok: false, code: 'ALREADY_CLAIMED' };
+    }
+
+    const monday = getMondayInWAT();
+    const claimedThisWeekRow = await trx('pending_refills')
+      .where({ student_id: studentId, week_starting: monday })
+      .whereNotNull('claimed_at')
+      .count('id as count')
+      .first();
+    const claimedThisWeek = parseInt(claimedThisWeekRow?.count || 0, 10);
+
+    if (claimedThisWeek >= 3) {
+      // Consume the row so a stuck client doesn't retry forever.
+      await trx('pending_refills').where({ id: refillId }).update({ claimed_at: new Date() });
+      return { ok: false, code: 'WEEKLY_CAP_REACHED' };
+    }
+
+    const student = await trx('students').where({ id: studentId }).forUpdate().first();
+    const oldBalance = student?.points_balance || 0;
+    const credited = Math.min(row.amount, MAX_POINTS_BALANCE - oldBalance);
+
+    await trx('point_transactions').insert({
+      student_id: studentId,
+      amount: credited,
+      type: 'daily_refill',
+      description: 'Daily refill claimed',
+    });
+
+    await trx('students').where({ id: studentId }).increment('points_balance', credited);
+    await trx('pending_refills').where({ id: refillId }).update({ claimed_at: new Date() });
+
+    return { ok: true, amount: credited, newBalance: oldBalance + credited };
+  });
+}
+
+module.exports = { getMondayInWAT, issuePendingRefills, getPending, claim };
