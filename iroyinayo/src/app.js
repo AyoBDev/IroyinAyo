@@ -217,7 +217,11 @@ setupExpressErrorHandler(posthog, app);
 
 app.use((err, req, res, next) => {
   if (err instanceof AppError) {
-    return res.status(err.statusCode).json({ error: err.message });
+    const body = { error: err.message };
+    if (err.code) body.code = err.code;
+    if (typeof err.balance === 'number') body.balance = err.balance;
+    if (typeof err.attempted === 'number') body.attempted = err.attempted;
+    return res.status(err.statusCode).json(body);
   }
   console.error(err);
   res.status(500).json({ error: 'Internal server error' });
