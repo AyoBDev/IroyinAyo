@@ -15,14 +15,22 @@ function getWeekBounds(date = new Date()) {
   return { start: monday, end: sunday };
 }
 
-async function getCurrentWeekStandings(limit = 20) {
-  const { start, end } = getWeekBounds();
+function getMonthBounds(date = new Date()) {
+  const d = new Date(date);
+  const start = new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0);
+  const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
+  return { start, end };
+}
 
-  const standings = await db('multi_market_positions')
+async function buildStandings({ start, end, limit }) {
+  let query = db('multi_market_positions')
     .join('students', 'multi_market_positions.student_id', 'students.id')
-    .where('multi_market_positions.created_at', '>=', start)
-    .where('multi_market_positions.created_at', '<=', end)
-    .where('students.is_system', false)
+    .where('students.is_system', false);
+
+  if (start) query = query.where('multi_market_positions.created_at', '>=', start);
+  if (end) query = query.where('multi_market_positions.created_at', '<=', end);
+
+  const rows = await query
     .groupBy('students.id', 'students.name')
     .select(
       'students.id',
@@ -38,7 +46,7 @@ async function getCurrentWeekStandings(limit = 20) {
     .orderBy('predictions', 'desc')
     .limit(limit);
 
-  return standings.map((s, i) => ({
+  return rows.map((s, i) => ({
     rank: i + 1,
     id: s.id,
     name: s.name,
@@ -48,6 +56,20 @@ async function getCurrentWeekStandings(limit = 20) {
     predictions: parseInt(s.predictions, 10),
     wins: parseInt(s.wins, 10),
   }));
+}
+
+async function getCurrentWeekStandings(limit = 20) {
+  const { start, end } = getWeekBounds();
+  return buildStandings({ start, end, limit });
+}
+
+async function getCurrentMonthStandings(limit = 20) {
+  const { start, end } = getMonthBounds();
+  return buildStandings({ start, end, limit });
+}
+
+async function getAllTimeStandings(limit = 20) {
+  return buildStandings({ start: null, end: null, limit });
 }
 
 async function finalizeWeek(weekDate) {
@@ -106,35 +128,14 @@ async function getWeeklyStandingForStudent(studentId) {
   };
 }
 
-async function getAllTimeStandings(limit = 20) {
-  const standings = await db('multi_market_positions')
-    .join('students', 'multi_market_positions.student_id', 'students.id')
-    .where('students.is_system', false)
-    .groupBy('students.id', 'students.name')
-    .select(
-      'students.id',
-      'students.name',
-      db.raw('COALESCE(SUM(multi_market_positions.payout - multi_market_positions.amount), 0) as net_profit'),
-      db.raw('COALESCE(SUM(multi_market_positions.amount), 0) as total_wagered'),
-      db.raw('COUNT(multi_market_positions.id) as predictions'),
-      db.raw('SUM(CASE WHEN multi_market_positions.payout > 0 THEN 1 ELSE 0 END) as wins'),
-      db.raw('COALESCE(SUM(CASE WHEN multi_market_positions.payout > 0 THEN multi_market_positions.payout ELSE 0 END), 0) as total_won')
-    )
-    .orderBy('wins', 'desc')
-    .orderBy('total_won', 'desc')
-    .orderBy('predictions', 'desc')
-    .limit(limit);
-
-  return standings.map((s, i) => ({
-    rank: i + 1,
-    id: s.id,
-    name: s.name,
-    netProfit: parseInt(s.net_profit, 10),
-    totalWagered: parseInt(s.total_wagered, 10),
-    totalWon: parseInt(s.total_won, 10),
-    predictions: parseInt(s.predictions, 10),
-    wins: parseInt(s.wins, 10),
-  }));
-}
-
-module.exports = { getWeekBounds, getCurrentWeekStandings, getAllTimeStandings, finalizeWeek, getPastWeeks, getWeeklyRank, getWeeklyStandingForStudent };
+module.exports = {
+  getWeekBounds,
+  getMonthBounds,
+  getCurrentWeekStandings,
+  getCurrentMonthStandings,
+  getAllTimeStandings,
+  finalizeWeek,
+  getPastWeeks,
+  getWeeklyRank,
+  getWeeklyStandingForStudent,
+};

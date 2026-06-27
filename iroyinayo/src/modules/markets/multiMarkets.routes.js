@@ -64,11 +64,16 @@ router.get('/social-proof', async (req, res, next) => {
 router.get('/leaderboard', async (req, res, next) => {
   try {
     const weeklyLeaderboard = require('../gamification/weeklyLeaderboard');
-    let standings = await weeklyLeaderboard.getCurrentWeekStandings(20);
-    let period = 'weekly';
-    if (standings.length === 0) {
+    const requested = String(req.query.period || 'weekly').toLowerCase();
+    const period = ['weekly', 'monthly', 'all-time'].includes(requested) ? requested : 'weekly';
+
+    let standings;
+    if (period === 'monthly') {
+      standings = await weeklyLeaderboard.getCurrentMonthStandings(20);
+    } else if (period === 'all-time') {
       standings = await weeklyLeaderboard.getAllTimeStandings(20);
-      period = 'all-time';
+    } else {
+      standings = await weeklyLeaderboard.getCurrentWeekStandings(20);
     }
     res.json({ standings, period });
   } catch (err) { next(err); }

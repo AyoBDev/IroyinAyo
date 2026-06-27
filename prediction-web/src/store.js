@@ -7,6 +7,7 @@ const useStore = create((set, get) => ({
   user: null,
   positions: [],
   leaderboard: [],
+  leaderboardsByPeriod: { weekly: null, monthly: null, 'all-time': null },
   feed: [],
   toast: null,
   loading: true,
@@ -62,12 +63,19 @@ const useStore = create((set, get) => ({
     }
   },
 
-  fetchLeaderboard: async () => {
+  fetchLeaderboard: async (period = 'weekly') => {
     try {
-      const data = await apiFetch('/api/multi-markets/leaderboard');
-      set({ leaderboard: data?.standings ?? data ?? [] });
+      const data = await apiFetch(`/api/multi-markets/leaderboard?period=${encodeURIComponent(period)}`);
+      const standings = data?.standings ?? data ?? [];
+      const update = {
+        leaderboardsByPeriod: { ...get().leaderboardsByPeriod, [period]: standings },
+      };
+      if (period === 'weekly') update.leaderboard = standings;
+      set(update);
+      return standings;
     } catch (err) {
       console.error('Failed to fetch leaderboard:', err);
+      return [];
     }
   },
 
