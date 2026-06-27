@@ -115,6 +115,7 @@ export default function Portfolio() {
                   {pos.entry_price != null && (
                     <span className="font-mono">{Math.round(pos.entry_price * 100)}% → {Math.round(pos.current_price * 100)}%</span>
                   )}
+                  <span className="font-mono">{pos.amount} pts</span>
                   <span className="font-mono">{pos.shares.toFixed(1)} shares</span>
                 </div>
               </div>
