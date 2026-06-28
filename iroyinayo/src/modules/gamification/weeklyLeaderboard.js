@@ -1,5 +1,7 @@
 const db = require('../../config/database');
 
+const HIDDEN_LEADERBOARD_NAMES = ['AyoB'];
+
 function getWeekBounds(date = new Date()) {
   const d = new Date(date);
   const day = d.getDay();
@@ -25,7 +27,8 @@ function getMonthBounds(date = new Date()) {
 async function buildStandings({ start, end, limit }) {
   let query = db('multi_market_positions')
     .join('students', 'multi_market_positions.student_id', 'students.id')
-    .where('students.is_system', false);
+    .where('students.is_system', false)
+    .whereNotIn('students.name', HIDDEN_LEADERBOARD_NAMES);
 
   if (start) query = query.where('multi_market_positions.created_at', '>=', start);
   if (end) query = query.where('multi_market_positions.created_at', '<=', end);
