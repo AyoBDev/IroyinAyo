@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Crown, Target, TrendingUp, ChevronDown } from 'lucide-react';
+import { Trophy, Target, TrendingUp, ChevronDown } from 'lucide-react';
 import { apiFetch } from '../api.js';
 import useStore from '../store.js';
 
@@ -15,51 +15,77 @@ const PERIOD_COPY = {
   'all-time': { reset: 'Since launch', emptyHint: 'No wagers yet. Place one to appear here.' },
 };
 
-function PodiumUser({ entry, rank, size }) {
+function MedalBadge({ rank }) {
+  // Small circular rank badge tucked at the avatar's top-right corner.
+  // Reference shows a ribbon + medallion; we use a clean circular badge
+  // that reads better at our scale on the light theme.
+  const color = rank === 2 ? 'bg-ink-muted text-bone' : 'bg-accent-yellow text-bone';
+  return (
+    <div className={`absolute -top-1 -right-1 w-[24px] h-[24px] rounded-full ${color} border-[2.5px] border-bone flex items-center justify-center text-[12px] font-extrabold shadow-sm`}>
+      {rank}
+    </div>
+  );
+}
+
+function PodiumColumn({ entry, rank }) {
   const initial = entry.name?.charAt(0)?.toUpperCase() || '?';
-
-  const avatarSize = size === 'lg' ? 'w-[88px] h-[88px]' : size === 'md' ? 'w-[64px] h-[64px]' : 'w-[56px] h-[56px]';
-  const fontSize = size === 'lg' ? 'text-[34px]' : size === 'md' ? 'text-[24px]' : 'text-[22px]';
-  const badgeSize = size === 'lg' ? 'w-[28px] h-[28px] text-[12px]' : 'w-[22px] h-[22px] text-[10px]';
-
-  // Gold for #1, silver for #2, bronze (muted yellow) for #3
-  const borderClass = rank === 1
-    ? 'border-accent-yellow ring-4 ring-accent-yellow/20'
-    : rank === 2
-      ? 'border-line ring-2 ring-line/40'
-      : 'border-accent-yellow/40 ring-2 ring-accent-yellow/10';
-  const bgClass = rank === 1 ? 'bg-accent-yellow-bg' : rank === 2 ? 'bg-paper' : 'bg-accent-yellow-bg/50';
-  const colorClass = rank === 1 ? 'text-accent-yellow' : rank === 2 ? 'text-ink-muted' : 'text-accent-yellow/80';
-
   const totalWon = entry.totalWon ?? 0;
-  const wins = entry.wins ?? 0;
+
+  const isFirst = rank === 1;
+  const avatarSize = isFirst ? 'w-[88px] h-[88px]' : 'w-[68px] h-[68px]';
+  const fontSize = isFirst ? 'text-[34px]' : 'text-[26px]';
+
+  const avatarRing = isFirst
+    ? 'ring-4 ring-accent-yellow/30 border-accent-yellow'
+    : 'ring-2 ring-line/50 border-line';
+  const avatarBg = isFirst ? 'bg-accent-yellow-bg' : 'bg-paper';
+  const initialColor = isFirst ? 'text-accent-yellow' : 'text-ink-muted';
+
+  // Pedestal heights: #1 tallest, #2 medium, #3 shortest.
+  const pedestalHeight = rank === 1 ? 'h-[120px]' : rank === 2 ? 'h-[88px]' : 'h-[68px]';
+  // Numeral color matches the medal tier.
+  const numeralColor = rank === 1 ? 'text-accent-yellow/30' : rank === 2 ? 'text-ink-muted/35' : 'text-accent-yellow/20';
+
+  // Pill color: gold tone for #1, soft tone for #2/#3.
+  const pillBg = isFirst ? 'bg-accent-green text-bone' : rank === 2 ? 'bg-paper border border-line text-ink' : 'bg-accent-yellow-bg border border-accent-yellow/40 text-accent-yellow';
 
   return (
     <div className="flex flex-col items-center">
-      <div className="relative mb-3">
-        {rank === 1 && (
+      {/* Avatar with badge / trophy */}
+      <div className="relative mb-2">
+        {isFirst && (
           <div className="absolute -top-7 left-1/2 -translate-x-1/2">
-            <Crown size={26} className="text-accent-yellow fill-accent-yellow drop-shadow-sm" />
+            <Trophy size={28} className="text-accent-yellow fill-accent-yellow drop-shadow-sm" />
           </div>
         )}
-        <div className={`${avatarSize} rounded-full border-[3px] ${borderClass} ${bgClass} flex items-center justify-center transition-shadow`}>
-          <span className={`${fontSize} font-extrabold ${colorClass}`}>
-            {initial}
-          </span>
+        <div className={`${avatarSize} rounded-full border-[3px] ${avatarRing} ${avatarBg} flex items-center justify-center overflow-hidden`}>
+          {entry.avatar_url ? (
+            <img src={entry.avatar_url} alt={entry.name} className="w-full h-full object-cover" />
+          ) : (
+            <span className={`${fontSize} font-extrabold ${initialColor}`}>{initial}</span>
+          )}
         </div>
-        <div className={`absolute -bottom-1 -right-1 ${badgeSize} rounded-full ${bgClass} border-2 border-bone flex items-center justify-center font-extrabold ${colorClass}`}>
-          {rank}
-        </div>
+        {!isFirst && <MedalBadge rank={rank} />}
       </div>
-      <p className={`${size === 'lg' ? 'text-[13px]' : 'text-xs'} font-semibold text-ink text-center max-w-[100px] overflow-hidden text-ellipsis whitespace-nowrap`}>
+
+      {/* Name */}
+      <p className={`${isFirst ? 'text-sm' : 'text-[13px]'} font-semibold text-ink text-center max-w-[110px] overflow-hidden text-ellipsis whitespace-nowrap mb-1.5`}>
         {entry.name}
       </p>
-      <p className={`font-mono ${size === 'lg' ? 'text-[13px]' : 'text-xs'} font-extrabold mt-1 ${wins > 0 ? 'text-ink' : 'text-ink-muted'}`}>
-        {wins} {wins === 1 ? 'win' : 'wins'}
-      </p>
-      <p className={`font-mono text-[10px] mt-0.5 tracking-tight ${totalWon > 0 ? 'text-accent-green' : 'text-ink-muted'}`}>
-        {totalWon > 0 ? `+${totalWon} pts` : '—'}
-      </p>
+
+      {/* Pill (total won) */}
+      <div className={`font-mono ${isFirst ? 'text-[13px] px-4 py-1' : 'text-[11px] px-3 py-1'} rounded-full font-bold ${pillBg} mb-2`}>
+        {totalWon > 0 ? `+${totalWon}` : '0'} pts
+      </div>
+
+      {/* Pedestal block with giant numeral */}
+      <div className={`relative w-full ${pedestalHeight} bg-paper border border-line rounded-t-2xl overflow-hidden`}>
+        <span className={`absolute inset-0 flex items-center justify-center font-serif ${isFirst ? 'text-[72px]' : 'text-[56px]'} font-bold ${numeralColor} leading-none`}>
+          {rank}
+        </span>
+        {/* Subtle top edge for depth */}
+        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-b from-black/5 to-transparent" />
+      </div>
     </div>
   );
 }
@@ -138,23 +164,11 @@ export default function LeaderboardPage() {
         <>
           {/* Podium Top 3 */}
           {top3.length >= 3 && (
-            <div className="relative mb-8 pt-8">
-              <div className="grid grid-cols-3 items-end gap-3 px-2">
-                <div className="pt-10 flex justify-center">
-                  <PodiumUser entry={top3[1]} rank={2} size="md" />
-                </div>
-                <div className="flex justify-center">
-                  <PodiumUser entry={top3[0]} rank={1} size="lg" />
-                </div>
-                <div className="pt-14 flex justify-center">
-                  <PodiumUser entry={top3[2]} rank={3} size="sm" />
-                </div>
-              </div>
-              {/* Subtle pedestal floor */}
-              <div className="grid grid-cols-3 gap-3 mt-4 px-2">
-                <div className="h-2 rounded-t-md bg-line/60" />
-                <div className="h-3 rounded-t-md bg-accent-yellow/40" />
-                <div className="h-1.5 rounded-t-md bg-accent-yellow/15" />
+            <div className="mb-8 pt-10">
+              <div className="grid grid-cols-3 items-end gap-2">
+                <PodiumColumn entry={top3[1]} rank={2} />
+                <PodiumColumn entry={top3[0]} rank={1} />
+                <PodiumColumn entry={top3[2]} rank={3} />
               </div>
             </div>
           )}
