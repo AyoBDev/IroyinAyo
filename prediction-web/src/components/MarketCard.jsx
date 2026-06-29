@@ -6,26 +6,33 @@ import OutcomeRow from './OutcomeRow.jsx';
 import PredictSlip from './PredictSlip.jsx';
 import PublicChat from './PublicChat.jsx';
 import MarketShareModal from './MarketShareModal.jsx';
+import AnimatedPercent from './AnimatedPercent.jsx';
 
 const PRESS_TRANSITION = { type: 'spring', stiffness: 400, damping: 30 };
 const LAYOUT_TRANSITION = { type: 'spring', stiffness: 320, damping: 32 };
 
 const PAGE_SIZE = 10;
 
-function CategoryBadge({ category }) {
+function CategoryBadge({ category, layoutId }) {
   if (!category) return null;
   return (
-    <span className="font-mono text-mono-label uppercase tracking-[1.76px] px-2 py-0.5 rounded-md bg-paper border border-line text-ink-muted">
+    <motion.span
+      layoutId={layoutId}
+      className="font-mono text-mono-label uppercase tracking-[1.76px] px-2 py-0.5 rounded-md bg-paper border border-line text-ink-muted"
+    >
       {category}
-    </span>
+    </motion.span>
   );
 }
 
-function TopPercentBadge({ percent }) {
+function TopPercentBadge({ percent, layoutId }) {
   return (
-    <div className="flex items-center gap-0.5 bg-accent-green-bg text-accent-green px-2.5 py-1 rounded-full">
-      <span className="text-[12px] font-bold">{percent}%</span>
-    </div>
+    <motion.div
+      layoutId={layoutId}
+      className="flex items-center gap-0.5 bg-accent-green-bg text-accent-green px-2.5 py-1 rounded-full"
+    >
+      <AnimatedPercent value={percent} className="text-[12px] font-bold" />
+    </motion.div>
   );
 }
 
@@ -84,9 +91,10 @@ function OutcomeItem({ outcome, isTop, isSelected, onSelect }) {
           {outcome.label}
         </span>
       </div>
-      <span className={`text-[13px] font-bold ${isTop ? 'text-emerald' : 'text-ink-muted'}`}>
-        {percent}%
-      </span>
+      <AnimatedPercent
+        value={percent}
+        className={`text-[13px] font-bold ${isTop ? 'text-emerald' : 'text-ink-muted'}`}
+      />
     </motion.div>
   );
 }
@@ -119,7 +127,7 @@ function BinaryOutcomes({ market, outcomes, isFirstCard }) {
               : 'bg-accent-green-bg text-accent-green border-accent-green-border',
           ].join(' ')}
         >
-          Yes {yesPercent}%
+          Yes <AnimatedPercent value={yesPercent} />
         </motion.button>
         <motion.button
           onClick={() => setSelectedOutcome(noSelected ? null : noOutcome.id)}
@@ -132,7 +140,7 @@ function BinaryOutcomes({ market, outcomes, isFirstCard }) {
               : 'bg-accent-red-bg text-accent-red border-accent-red-border',
           ].join(' ')}
         >
-          No {noPercent}%
+          No <AnimatedPercent value={noPercent} />
         </motion.button>
       </div>
       {selectedOutcome && (
@@ -204,16 +212,17 @@ function LargeMarketCard({ market }) {
     ].join(' ')}>
       <div className="p-5">
         <div className="flex justify-between items-start mb-3">
-          <CategoryBadge category={market.category} />
-          <TopPercentBadge percent={topPercent} />
+          <CategoryBadge category={market.category} layoutId={`market-category-${market.id}`} />
+          <TopPercentBadge percent={topPercent} layoutId={`market-percent-${market.id}`} />
         </div>
 
-        <h3
+        <motion.h3
+          layoutId={`market-title-${market.id}`}
           onClick={() => navigate(`/market/${market.id}`)}
           className="font-serif text-section leading-tight cursor-pointer hover:text-emerald transition-colors mb-4"
         >
           {market.title}
-        </h3>
+        </motion.h3>
 
         <div className="relative mb-3">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
@@ -318,17 +327,18 @@ function SmallMarketCard({ market, dataTutorial }) {
       <div className="p-5 flex flex-col gap-4">
         {/* Header */}
         <div className="flex justify-between items-start">
-          <CategoryBadge category={market.category} />
-          <TopPercentBadge percent={topPercent} />
+          <CategoryBadge category={market.category} layoutId={`market-category-${market.id}`} />
+          <TopPercentBadge percent={topPercent} layoutId={`market-percent-${market.id}`} />
         </div>
 
         {/* Title */}
-        <h3
+        <motion.h3
+          layoutId={`market-title-${market.id}`}
           onClick={() => navigate(`/market/${market.id}`)}
           className="font-serif text-section leading-tight cursor-pointer hover:text-emerald transition-colors"
         >
           {market.title}
-        </h3>
+        </motion.h3>
 
         {/* Outcomes */}
         <div data-tutorial={dataTutorial ? 'predict-btn' : undefined}>

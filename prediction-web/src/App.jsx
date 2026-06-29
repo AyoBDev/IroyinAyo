@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { LayoutGroup } from 'motion/react';
 import { Loader2 } from 'lucide-react';
 import { connectSocket } from './socket.js';
 import useStore from './store.js';
@@ -103,14 +104,16 @@ function MainApp() {
         <TopBar />
         {showPositions && <MyPositions onClose={() => setShowPositions(false)} />}
 
-        <Routes>
-          <Route path="/" element={<Markets />} />
-          <Route path="/market/:marketId" element={<MarketDetail />} />
-          <Route path="/portfolio" element={<Portfolio />} />
-          <Route path="/leaderboard" element={<LeaderboardPage />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <LayoutGroup>
+          <Routes>
+            <Route path="/" element={<Markets />} />
+            <Route path="/market/:marketId" element={<MarketDetail />} />
+            <Route path="/portfolio" element={<Portfolio />} />
+            <Route path="/leaderboard" element={<LeaderboardPage />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </LayoutGroup>
 
         <BottomNav />
         {showAuthModal && <AuthModal onClose={closeAuthModal} />}

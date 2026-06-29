@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Share2, Clock, Users, MessageSquare, TrendingUp, Trophy, Flag } from 'lucide-react';
+import { motion } from 'motion/react';
 import useStore from '../store.js';
 import { apiFetch } from '../api.js';
 import PredictSlip from '../components/PredictSlip.jsx';
 import PublicChat from '../components/PublicChat.jsx';
 import MarketShareModal from '../components/MarketShareModal.jsx';
+import AnimatedPercent from '../components/AnimatedPercent.jsx';
 import { useDeepLinkRef, buildSourceRef } from '../hooks/useDeepLinkRef.js';
 import QuickPredictBar from '../components/QuickPredictBar.jsx';
 import PredictionConfirmation from '../components/PredictionConfirmation.jsx';
@@ -75,20 +77,24 @@ function OutcomeButtons({ market, outcomes }) {
     return (
       <div className="flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-3">
-          <button
+          <motion.button
             onClick={() => setSelectedOutcome(selectedOutcome === yesOutcome.id ? null : yesOutcome.id)}
-            className={`flex flex-col items-center gap-1 p-4 rounded-2xl border text-base font-bold transition-all duration-150 ${selectedOutcome === yesOutcome.id ? 'bg-accent-green text-white border-accent-green' : 'bg-accent-green-bg text-accent-green border-accent-green/30'}`}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            className={`flex flex-col items-center gap-1 p-4 rounded-2xl border text-base font-bold transition-colors duration-150 ${selectedOutcome === yesOutcome.id ? 'bg-accent-green text-white border-accent-green' : 'bg-accent-green-bg text-accent-green border-accent-green/30'}`}
           >
             <span>Yes</span>
-            <span className="text-[13px] opacity-80">{yesPercent}%</span>
-          </button>
-          <button
+            <AnimatedPercent value={yesPercent} className="text-[13px] opacity-80" />
+          </motion.button>
+          <motion.button
             onClick={() => setSelectedOutcome(selectedOutcome === noOutcome.id ? null : noOutcome.id)}
-            className={`flex flex-col items-center gap-1 p-4 rounded-2xl border text-base font-bold transition-all duration-150 ${selectedOutcome === noOutcome.id ? 'bg-accent-red text-white border-accent-red' : 'bg-accent-red-bg text-accent-red border-accent-red/30'}`}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            className={`flex flex-col items-center gap-1 p-4 rounded-2xl border text-base font-bold transition-colors duration-150 ${selectedOutcome === noOutcome.id ? 'bg-accent-red text-white border-accent-red' : 'bg-accent-red-bg text-accent-red border-accent-red/30'}`}
           >
             <span>No</span>
-            <span className="text-[13px] opacity-80">{noPercent}%</span>
-          </button>
+            <AnimatedPercent value={noPercent} className="text-[13px] opacity-80" />
+          </motion.button>
         </div>
         {selectedOutcome && (
           <PredictSlip
@@ -109,10 +115,16 @@ function OutcomeButtons({ market, outcomes }) {
         const isSelected = selectedOutcome === outcome.id;
 
         return (
-          <div key={outcome.id}>
-            <button
+          <motion.div
+            key={outcome.id}
+            layout
+            transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+          >
+            <motion.button
               onClick={() => setSelectedOutcome(isSelected ? null : outcome.id)}
-              className={`w-full flex justify-between items-center px-4 py-3.5 rounded-lg border transition-all duration-150 ${isSelected ? 'bg-accent-green-bg border-emerald/30' : isTop ? 'bg-paper border-line' : 'bg-paper border-line'}`}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              className={`w-full flex justify-between items-center px-4 py-3.5 rounded-lg border transition-colors duration-150 ${isSelected ? 'bg-accent-green-bg border-emerald/30' : isTop ? 'bg-paper border-line' : 'bg-paper border-line'}`}
             >
               <div className="flex items-center gap-2.5">
                 <div className={`w-2.5 h-2.5 rounded-full ${isTop ? 'bg-emerald' : 'bg-ink-muted'}`} />
@@ -120,16 +132,17 @@ function OutcomeButtons({ market, outcomes }) {
                   {outcome.label}
                 </span>
               </div>
-              <span className={`font-mono text-sm font-bold ${isTop ? 'text-emerald' : 'text-ink-muted'}`}>
-                {percent}%
-              </span>
-            </button>
+              <AnimatedPercent
+                value={percent}
+                className={`font-mono text-sm font-bold ${isTop ? 'text-emerald' : 'text-ink-muted'}`}
+              />
+            </motion.button>
             {isSelected && (
               <div className="mt-2">
                 <PredictSlip market={market} outcome={outcome} onClose={() => setSelectedOutcome(null)} />
               </div>
             )}
-          </div>
+          </motion.div>
         );
       })}
     </div>
@@ -308,20 +321,32 @@ export default function MarketDetail() {
         <section className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
             {market.category && (
-              <span className="text-[11px] font-semibold tracking-wide px-2.5 py-1 rounded-full bg-accent-green-bg text-emerald border border-emerald/30 uppercase">
+              <motion.span
+                layoutId={`market-category-${market.id}`}
+                className="text-[11px] font-semibold tracking-wide px-2.5 py-1 rounded-full bg-accent-green-bg text-emerald border border-emerald/30 uppercase"
+              >
                 {market.category}
-              </span>
+              </motion.span>
             )}
             {market.is_featured && (
               <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-accent-yellow-bg text-accent-yellow border border-accent-yellow/30 flex items-center gap-1">
                 <Trophy size={11} /> Featured
               </span>
             )}
+            <motion.div
+              layoutId={`market-percent-${market.id}`}
+              className="ml-auto flex items-center gap-0.5 bg-accent-green-bg text-accent-green px-2.5 py-1 rounded-full"
+            >
+              <AnimatedPercent value={topPercent} className="text-[12px] font-bold" />
+            </motion.div>
           </div>
 
-          <h2 className="font-serif text-section font-bold leading-tight tracking-tight">
+          <motion.h2
+            layoutId={`market-title-${market.id}`}
+            className="font-serif text-section font-bold leading-tight tracking-tight"
+          >
             {market.title}
-          </h2>
+          </motion.h2>
 
           {market.creator_name && (
             <span className="text-xs font-medium text-ink-muted flex items-center gap-1">
@@ -331,9 +356,10 @@ export default function MarketDetail() {
 
           {/* Probability summary */}
           <div className="flex items-baseline gap-2">
-            <span className="font-mono text-mono-data font-extrabold text-emerald">
-              {topPercent}%
-            </span>
+            <AnimatedPercent
+              value={topPercent}
+              className="font-mono text-mono-data font-extrabold text-emerald"
+            />
             <span className="text-sm text-ink-muted">
               {topOutcome?.label}
             </span>
