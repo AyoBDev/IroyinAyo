@@ -52,3 +52,30 @@ describe('buildTrendPrompt', () => {
     }
   });
 });
+
+describe('buildDescribePrompt', () => {
+  const { buildDescribePrompt } = require('../../../src/modules/admin/aiMarket/prompts');
+
+  test('includes the title verbatim', () => {
+    const p = buildDescribePrompt('Will UNILAG beat OAU on Saturday?', ['UNILAG', 'OAU', 'Draw']);
+    expect(p).toContain('Will UNILAG beat OAU on Saturday?');
+  });
+
+  test('lists each outcome on its own bullet', () => {
+    const p = buildDescribePrompt('Some title that is long enough', ['Alpha', 'Beta', 'Gamma']);
+    expect(p).toContain('- Alpha');
+    expect(p).toContain('- Beta');
+    expect(p).toContain('- Gamma');
+  });
+
+  test('asks for JSON with a description field', () => {
+    const p = buildDescribePrompt('Some title that is long enough', ['A', 'B']);
+    expect(p).toMatch(/JSON/);
+    expect(p).toMatch(/"description"/);
+  });
+
+  test('mentions the 500-character cap', () => {
+    const p = buildDescribePrompt('Some title that is long enough', ['A', 'B']);
+    expect(p).toMatch(/500/);
+  });
+});

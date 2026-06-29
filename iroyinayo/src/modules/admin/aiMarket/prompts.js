@@ -24,4 +24,17 @@ ${headlinesJoined}
 Return 5 of the most market-worthy headlines as a JSON array of objects: {"title": string (rewritten as a prediction market question), "source": string, "url": string, "category": string}. The "category" field MUST be one of: scholarships, entertainment, tech, sports, campus_news, career, health, academic. If a headline is politics, map it to "campus_news". Skip headlines that can't resolve verifiably.`;
 }
 
-module.exports = { SYSTEM_PROMPT, buildDraftPrompt, buildTrendPrompt };
+function buildDescribePrompt(title, outcomes) {
+  const lines = outcomes.map((o) => `- ${o}`).join('\n');
+  return `Write a short, neutral description (1-2 sentences, max 500 characters) for a Nigerian campus prediction market.
+The description should give context to a student who has never heard of this event, without favoring any outcome.
+Avoid speculation, hype, and slang. Do not mention the outcomes explicitly.
+
+Title: ${title}
+Outcomes:
+${lines}
+
+Return JSON: {"description": "..."}`;
+}
+
+module.exports = { SYSTEM_PROMPT, buildDraftPrompt, buildTrendPrompt, buildDescribePrompt };
