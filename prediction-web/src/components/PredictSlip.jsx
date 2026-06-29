@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X, ArrowRight, Users, Copy, Check } from 'lucide-react';
+import { motion } from 'motion/react';
 import useStore from '../store.js';
 import { ApiError } from '../api.js';
 import PredictionConfirmation from './PredictionConfirmation.jsx';
@@ -101,7 +102,23 @@ export default function PredictSlip({ market, outcome, onClose }) {
   ].join(' ');
 
   return (
-    <div className="p-4 bg-bone rounded-lg mt-1.5 animate-slide-up border border-line">
+    <motion.div
+      drag="y"
+      dragConstraints={{ top: 0, bottom: 0 }}
+      dragElastic={{ top: 0, bottom: 0.4 }}
+      dragDirectionLock
+      onDragEnd={(_, info) => {
+        if (info.offset.y > 80 || info.velocity.y > 500) onClose();
+      }}
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+      className="p-4 bg-bone rounded-lg mt-1.5 border border-line"
+    >
+      {/* Drag handle */}
+      <div className="flex justify-center mb-2 -mt-1">
+        <div className="w-10 h-1 rounded-full bg-line" />
+      </div>
       {/* Header */}
       <div className="flex justify-between items-center mb-3.5">
         <div className="flex items-center gap-2">
@@ -132,9 +149,11 @@ export default function PredictSlip({ market, outcome, onClose }) {
           />
         </div>
         {[5, 10, 25, 50].map((v) => (
-          <button
+          <motion.button
             key={v}
             onClick={() => setAmount(String(v))}
+            whileTap={{ scale: 0.92 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             className={`px-2.5 py-2 text-[12px] font-bold rounded-md min-w-[38px] border ${
               amount === String(v)
                 ? classes.amountActive
@@ -142,7 +161,7 @@ export default function PredictSlip({ market, outcome, onClose }) {
             }`}
           >
             {v}
-          </button>
+          </motion.button>
         ))}
       </div>
 
@@ -171,9 +190,11 @@ export default function PredictSlip({ market, outcome, onClose }) {
       )}
 
       {/* Submit button */}
-      <button
+      <motion.button
         onClick={isAuthenticated ? handleSubmit : openAuthModal}
         disabled={isAuthenticated && (amountNum < 1 || submitting)}
+        whileTap={{ scale: 0.97 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
         className={submitBtnClasses}
       >
         {!isAuthenticated
@@ -183,7 +204,7 @@ export default function PredictSlip({ market, outcome, onClose }) {
             : amountNum > 0
               ? `Predict ${outcome.label}`
               : 'Enter amount'}
-      </button>
+      </motion.button>
 
       {/* Balance hint */}
       {isAuthenticated && user && amountNum > 0 && (
@@ -201,7 +222,7 @@ export default function PredictSlip({ market, outcome, onClose }) {
           onClose={() => { setConfirmationData(null); onClose(); }}
         />
       )}
-    </div>
+    </motion.div>
   );
 }
 

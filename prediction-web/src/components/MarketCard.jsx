@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, ChevronLeft, ChevronRight, Search, Trophy, Share2, MessageSquare, Users } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import OutcomeRow from './OutcomeRow.jsx';
 import PredictSlip from './PredictSlip.jsx';
 import PublicChat from './PublicChat.jsx';
 import MarketShareModal from './MarketShareModal.jsx';
+
+const PRESS_TRANSITION = { type: 'spring', stiffness: 400, damping: 30 };
+const LAYOUT_TRANSITION = { type: 'spring', stiffness: 320, damping: 32 };
 
 const PAGE_SIZE = 10;
 
@@ -68,7 +72,12 @@ function OutcomeItem({ outcome, isTop, isSelected, onSelect }) {
   ].join(' ');
 
   return (
-    <div onClick={onSelect} className={wrapperClasses}>
+    <motion.div
+      onClick={onSelect}
+      className={wrapperClasses}
+      whileTap={{ scale: 0.97 }}
+      transition={PRESS_TRANSITION}
+    >
       <div className="flex items-center gap-2">
         <div className={`w-2 h-2 rounded-full ${isTop ? 'bg-emerald' : 'bg-ink-muted'}`} />
         <span className={`text-[13px] ${isTop ? 'font-semibold text-ink' : 'font-normal text-ink-muted'}`}>
@@ -78,7 +87,7 @@ function OutcomeItem({ outcome, isTop, isSelected, onSelect }) {
       <span className={`text-[13px] font-bold ${isTop ? 'text-emerald' : 'text-ink-muted'}`}>
         {percent}%
       </span>
-    </div>
+    </motion.div>
   );
 }
 
@@ -98,29 +107,33 @@ function BinaryOutcomes({ market, outcomes, isFirstCard }) {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex gap-2">
-        <button
+        <motion.button
           data-tutorial={isFirstCard ? 'odds' : undefined}
           onClick={() => setSelectedOutcome(yesSelected ? null : yesOutcome.id)}
+          whileTap={{ scale: 0.97 }}
+          transition={PRESS_TRANSITION}
           className={[
-            'flex-1 p-3 rounded-lg text-[13px] font-semibold border transition-all',
+            'flex-1 p-3 rounded-lg text-[13px] font-semibold border transition-colors',
             yesSelected
               ? 'bg-accent-green text-white border-accent-green'
               : 'bg-accent-green-bg text-accent-green border-accent-green-border',
           ].join(' ')}
         >
           Yes {yesPercent}%
-        </button>
-        <button
+        </motion.button>
+        <motion.button
           onClick={() => setSelectedOutcome(noSelected ? null : noOutcome.id)}
+          whileTap={{ scale: 0.97 }}
+          transition={PRESS_TRANSITION}
           className={[
-            'flex-1 p-3 rounded-lg text-[13px] font-semibold border transition-all',
+            'flex-1 p-3 rounded-lg text-[13px] font-semibold border transition-colors',
             noSelected
               ? 'bg-accent-red text-white border-accent-red'
               : 'bg-accent-red-bg text-accent-red border-accent-red-border',
           ].join(' ')}
         >
           No {noPercent}%
-        </button>
+        </motion.button>
       </div>
       {selectedOutcome && (
         <PredictSlip
@@ -140,7 +153,12 @@ function MultiOutcomes({ market, outcomes, isFirstCard }) {
   return (
     <div className="flex flex-col gap-1">
       {sorted.map((outcome, index) => (
-        <div key={outcome.id} data-tutorial={isFirstCard && index === 0 ? 'odds' : undefined}>
+        <motion.div
+          key={outcome.id}
+          layout
+          transition={LAYOUT_TRANSITION}
+          data-tutorial={isFirstCard && index === 0 ? 'odds' : undefined}
+        >
           <OutcomeItem
             outcome={outcome}
             isTop={index === 0}
@@ -152,7 +170,7 @@ function MultiOutcomes({ market, outcomes, isFirstCard }) {
               <PredictSlip market={market} outcome={outcome} onClose={() => setSelectedOutcome(null)} />
             </div>
           )}
-        </div>
+        </motion.div>
       ))}
     </div>
   );
@@ -177,7 +195,10 @@ function LargeMarketCard({ market }) {
   const paginatedOutcomes = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
-    <div className={[
+    <motion.div
+      whileTap={{ scale: 0.99 }}
+      transition={PRESS_TRANSITION}
+      className={[
       'bg-paper rounded-2xl overflow-hidden flex flex-col border',
       market.is_featured ? 'border-2 border-accent-yellow' : 'border-line',
     ].join(' ')}>
@@ -212,7 +233,7 @@ function LargeMarketCard({ market }) {
             </div>
           ) : (
             paginatedOutcomes.map((outcome, index) => (
-              <div key={outcome.id}>
+              <motion.div key={outcome.id} layout transition={LAYOUT_TRANSITION}>
                 <OutcomeItem
                   outcome={outcome}
                   isTop={index === 0 && page === 0 && !search}
@@ -224,7 +245,7 @@ function LargeMarketCard({ market }) {
                     <PredictSlip market={market} outcome={outcome} onClose={() => setSelectedOutcome(null)} />
                   </div>
                 )}
-              </div>
+              </motion.div>
             ))
           )}
         </div>
@@ -268,7 +289,7 @@ function LargeMarketCard({ market }) {
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -286,7 +307,11 @@ function SmallMarketCard({ market, dataTutorial }) {
   const isFirstCard = !!dataTutorial;
 
   return (
-    <div data-tutorial={dataTutorial || undefined} className={[
+    <motion.div
+      data-tutorial={dataTutorial || undefined}
+      whileTap={{ scale: 0.99 }}
+      transition={PRESS_TRANSITION}
+      className={[
       'bg-paper rounded-2xl overflow-hidden flex flex-col border transition-colors',
       market.is_featured ? 'border-2 border-accent-yellow' : 'border-line',
     ].join(' ')}>
@@ -317,7 +342,7 @@ function SmallMarketCard({ market, dataTutorial }) {
         {/* Footer */}
         <CardFooter market={market} />
       </div>
-    </div>
+    </motion.div>
   );
 }
 
