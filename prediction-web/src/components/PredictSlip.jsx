@@ -39,6 +39,7 @@ export default function PredictSlip({ market, outcome, onClose }) {
   const [error, setError] = useState(null);
   const placePrediction = useStore((s) => s.placePrediction);
   const fetchPositions = useStore((s) => s.fetchPositions);
+  const positions = useStore((s) => s.positions);
   const user = useStore((s) => s.user);
   const openAuthModal = useStore((s) => s.openAuthModal);
   const isAuthenticated = !!user;
@@ -49,6 +50,12 @@ export default function PredictSlip({ market, outcome, onClose }) {
   const amountNum = parseInt(amount, 10) || 0;
   const payout = amountNum > 0 ? Math.floor(amountNum / outcome.price) : 0;
   const profit = payout - amountNum;
+
+  const opposingPositions = (positions || []).filter(
+    (p) => p.market_id === market.id && p.outcome_id !== outcome.id
+  );
+  const opposingTotal = opposingPositions.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const opposingLabel = opposingPositions[0]?.outcome_label;
 
   async function handleSubmit() {
     if (amountNum < 1) return;
@@ -134,6 +141,15 @@ export default function PredictSlip({ market, outcome, onClose }) {
           <X size={14} />
         </button>
       </div>
+
+      {/* Hedge notice */}
+      {opposingTotal > 0 && (
+        <div className="mb-3 px-3 py-2 bg-paper border border-line rounded-md text-[12px] text-ink-muted">
+          You already hold {opposingTotal} pts on{' '}
+          <span className="font-semibold text-ink">{opposingLabel}</span>
+          {opposingPositions.length > 1 ? ' and others' : ''}. This will hedge your position.
+        </div>
+      )}
 
       {/* Amount input */}
       <div className="flex gap-1.5 mb-3">
