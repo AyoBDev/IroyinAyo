@@ -98,4 +98,15 @@ describe('POST /api/multi-markets/admin/create — description & closesAt', () =
     expect(row.title).toBe(basePayload().title);
     expect(row.description).toBeFalsy();
   });
+
+  test('persists a custom category from the manual form', async () => {
+    const { token } = await adminToken();
+    const res = await request(app)
+      .post('/api/multi-markets/admin/create')
+      .set('Authorization', `Bearer ${token}`)
+      .send(basePayload({ category: 'campus_news_special' }));
+    expect(res.status).toBe(200);
+    const row = await db('multi_markets').where({ id: res.body.id }).first();
+    expect(row.category).toBe('campus_news_special');
+  });
 });

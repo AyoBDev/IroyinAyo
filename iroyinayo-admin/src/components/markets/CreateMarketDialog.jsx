@@ -102,11 +102,16 @@ export default function CreateMarketDialog({ open, onClose, onCreated }) {
         title: trimmedTitle,
         outcomes: nonEmptyOutcomes,
       });
-      set({ description: res.description, generating: false });
+      set({ description: res.description, generating: false, generateError: '' });
     } catch (err) {
       const msg = err.message || 'Failed to generate description.';
       let friendly = msg;
-      if (msg === 'rate_limit_exceeded') friendly = 'AI rate-limited. Try again in a minute.';
+      if (msg === 'rate_limit_exceeded') {
+        const retryAfter = err.retryAfter;
+        friendly = retryAfter
+          ? `AI rate-limited. Try again in ${retryAfter} second${retryAfter === 1 ? '' : 's'}.`
+          : 'AI rate-limited. Try again in a minute.';
+      }
       else if (msg === 'groq_unavailable' || msg === 'ai_returned_invalid_response') friendly = "AI couldn't draft a description. Type one below.";
       else if (msg === 'groq_not_configured') friendly = 'AI is not configured on the server.';
       set({ generating: false, generateError: friendly });

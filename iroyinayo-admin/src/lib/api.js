@@ -33,7 +33,9 @@ async function request(path, options = {}) {
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(data.error || `Request failed: ${res.status}`);
+    const err = new Error(data.error || `Request failed: ${res.status}`);
+    if (data.retryAfter !== undefined) err.retryAfter = data.retryAfter;
+    throw err;
   }
 
   return data;
