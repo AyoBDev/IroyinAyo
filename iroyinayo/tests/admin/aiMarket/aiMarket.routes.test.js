@@ -184,3 +184,92 @@ describe('POST /api/admin/ai-market/trends', () => {
     }
   });
 });
+
+describe('POST /api/admin/ai-market/describe', () => {
+  test('401 when unauthenticated', async () => {
+    const res = await request(app)
+      .post('/api/admin/ai-market/describe')
+      .send({ title: 'A long enough title here', outcomes: ['a', 'b'] });
+    expect(res.status).toBe(401);
+  });
+
+  test('403 when role is not super_admin or moderator', async () => {
+    const id = uuidv4();
+    await db('admins').insert({ id, email: `v2-${id.slice(0,8)}@t.com`, password_hash: 'x', role: 'viewer', name: 'V' });
+    const token = jwt.sign({ id }, process.env.JWT_SECRET || 'test-secret');
+    const res = await request(app)
+      .post('/api/admin/ai-market/describe')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ title: 'A long enough title here', outcomes: ['a', 'b'] });
+    expect(res.status).toBe(403);
+  });
+
+  test('400 on invalid input (short title)', async () => {
+    const { token } = await adminToken();
+    const res = await request(app)
+      .post('/api/admin/ai-market/describe')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ title: 'short', outcomes: ['a', 'b'] });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('invalid_prompt');
+  });
+
+  test('200 with description when service returns one', async () => {
+    const orig = aiMarketService.describeMarket;
+    aiMarketService.describeMarket = async () => ({
+      description: 'A neutral, context-providing description for testing purposes.',
+      model: 'llama-3.1-8b-instant',
+      latencyMs: 75,
+    });
+    try {
+      const { token } = await adminToken();
+      const res = await request(app)
+        .post('/api/admin/ai-market/describe')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: 'Will UNILAG beat OAU on Saturday?', outcomes: ['UNILAG', 'OAU', 'Draw'] });
+      expect(res.status).toBe(200);
+      expect(res.body.description).toMatch(/neutral/);
+      expect(res.body.model).toBe('llama-3.1-8b-instant');
+    } finally {
+      aiMarketService.describeMarket = orig;
+    }
+  });
+
+  test('429 on rate limit exceeded', async () => {
+    const orig = aiMarketService.describeMarket;
+    aiMarketService.describeMarket = async () => {
+      const err = new aiMarketService.StructuredError('rate_limit_exceeded', 'too fast');
+      err.retryAfterSeconds = 45;
+      throw err;
+    };
+    try {
+      const { token } = await adminToken();
+      const res = await request(app)
+        .post('/api/admin/ai-market/describe')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: 'A long enough title here', outcomes: ['a', 'b'] });
+      expect(res.status).toBe(429);
+      expect(res.body.retryAfter).toBe(45);
+    } finally {
+      aiMarketService.describeMarket = orig;
+    }
+  });
+
+  test('502 when Groq returns invalid response', async () => {
+    const orig = aiMarketService.describeMarket;
+    aiMarketService.describeMarket = async () => {
+      throw new aiMarketService.StructuredError('ai_returned_invalid_response', 'missing description');
+    };
+    try {
+      const { token } = await adminToken();
+      const res = await request(app)
+        .post('/api/admin/ai-market/describe')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: 'A long enough title here', outcomes: ['a', 'b'] });
+      expect(res.status).toBe(502);
+      expect(res.body.error).toBe('ai_returned_invalid_response');
+    } finally {
+      aiMarketService.describeMarket = orig;
+    }
+  });
+});

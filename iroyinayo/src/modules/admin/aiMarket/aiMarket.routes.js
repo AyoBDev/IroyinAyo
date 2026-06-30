@@ -54,4 +54,15 @@ router.post('/ai-market/publish', authenticate, requireRole('super_admin', 'mode
   }
 });
 
+router.post('/ai-market/describe', authenticate, requireRole('super_admin', 'moderator'), async (req, res, next) => {
+  try {
+    const { title, outcomes } = req.body || {};
+    const result = await service.describeMarket({ adminId: req.admin.id, title, outcomes });
+    res.json(result);
+  } catch (err) {
+    if (mapErrorToResponse(err, res)) return;
+    next(err);
+  }
+});
+
 module.exports = router;
