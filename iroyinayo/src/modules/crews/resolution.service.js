@@ -9,9 +9,9 @@ function err(code, message, userMessage, status = 400) {
 }
 
 async function calculateAndApplyPayouts(poolId, winnerOutcome, source, opts = {}) {
-  const { resolverId = null, adminId = null, adminNote = null } = opts;
+  const { resolverId = null, adminId = null, adminNote = null, trx: externalTrx = null } = opts;
 
-  return db.transaction(async (trx) => {
+  async function body(trx) {
     const pool = await trx('crew_pools').where({ id: poolId }).forUpdate().first();
     if (!pool) throw err('POOL_NOT_FOUND', 'No pool', 'Pool not found.', 404);
     // Idempotency: if payouts already applied, return early
@@ -60,7 +60,10 @@ async function calculateAndApplyPayouts(poolId, winnerOutcome, source, opts = {}
     await trx('crew_pools').where({ id: poolId }).update({ status: newStatus, winner_outcome: winnerOutcome });
 
     return { paid: perWinner * winners.length, perWinner, platformAbsorbed };
-  });
+  }
+
+  if (externalTrx) return body(externalTrx);
+  return db.transaction(body);
 }
 
 async function creatorReportResult(poolId, creatorId, winnerOutcome) {
@@ -94,16 +97,16 @@ async function raiseDispute(poolId, studentId, reason) {
 }
 
 async function adminOverrideResolution(poolId, adminId, winnerOutcome, note) {
-  const pool = await db('crew_pools').where({ id: poolId }).first();
-  if (!pool) throw err('POOL_NOT_FOUND', 'No pool', 'Pool not found.', 404);
-  if (pool.status !== 'disputed') throw err('NOT_DISPUTED', 'Not disputed', 'This pool isn\'t disputed.', 409);
-  // Mark old resolution void
-  await db('crew_pool_resolutions').where({ pool_id: poolId }).update({ dispute_status: 'resolved' });
-  // New resolution applied via calculateAndApplyPayouts; but since previous resolution row exists, we need to handle it.
-  // Strategy: delete prior resolution row to allow re-insert.
-  await db('crew_pool_resolutions').where({ pool_id: poolId }).del();
-  await db('crew_pools').where({ id: poolId }).update({ status: 'closed' }); // reset for re-resolution
-  return calculateAndApplyPayouts(poolId, winnerOutcome, 'admin', { adminId, adminNote: note });
+  return db.transaction(async (trx) => {
+    const pool = await trx('crew_pools').where({ id: poolId }).forUpdate().first();
+    if (!pool) throw err('POOL_NOT_FOUND', 'No pool', 'Pool not found.', 404);
+    if (pool.status !== 'disputed') throw err('NOT_DISPUTED', 'Not disputed', 'This pool isn\'t disputed.', 409);
+
+    await trx('crew_pool_resolutions').where({ pool_id: poolId }).del();
+    await trx('crew_pools').where({ id: poolId }).update({ status: 'closed' });
+
+    return calculateAndApplyPayouts(poolId, winnerOutcome, 'admin', { adminId, adminNote: note, trx });
+  });
 }
 
 async function processExpiredDisputeWindows() {
