@@ -84,6 +84,32 @@ server.listen(PORT, async () => {
     console.error('Simulation scheduler failed to start:', err.message);
   }
 
+  // Crews background jobs
+  const crewsPools = require('./modules/crews/pools.service');
+  const crewsResolution = require('./modules/crews/resolution.service');
+  const crewsFixtures = require('./modules/crews/fixtures.service');
+
+  setInterval(async () => {
+    try { const r = await crewsPools.closeExpiredPools(); if (r.closed) console.log(`[crews] closed ${r.closed} pools`); }
+    catch (e) { console.error('[crews] closeExpiredPools error:', e.message); }
+  }, 60 * 1000); // 1 min
+
+  setInterval(async () => {
+    try { const r = await crewsResolution.processExpiredDisputeWindows(); if (r.resolved) console.log(`[crews] expired ${r.resolved} dispute windows`); }
+    catch (e) { console.error('[crews] processExpiredDisputeWindows error:', e.message); }
+  }, 60 * 60 * 1000); // 1 hour
+
+  setInterval(async () => {
+    try { const r = await crewsFixtures.pollCompletedFixtures(); if (r.resolved) console.log(`[crews] resolved ${r.resolved} fixtures`); }
+    catch (e) { console.error('[crews] pollCompletedFixtures error:', e.message); }
+  }, 15 * 60 * 1000); // 15 min
+
+  setInterval(async () => {
+    try { const r = await crewsFixtures.pollUpcomingFixtures(); if (r.ingested) console.log(`[crews] ingested ${r.ingested} fixtures`); }
+    catch (e) { console.error('[crews] pollUpcomingFixtures error:', e.message); }
+  }, 6 * 60 * 60 * 1000); // 6 hours
+
+
   if (process.env.ENABLE_BOT !== 'false') {
     try {
       const { createConnection } = require('./bot/connection');
