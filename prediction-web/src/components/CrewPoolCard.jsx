@@ -29,7 +29,7 @@ export default function CrewPoolCard({ pool, crewId }) {
   return (
     <button
       onClick={() => navigate(`/crews/${crewId}/pools/${pool.id}`)}
-      className="bg-paper border border-line rounded-xl p-4 text-left w-full"
+      className="bg-paper border border-line rounded-2xl p-4 text-left w-full hover:bg-paper-hover transition-colors"
     >
       <div className="flex justify-between items-start mb-2">
         <div className="font-semibold text-[14px] line-clamp-2 flex-1">{title}</div>
