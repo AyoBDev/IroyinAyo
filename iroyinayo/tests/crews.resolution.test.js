@@ -6,7 +6,7 @@ const resolution = require('../src/modules/crews/resolution.service');
 async function makeStudent(name, balance = 1000) {
   const [s] = await db('students').insert({
     name, phone_number: `${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
-    is_onboarded: true, is_verified: true, is_banned: false, is_system: false,
+    is_onboarded: true, is_banned: false, is_system: false,
     points_balance: balance,
   }).returning('*');
   return s;
