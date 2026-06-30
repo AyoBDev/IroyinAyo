@@ -76,8 +76,19 @@ export default function CrewPool() {
   const { pool, predictions, currentUserPrediction } = data;
   const isCreator = pool.creator_id === user?.id;
   const isPrivate = pool.pool_type === 'private';
-  const optionA = isPrivate ? pool.outcome_a_label : 'Home';
-  const optionB = isPrivate ? pool.outcome_b_label : 'Away';
+  // Public pools store outcomes in lowercase (home/away/draw) to match the
+  // values written by computeWinner() so auto-resolution can match them.
+  // The UI shows capitalised labels but submits the lowercase value.
+  const optionA = isPrivate ? pool.outcome_a_label : 'home';
+  const optionB = isPrivate ? pool.outcome_b_label : 'away';
+  const optionDraw = isPrivate ? null : 'draw';
+  const labelOf = (val) => {
+    if (isPrivate) return val;
+    if (val === 'home') return 'Home';
+    if (val === 'away') return 'Away';
+    if (val === 'draw') return 'Draw';
+    return val;
+  };
 
   return (
     <div className="p-4 max-w-[640px] mx-auto">
@@ -96,17 +107,22 @@ export default function CrewPool() {
         {pool.status === 'open' && !currentUserPrediction && (
           <div className="flex gap-2">
             <button onClick={() => predict(optionA)} disabled={submitting} className="flex-1 py-3 rounded-xl bg-accent-green-bg border border-accent-green-border text-accent-green font-semibold disabled:opacity-60">
-              {optionA}
+              {labelOf(optionA)}
             </button>
+            {optionDraw && (
+              <button onClick={() => predict(optionDraw)} disabled={submitting} className="flex-1 py-3 rounded-xl bg-paper border border-line text-ink font-semibold disabled:opacity-60">
+                {labelOf(optionDraw)}
+              </button>
+            )}
             <button onClick={() => predict(optionB)} disabled={submitting} className="flex-1 py-3 rounded-xl bg-accent-red-bg border border-accent-red-border text-accent-red font-semibold disabled:opacity-60">
-              {optionB}
+              {labelOf(optionB)}
             </button>
           </div>
         )}
 
         {currentUserPrediction && (
           <div className="bg-accent-green-bg border border-accent-green-border rounded-lg px-3 py-2 text-[13px] text-accent-green">
-            You picked: <span className="font-bold">{currentUserPrediction.predicted_outcome}</span>
+            You picked: <span className="font-bold">{labelOf(currentUserPrediction.predicted_outcome)}</span>
           </div>
         )}
 
@@ -115,10 +131,10 @@ export default function CrewPool() {
             <div className="text-[12px] text-ink-muted mb-2">Report the winner:</div>
             <div className="flex gap-2">
               <button onClick={() => reportResult(optionA)} disabled={submitting} className="flex-1 py-2.5 rounded-xl bg-paper border border-line text-[13px] font-semibold">
-                {optionA} won
+                {labelOf(optionA)} won
               </button>
               <button onClick={() => reportResult(optionB)} disabled={submitting} className="flex-1 py-2.5 rounded-xl bg-paper border border-line text-[13px] font-semibold">
-                {optionB} won
+                {labelOf(optionB)} won
               </button>
             </div>
           </div>
@@ -133,7 +149,7 @@ export default function CrewPool() {
         {pool.status === 'resolved' && pool.winner_outcome && (
           <div className="mt-3 bg-accent-green-bg border border-accent-green-border rounded-lg px-3 py-3 flex items-center gap-2">
             <CheckCircle2 size={16} className="text-accent-green" />
-            <div className="text-[13px]"><span className="font-bold">{pool.winner_outcome}</span> won.{' '}
+            <div className="text-[13px]"><span className="font-bold">{labelOf(pool.winner_outcome)}</span> won.{' '}
               {currentUserPrediction?.payout > 0 ? `You earned ${currentUserPrediction.payout} pts.` : 'Better luck next time.'}
             </div>
           </div>
@@ -154,7 +170,7 @@ export default function CrewPool() {
           {predictions.map((p) => (
             <div key={p.id} className="flex justify-between items-center px-3 py-2 text-[13px]">
               <div>{p.name || 'Anonymous'}</div>
-              <div className="text-ink-muted">{p.predicted_outcome || 'predicted'}</div>
+              <div className="text-ink-muted">{p.predicted_outcome ? labelOf(p.predicted_outcome) : 'predicted'}</div>
             </div>
           ))}
           {predictions.length === 0 && <div className="p-3 text-[12px] text-ink-muted">No predictions yet.</div>}

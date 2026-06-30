@@ -34,7 +34,7 @@ export default function CreatePoolModal({ crewId, onClose, onCreated }) {
     try {
       const payload = tab === 'private'
         ? { poolType: 'private', title: title.trim(), outcomeA: outcomeA.trim(), outcomeB: outcomeB.trim(), kickoffAt, stakeAmount: Number(stakeAmount) }
-        : { poolType: 'public', parentMarketId: selectedFixture?.parent_market_id || null, kickoffAt: selectedFixture?.kickoff_at, stakeAmount: Number(stakeAmount) };
+        : { poolType: 'public', parentMarketId: selectedFixture?.id || null, kickoffAt: selectedFixture?.kickoff_at, stakeAmount: Number(stakeAmount) };
       const { pool } = await apiFetch(`/api/crews/${crewId}/pools`, { method: 'POST', body: JSON.stringify(payload) });
       onCreated(pool);
     } catch (e) {

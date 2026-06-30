@@ -122,4 +122,70 @@ describe('Crew resolution service', () => {
     const p = await db('crew_pools').where({ id: pool.id }).first();
     expect(p.status).toBe('resolved');
   });
+
+  test('creatorReportResult does NOT credit balances (deferred payout)', async () => {
+    const { pool, members, creator } = await setupPool(3, 100);
+    await poolsService.predictInPool(pool.id, { studentId: members[0].id }, 'A');
+    await poolsService.predictInPool(pool.id, { studentId: members[1].id }, 'A');
+    await poolsService.predictInPool(pool.id, { studentId: members[2].id }, 'B');
+    await db('crew_pools').where({ id: pool.id }).update({ status: 'closed' });
+
+    const balancesBefore = await Promise.all(members.map(m =>
+      db('students').where({ id: m.id }).first().then(r => r.points_balance)));
+    await resolution.creatorReportResult(pool.id, creator.id, 'A');
+    const balancesAfter = await Promise.all(members.map(m =>
+      db('students').where({ id: m.id }).first().then(r => r.points_balance)));
+    // Balances unchanged — payouts deferred to window close / admin
+    expect(balancesAfter).toEqual(balancesBefore);
+
+    const p = await db('crew_pools').where({ id: pool.id }).first();
+    expect(p.status).toBe('awaiting_dispute_window');
+    const res = await db('crew_pool_resolutions').where({ pool_id: pool.id }).first();
+    expect(res.dispute_status).toBe('open_window');
+  });
+
+  test('admin override after dispute does NOT double-credit (points conserved)', async () => {
+    const { pool, members, creator } = await setupPool(4, 100);
+    // 3 members predict A (creator-reported winner), 1 predicts B (admin-reported winner)
+    await poolsService.predictInPool(pool.id, { studentId: members[0].id }, 'A');
+    await poolsService.predictInPool(pool.id, { studentId: members[1].id }, 'A');
+    await poolsService.predictInPool(pool.id, { studentId: members[2].id }, 'A');
+    await poolsService.predictInPool(pool.id, { studentId: members[3].id }, 'B');
+
+    const balancesAfterStakes = await Promise.all(members.map(m =>
+      db('students').where({ id: m.id }).first().then(r => r.points_balance)));
+    // Everyone is down 100
+    for (const b of balancesAfterStakes) expect(b).toBe(900);
+
+    await db('crew_pools').where({ id: pool.id }).update({ status: 'closed' });
+    await resolution.creatorReportResult(pool.id, creator.id, 'A');
+    // Dispute window opens — a member disputes
+    await resolution.raiseDispute(pool.id, members[3].id, 'I think B actually won');
+    const disputed = await db('crew_pools').where({ id: pool.id }).first();
+    expect(disputed.status).toBe('disputed');
+
+    // Admin override: B is the true winner
+    // Need a super_admin in the students table for the admin_id FK
+    const [admin] = await db('students').insert({
+      name: 'Admin', phone_number: `admin${Date.now()}`,
+      is_onboarded: true, is_banned: false, is_system: false,
+      points_balance: 0,
+    }).returning('*');
+    await resolution.adminOverrideResolution(pool.id, admin.id, 'B', 'B confirmed by replay');
+
+    // Pot = 400. 1 winner. Winner gets 400.
+    const finalBalances = await Promise.all(members.map(m =>
+      db('students').where({ id: m.id }).first().then(r => r.points_balance)));
+    expect(finalBalances[0]).toBe(900); // A-predictor: no payout
+    expect(finalBalances[1]).toBe(900);
+    expect(finalBalances[2]).toBe(900);
+    expect(finalBalances[3]).toBe(900 + 400); // B-predictor: gets entire pot
+    // Points-conservation invariant: sum(deltas) === platformAbsorbed (0 here, single winner)
+    const totalDelta = finalBalances.reduce((s, b) => s + (b - 1000), 0);
+    expect(totalDelta).toBe(0);
+
+    const finalPool = await db('crew_pools').where({ id: pool.id }).first();
+    expect(finalPool.status).toBe('resolved');
+    expect(finalPool.winner_outcome).toBe('B');
+  });
 });

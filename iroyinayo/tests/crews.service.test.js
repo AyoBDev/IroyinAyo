@@ -80,6 +80,35 @@ describe('Crews service', () => {
     await expect(service.leaveCrew(crew.id, creator.id)).rejects.toMatchObject({ code: 'CREATOR_CANNOT_LEAVE' });
   });
 
+  test('getCurrentInviteToken returns active token without rotating', async () => {
+    const creator = await makeStudent('Alice');
+    const { crew, inviteToken } = await service.createCrew('Crew', creator.id);
+    const r1 = await service.getCurrentInviteToken(crew.id, creator.id);
+    expect(r1.token).toBe(inviteToken);
+    // Call twice — same token, no churn
+    const r2 = await service.getCurrentInviteToken(crew.id, creator.id);
+    expect(r2.token).toBe(inviteToken);
+    // The original invite should remain non-revoked
+    const invite = await db('crew_invites').where({ token: inviteToken }).first();
+    expect(invite.revoked_at).toBeNull();
+  });
+
+  test('getCurrentInviteToken issues fresh token if all invites revoked', async () => {
+    const creator = await makeStudent('Alice');
+    const { crew, inviteToken } = await service.createCrew('Crew', creator.id);
+    await db('crew_invites').where({ token: inviteToken }).update({ revoked_at: db.fn.now() });
+    const r = await service.getCurrentInviteToken(crew.id, creator.id);
+    expect(r.token).not.toBe(inviteToken);
+    expect(r.token).toMatch(/^[A-Za-z0-9_-]{22}$/);
+  });
+
+  test('getCurrentInviteToken rejects non-creators', async () => {
+    const creator = await makeStudent('Alice');
+    const stranger = await makeStudent('Bola');
+    const { crew } = await service.createCrew('Crew', creator.id);
+    await expect(service.getCurrentInviteToken(crew.id, stranger.id)).rejects.toMatchObject({ code: 'NOT_CREATOR' });
+  });
+
   test('bootMember requires caller to be creator', async () => {
     const creator = await makeStudent('Alice');
     const m1 = await makeStudent('Bola');

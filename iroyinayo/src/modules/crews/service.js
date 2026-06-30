@@ -59,6 +59,28 @@ async function joinCrewByToken(token, studentId) {
   });
 }
 
+/**
+ * Returns the current active (non-revoked) invite token for the crew. Creator
+ * only. Used by the invite sheet so opening it doesn't invalidate the link the
+ * creator may have already shared. Falls back to issuing a fresh token if none
+ * is active (e.g. if all prior invites were revoked).
+ */
+async function getCurrentInviteToken(crewId, callerStudentId) {
+  const member = await db('crew_members').where({ crew_id: crewId, student_id: callerStudentId, role: 'creator' }).first();
+  if (!member) throw err('NOT_CREATOR', 'Not creator', 'Only the crew creator can do that.', 403);
+  const active = await db('crew_invites')
+    .where({ crew_id: crewId })
+    .whereNull('revoked_at')
+    .orderBy('created_at', 'desc')
+    .first();
+  if (active) return { token: active.token };
+  return db.transaction(async (trx) => {
+    const token = generateToken();
+    await trx('crew_invites').insert({ token, crew_id: crewId });
+    return { token };
+  });
+}
+
 async function rotateInviteToken(crewId, callerStudentId) {
   const member = await db('crew_members').where({ crew_id: crewId, student_id: callerStudentId, role: 'creator' }).first();
   if (!member) throw err('NOT_CREATOR', 'Not creator', 'Only the crew creator can do that.', 403);
@@ -137,6 +159,7 @@ module.exports = {
   createCrew,
   previewByToken,
   joinCrewByToken,
+  getCurrentInviteToken,
   rotateInviteToken,
   leaveCrew,
   bootMember,

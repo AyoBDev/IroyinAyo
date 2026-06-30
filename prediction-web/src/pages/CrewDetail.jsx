@@ -45,14 +45,15 @@ export default function CrewDetail() {
   }, [id]);
 
   async function openInvite() {
-    // Use rotate-invite as a way to fetch current token? Simpler: regenerate gives newToken; reuse it.
-    // For V1, regenerate on demand; the creator pattern is fine.
+    // Fetch the existing active invite token. Opening the sheet must NOT
+    // rotate the token — that would invalidate any link the creator already
+    // shared. Rotation is an explicit action inside the sheet.
     if (!data) return;
     const isCreator = data.members.find((m) => m.id === user?.id)?.role === 'creator';
     if (isCreator) {
       try {
-        const { newToken } = await apiFetch(`/api/crews/${id}/rotate-invite`, { method: 'POST' });
-        setInviteToken(newToken);
+        const { token } = await apiFetch(`/api/crews/${id}/invite`);
+        setInviteToken(token);
         setShowInvite(true);
       } catch {}
     }

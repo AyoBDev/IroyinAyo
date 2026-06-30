@@ -26,8 +26,12 @@ async function createPool(crewId, creatorId, opts) {
 
   if (poolType === 'public') {
     if (!parentMarketId) throw err('VALIDATION', 'Missing market', 'Select a match to predict on.');
-    const market = await db('multi_markets').where({ id: parentMarketId }).first();
-    if (!market) throw err('FIXTURE_NOT_FOUND', 'Market gone', 'We couldn\'t find this match. Try another.');
+    // parent_market_id now references fixtures.id (see migration 041).
+    const fixture = await db('fixtures').where({ id: parentMarketId }).first();
+    if (!fixture) throw err('FIXTURE_NOT_FOUND', 'Fixture gone', 'We couldn\'t find this match. Try another.');
+    if (fixture.status && fixture.status !== 'scheduled') {
+      throw err('FIXTURE_NOT_AVAILABLE', 'Fixture not selectable', 'That match isn\'t available to pool on anymore.');
+    }
   } else {
     if (!title || !outcomeA || !outcomeB) throw err('VALIDATION', 'Missing fields', 'Add a question and two options.');
   }
@@ -63,6 +67,12 @@ async function predictInPool(poolId, actor, outcome) {
     if (pool.pool_type === 'private') {
       if (![pool.outcome_a_label, pool.outcome_b_label].includes(outcome)) {
         throw err('VALIDATION', 'Outcome mismatch', 'Pick one of the listed options.');
+      }
+    } else {
+      // Public pools use the same lowercase tokens computeWinner returns so
+      // auto-resolution can match exactly.
+      if (!['home', 'away', 'draw'].includes(outcome)) {
+        throw err('VALIDATION', 'Outcome mismatch', 'Pick home, draw, or away.');
       }
     }
 

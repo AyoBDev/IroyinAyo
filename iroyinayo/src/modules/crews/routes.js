@@ -59,6 +59,15 @@ router.post('/:id/rotate-invite', authenticateStudent, async (req, res, next) =>
   } catch (e) { handleErr(e, res, next); }
 });
 
+// Returns the current active invite token (creator only). Use this when
+// opening the invite sheet so we don't rotate the token every time.
+router.get('/:id/invite', authenticateStudent, async (req, res, next) => {
+  try {
+    const result = await crewsService.getCurrentInviteToken(req.params.id, req.student.id);
+    res.json(result);
+  } catch (e) { handleErr(e, res, next); }
+});
+
 router.post('/:id/delete', authenticateStudent, async (req, res, next) => {
   try {
     await crewsService.deleteCrew(req.params.id, req.student.id);
