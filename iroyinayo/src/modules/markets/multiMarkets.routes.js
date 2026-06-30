@@ -273,9 +273,34 @@ router.get('/admin/all', authenticate, async (req, res, next) => {
 
 router.post('/admin/create', authenticate, async (req, res, next) => {
   try {
-    const { title, outcomes, category, liquidityB, sponsor } = req.body;
+    const { title, outcomes, category, liquidityB, sponsor, description, closesAt } = req.body;
     if (!title || !outcomes || !Array.isArray(outcomes) || outcomes.length < 2) {
       throw new ValidationError('Title and at least 2 outcomes required');
+    }
+
+    let trimmedDescription;
+    if (description !== undefined && description !== null) {
+      if (typeof description !== 'string') {
+        throw new ValidationError('description must be a string');
+      }
+      trimmedDescription = description.trim();
+      if (trimmedDescription.length === 0) {
+        throw new ValidationError('description cannot be empty');
+      }
+      if (trimmedDescription.length > 500) {
+        throw new ValidationError('description must be at most 500 characters');
+      }
+    }
+
+    let closesAtDate;
+    if (closesAt !== undefined && closesAt !== null && closesAt !== '') {
+      closesAtDate = new Date(closesAt);
+      if (isNaN(closesAtDate.getTime())) {
+        throw new ValidationError('closesAt must be a valid ISO date');
+      }
+      if (closesAtDate.getTime() <= Date.now()) {
+        throw new ValidationError('closesAt must be in the future');
+      }
     }
 
     const sponsorData = sponsor ? {
@@ -286,8 +311,12 @@ router.post('/admin/create', authenticate, async (req, res, next) => {
 
     const market = await multiMarkets.createMarket(title, liquidityB || null, sponsorData);
 
-    if (category) {
-      await db('multi_markets').where({ id: market.id }).update({ category });
+    const updates = {};
+    if (category) updates.category = category;
+    if (trimmedDescription !== undefined) updates.description = trimmedDescription;
+    if (closesAtDate !== undefined) updates.closes_at = closesAtDate;
+    if (Object.keys(updates).length > 0) {
+      await db('multi_markets').where({ id: market.id }).update(updates);
     }
 
     for (const label of outcomes) {
