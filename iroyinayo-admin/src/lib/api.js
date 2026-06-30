@@ -33,7 +33,9 @@ async function request(path, options = {}) {
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(data.error || `Request failed: ${res.status}`);
+    const err = new Error(data.error || `Request failed: ${res.status}`);
+    if (data.retryAfter !== undefined) err.retryAfter = data.retryAfter;
+    throw err;
   }
 
   return data;
@@ -79,6 +81,7 @@ export const cc = {
   getAIMarketDraft: (prompt, { signal } = {}) => apiWithSignal.post('/admin/ai-market/draft', { prompt }, signal),
   getAIMarketTrends: () => api.post('/admin/ai-market/trends', {}),
   publishAIMarket: (payload) => api.post('/admin/ai-market/publish', payload),
+  describeAIMarket: (payload) => api.post('/admin/ai-market/describe', payload),
   // Broadcast helpers
   broadcastTest: (payload) => api.post('/admin/broadcast/test', payload),
   broadcastAll: (payload) => api.post('/admin/broadcast', payload),

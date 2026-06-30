@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
@@ -12,8 +11,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Trophy, Plus, X, BarChart3 } from 'lucide-react';
+import { Trophy, Plus, BarChart3 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import CreateMarketDialog from '../../components/markets/CreateMarketDialog';
 
 export default function MarketsPage() {
   const router = useRouter();
@@ -22,15 +22,7 @@ export default function MarketsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [error, setError] = useState('');
   const [resolving, setResolving] = useState(false);
-  const [creating, setCreating] = useState(false);
   const [liquidityInfo, setLiquidityInfo] = useState(null);
-
-  const [newTitle, setNewTitle] = useState('');
-  const [newOutcomes, setNewOutcomes] = useState(['', '']);
-  const [newCategory, setNewCategory] = useState('');
-  const [isSponsored, setIsSponsored] = useState(false);
-  const [sponsorName, setSponsorName] = useState('');
-  const [sponsorFeatured, setSponsorFeatured] = useState(false);
 
   useEffect(() => {
     loadMarkets();
@@ -43,39 +35,6 @@ export default function MarketsPage() {
       setMarkets(data);
     } catch (err) {
       setError(err.message);
-    }
-  }
-
-  async function handleCreate(e) {
-    e.preventDefault();
-    const outcomes = newOutcomes.filter(o => o.trim());
-    if (!newTitle.trim() || outcomes.length < 2) return;
-    setCreating(true);
-    try {
-      const body = {
-        title: newTitle.trim(),
-        outcomes,
-        category: newCategory.trim() || undefined,
-      };
-      if (isSponsored && sponsorName.trim()) {
-        body.sponsor = {
-          name: sponsorName.trim(),
-          featured: sponsorFeatured,
-        };
-      }
-      await api.post('/multi-markets/admin/create', body);
-      setShowCreate(false);
-      setNewTitle('');
-      setNewOutcomes(['', '']);
-      setNewCategory('');
-      setIsSponsored(false);
-      setSponsorName('');
-      setSponsorFeatured(false);
-      loadMarkets();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setCreating(false);
     }
   }
 
@@ -175,110 +134,11 @@ export default function MarketsPage() {
         ))}
       </div>
 
-      {/* Create Market Dialog */}
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Create Prediction Market</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleCreate} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Question</label>
-              <Input
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                required
-                placeholder="Who will win the Engineering vs Science match?"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Category (optional)</label>
-              <Input
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                placeholder="sports, politics, entertainment..."
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Outcomes</label>
-              <div className="space-y-2">
-                {newOutcomes.map((outcome, i) => (
-                  <div key={i} className="flex gap-2">
-                    <Input
-                      value={outcome}
-                      onChange={(e) => {
-                        const updated = [...newOutcomes];
-                        updated[i] = e.target.value;
-                        setNewOutcomes(updated);
-                      }}
-                      placeholder={`Option ${i + 1}`}
-                    />
-                    {newOutcomes.length > 2 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setNewOutcomes(newOutcomes.filter((_, j) => j !== i))}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setNewOutcomes([...newOutcomes, ''])}
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Add Option
-                </Button>
-              </div>
-            </div>
-            <div className="border-t pt-4">
-              <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isSponsored}
-                  onChange={(e) => setIsSponsored(e.target.checked)}
-                  className="rounded"
-                />
-                Sponsored Market
-              </label>
-              {isSponsored && (
-                <div className="mt-3 space-y-3 pl-4 border-l-2 border-yellow-300">
-                  <div>
-                    <label className="block text-sm mb-1">Sponsor Name</label>
-                    <Input
-                      value={sponsorName}
-                      onChange={(e) => setSponsorName(e.target.value)}
-                      placeholder="e.g. ChopNow, DataPlug..."
-                    />
-                  </div>
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={sponsorFeatured}
-                      onChange={(e) => setSponsorFeatured(e.target.checked)}
-                      className="rounded"
-                    />
-                    Featured (pinned to top)
-                  </label>
-                </div>
-              )}
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={creating || !newTitle.trim() || newOutcomes.filter(o => o.trim()).length < 2}>
-                {creating ? 'Creating...' : 'Create Market'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <CreateMarketDialog
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        onCreated={loadMarkets}
+      />
 
       {/* Resolve Dialog */}
       <Dialog open={!!resolveModal} onOpenChange={(open) => !open && setResolveModal(null)}>
