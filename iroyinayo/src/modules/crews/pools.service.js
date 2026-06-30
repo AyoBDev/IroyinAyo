@@ -1,4 +1,5 @@
 const db = require('../../config/database');
+const { getIO } = require('../../socket');
 
 const STAKE_MIN = 10;
 const STAKE_MAX = 500;
@@ -52,7 +53,7 @@ async function predictInPool(poolId, actor, outcome) {
   if (!studentId && !pendingAccountId) throw err('VALIDATION', 'No actor', 'Sign in to predict.');
   if (!outcome || typeof outcome !== 'string') throw err('VALIDATION', 'Bad outcome', 'Pick an option to predict.');
 
-  return db.transaction(async (trx) => {
+  const result = await db.transaction(async (trx) => {
     const pool = await trx('crew_pools').where({ id: poolId }).forUpdate().first();
     if (!pool) throw err('POOL_NOT_FOUND', 'No pool', 'Pool not found.', 404);
     if (pool.status !== 'open') throw err('POOL_CLOSED', 'Pool not open', 'Pool closed at kickoff. Predict on the next one.', 409);
@@ -78,16 +79,24 @@ async function predictInPool(poolId, actor, outcome) {
       const [prediction] = await trx('crew_pool_predictions').insert({
         pool_id: poolId, student_id: studentId, predicted_outcome: outcome, points_locked: pool.stake_amount,
       }).returning('*');
-      return { prediction };
+      return { prediction, crewId: pool.crew_id };
     } else {
       const existing = await trx('crew_pool_predictions').where({ pool_id: poolId, pending_account_id: pendingAccountId }).first();
       if (existing) throw err('ALREADY_PREDICTED', 'Already predicted', 'You\'ve already predicted.', 409);
       const [prediction] = await trx('crew_pool_predictions').insert({
         pool_id: poolId, pending_account_id: pendingAccountId, predicted_outcome: outcome, points_locked: pool.stake_amount,
       }).returning('*');
-      return { prediction };
+      return { prediction, crewId: pool.crew_id };
     }
   });
+
+  // Emit socket event after transaction commits
+  const io = getIO();
+  if (io) {
+    io.to(`crew:${result.crewId}`).emit('crew:pool:prediction', { poolId, predictionId: result.prediction.id });
+  }
+
+  return { prediction: result.prediction };
 }
 
 async function closeExpiredPools() {

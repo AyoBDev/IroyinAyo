@@ -1,4 +1,5 @@
 const db = require('../../config/database');
+const { getIO } = require('../../socket');
 
 const DISPUTE_WINDOW_HOURS = 24;
 
@@ -59,11 +60,18 @@ async function calculateAndApplyPayouts(poolId, winnerOutcome, source, opts = {}
     const newStatus = source === 'creator' ? 'awaiting_dispute_window' : 'resolved';
     await trx('crew_pools').where({ id: poolId }).update({ status: newStatus, winner_outcome: winnerOutcome });
 
-    return { paid: perWinner * winners.length, perWinner, platformAbsorbed };
+    return { paid: perWinner * winners.length, perWinner, platformAbsorbed, newStatus, crewId: pool.crew_id };
   }
 
-  if (externalTrx) return body(externalTrx);
-  return db.transaction(body);
+  const result = externalTrx ? await body(externalTrx) : await db.transaction(body);
+
+  // Emit socket event after transaction commits, only when status is now 'resolved'
+  const io = getIO();
+  if (io && result.newStatus === 'resolved') {
+    io.to(`crew:${result.crewId}`).emit('crew:pool:resolved', { poolId, winnerOutcome });
+  }
+
+  return result;
 }
 
 async function creatorReportResult(poolId, creatorId, winnerOutcome) {

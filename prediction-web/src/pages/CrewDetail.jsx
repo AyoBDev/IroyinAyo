@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Users, Plus, UserPlus } from 'lucide-react';
 import { apiFetch } from '../api.js';
 import useStore from '../store.js';
+import { getSocket } from '../socket.js';
 import CrewPoolCard from '../components/CrewPoolCard.jsx';
 import CreatePoolModal from '../components/CreatePoolModal.jsx';
 import CrewInviteSheet from '../components/CrewInviteSheet.jsx';
@@ -28,6 +29,20 @@ export default function CrewDetail() {
   }
 
   useEffect(() => { reload(); }, [id]);
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    socket.emit('crew:join', { crewId: id });
+    socket.on('crew:pool:prediction', reload);
+    socket.on('crew:pool:resolved', reload);
+
+    return () => {
+      socket.off('crew:pool:prediction', reload);
+      socket.off('crew:pool:resolved', reload);
+    };
+  }, [id]);
 
   async function openInvite() {
     // Use rotate-invite as a way to fetch current token? Simpler: regenerate gives newToken; reuse it.

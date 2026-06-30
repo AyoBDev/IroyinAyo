@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, CheckCircle2, AlertCircle, Flag } from 'lucide-react';
 import { apiFetch } from '../api.js';
 import useStore from '../store.js';
+import { getSocket } from '../socket.js';
 
 export default function CrewPool() {
   const { id: crewId, poolId } = useParams();
@@ -24,6 +25,20 @@ export default function CrewPool() {
     }
   }
   useEffect(() => { reload(); }, [poolId]);
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    socket.emit('crew:join', { crewId });
+    socket.on('crew:pool:prediction', reload);
+    socket.on('crew:pool:resolved', reload);
+
+    return () => {
+      socket.off('crew:pool:prediction', reload);
+      socket.off('crew:pool:resolved', reload);
+    };
+  }, [crewId]);
 
   async function predict(outcome) {
     setSubmitting(true); setError(null);
