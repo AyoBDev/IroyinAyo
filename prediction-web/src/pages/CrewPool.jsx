@@ -73,21 +73,26 @@ export default function CrewPool() {
   if (loading) return <div className="p-4 text-ink-muted">Loading…</div>;
   if (!data) return <div className="p-4 text-ink-muted">{error || 'Pool not found.'}</div>;
 
-  const { pool, predictions, currentUserPrediction } = data;
+  const { pool, predictions, currentUserPrediction, marketOutcomes, parentMarket } = data;
   const isCreator = pool.creator_id === user?.id;
   const isPrivate = pool.pool_type === 'private';
-  // Public pools store outcomes in lowercase (home/away/draw) to match the
-  // values written by computeWinner() so auto-resolution can match them.
-  // The UI shows capitalised labels but submits the lowercase value.
-  const optionA = isPrivate ? pool.outcome_a_label : 'home';
-  const optionB = isPrivate ? pool.outcome_b_label : 'away';
-  const optionDraw = isPrivate ? null : 'draw';
-  const labelOf = (val) => {
-    if (isPrivate) return val;
-    if (val === 'home') return 'Home';
-    if (val === 'away') return 'Away';
-    if (val === 'draw') return 'Draw';
-    return val;
+  // Public pools wrap a multi_market; predict options come from its outcomes
+  // (each multi_market_outcomes.label). Private pools use the pool's own A/B
+  // labels. We pass the raw outcome label as the submitted value — backend
+  // validates against the wrapped market's outcomes list, and the auto-resolver
+  // passes through the winning outcome's label.
+  const publicOptions = (marketOutcomes || []).map((o) => o.label);
+  const publicOptionsForButtons = isPrivate
+    ? [pool.outcome_a_label, pool.outcome_b_label]
+    : publicOptions;
+  const labelOf = (val) => val;
+  // Resolve button accent styling: two-outcome public pools mirror the
+  // green/red treatment used for private A/B; pools with >2 outcomes (or
+  // a draw option) use neutral chrome to avoid implying a preference.
+  const buttonStyle = (i, total) => {
+    if (total === 2 && i === 0) return 'bg-accent-green-bg border border-accent-green-border text-accent-green';
+    if (total === 2 && i === 1) return 'bg-accent-red-bg border border-accent-red-border text-accent-red';
+    return 'bg-paper border border-line text-ink';
   };
 
   return (
@@ -96,27 +101,26 @@ export default function CrewPool() {
         <ArrowLeft size={16} /> Back to crew
       </button>
 
-      <h1 className="font-serif text-section mb-2">{pool.title || 'Match prediction'}</h1>
+      <h1 className="font-serif text-section mb-2">{pool.title || parentMarket?.title || 'Pool'}</h1>
       <div className="text-[12px] text-ink-muted mb-4 flex items-center gap-1">
-        <Clock size={12} /> Kickoff: {new Date(pool.kickoff_at).toLocaleString()}
+        <Clock size={12} /> Closes: {new Date(pool.kickoff_at).toLocaleString()}
       </div>
 
       <div className="bg-paper border border-line rounded-xl p-4 mb-4">
         <div className="text-[12px] text-ink-muted mb-3">Stake: {pool.stake_amount} pts · {predictions.length} predictors</div>
 
-        {pool.status === 'open' && !currentUserPrediction && (
-          <div className="flex gap-2">
-            <button onClick={() => predict(optionA)} disabled={submitting} className="flex-1 py-3 rounded-xl bg-accent-green-bg border border-accent-green-border text-accent-green font-semibold disabled:opacity-60">
-              {labelOf(optionA)}
-            </button>
-            {optionDraw && (
-              <button onClick={() => predict(optionDraw)} disabled={submitting} className="flex-1 py-3 rounded-xl bg-paper border border-line text-ink font-semibold disabled:opacity-60">
-                {labelOf(optionDraw)}
+        {pool.status === 'open' && !currentUserPrediction && publicOptionsForButtons.length > 0 && (
+          <div className="flex gap-2 flex-wrap">
+            {publicOptionsForButtons.map((label, i) => (
+              <button
+                key={label}
+                onClick={() => predict(label)}
+                disabled={submitting}
+                className={`flex-1 min-w-[30%] py-3 rounded-xl font-semibold disabled:opacity-60 ${buttonStyle(i, publicOptionsForButtons.length)}`}
+              >
+                {labelOf(label)}
               </button>
-            )}
-            <button onClick={() => predict(optionB)} disabled={submitting} className="flex-1 py-3 rounded-xl bg-accent-red-bg border border-accent-red-border text-accent-red font-semibold disabled:opacity-60">
-              {labelOf(optionB)}
-            </button>
+            ))}
           </div>
         )}
 
@@ -130,12 +134,16 @@ export default function CrewPool() {
           <div className="mt-3">
             <div className="text-[12px] text-ink-muted mb-2">Report the winner:</div>
             <div className="flex gap-2">
-              <button onClick={() => reportResult(optionA)} disabled={submitting} className="flex-1 py-2.5 rounded-xl bg-paper border border-line text-[13px] font-semibold">
-                {labelOf(optionA)} won
-              </button>
-              <button onClick={() => reportResult(optionB)} disabled={submitting} className="flex-1 py-2.5 rounded-xl bg-paper border border-line text-[13px] font-semibold">
-                {labelOf(optionB)} won
-              </button>
+              {publicOptionsForButtons.map((label) => (
+                <button
+                  key={label}
+                  onClick={() => reportResult(label)}
+                  disabled={submitting}
+                  className="flex-1 py-2.5 rounded-xl bg-paper border border-line text-[13px] font-semibold"
+                >
+                  {labelOf(label)} won
+                </button>
+              ))}
             </div>
           </div>
         )}

@@ -1,8 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Lock } from 'lucide-react';
 import { apiFetch } from '../api.js';
 import RealMoneyComingSoon from './RealMoneyComingSoon.jsx';
+
+// Default close window for a public pool when the underlying market has no
+// `closes_at` set. Pools must have a kickoff_at NOT NULL, so we pick a
+// sensible "24 hours from now" cap for the predict window.
+const DEFAULT_PUBLIC_CLOSE_HOURS = 24;
 
 export default function CreatePoolModal({ crewId, onClose, onCreated }) {
   const [tab, setTab] = useState('private'); // 'private' | 'public'
@@ -13,16 +18,28 @@ export default function CreatePoolModal({ crewId, onClose, onCreated }) {
   const [stakeAmount, setStakeAmount] = useState(50);
   const [currency, setCurrency] = useState('POINTS');
   const [showRealMoney, setShowRealMoney] = useState(false);
-  const [fixtures, setFixtures] = useState([]);
-  const [selectedFixture, setSelectedFixture] = useState(null);
+  const [markets, setMarkets] = useState([]);
+  const [selectedMarket, setSelectedMarket] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (tab === 'public') {
-      apiFetch('/api/crews/fixtures').then(setFixtures).catch(() => setFixtures([]));
+      // Backend `/api/crews/fixtures` now serves open multi_markets (same list
+      // the Markets feed shows). The endpoint name is preserved for compat.
+      apiFetch('/api/crews/fixtures').then(setMarkets).catch(() => setMarkets([]));
     }
   }, [tab]);
+
+  // For public pools, derive the pool's kickoff from the wrapped market: prefer
+  // the market's own closes_at; otherwise default to 24 hours from now. The
+  // user doesn't pick a kickoff for public pools — the Markets feed defines
+  // the predict window.
+  const publicKickoffISO = useMemo(() => {
+    if (!selectedMarket) return null;
+    if (selectedMarket.closes_at) return selectedMarket.closes_at;
+    return new Date(Date.now() + DEFAULT_PUBLIC_CLOSE_HOURS * 3600 * 1000).toISOString();
+  }, [selectedMarket]);
 
   function selectCurrency(c) {
     if (c === 'NGN') { setShowRealMoney(true); return; }
@@ -34,7 +51,7 @@ export default function CreatePoolModal({ crewId, onClose, onCreated }) {
     try {
       const payload = tab === 'private'
         ? { poolType: 'private', title: title.trim(), outcomeA: outcomeA.trim(), outcomeB: outcomeB.trim(), kickoffAt, stakeAmount: Number(stakeAmount) }
-        : { poolType: 'public', parentMarketId: selectedFixture?.id || null, kickoffAt: selectedFixture?.kickoff_at, stakeAmount: Number(stakeAmount) };
+        : { poolType: 'public', parentMarketId: selectedMarket?.id || null, kickoffAt: publicKickoffISO, stakeAmount: Number(stakeAmount) };
       const { pool } = await apiFetch(`/api/crews/${crewId}/pools`, { method: 'POST', body: JSON.stringify(payload) });
       onCreated(pool);
     } catch (e) {
@@ -54,7 +71,7 @@ export default function CreatePoolModal({ crewId, onClose, onCreated }) {
 
         <div className="flex gap-2 mb-4">
           <button onClick={() => setTab('private')} className={`flex-1 py-2 rounded-lg text-[13px] font-medium ${tab === 'private' ? 'bg-emerald text-white' : 'bg-paper border border-line text-ink'}`}>Private event</button>
-          <button onClick={() => setTab('public')} className={`flex-1 py-2 rounded-lg text-[13px] font-medium ${tab === 'public' ? 'bg-emerald text-white' : 'bg-paper border border-line text-ink'}`}>Public match</button>
+          <button onClick={() => setTab('public')} className={`flex-1 py-2 rounded-lg text-[13px] font-medium ${tab === 'public' ? 'bg-emerald text-white' : 'bg-paper border border-line text-ink'}`}>Public market</button>
         </div>
 
         {tab === 'private' ? (
@@ -65,24 +82,30 @@ export default function CreatePoolModal({ crewId, onClose, onCreated }) {
               <input type="text" value={outcomeA} onChange={(e) => setOutcomeA(e.target.value)} placeholder="Option A" maxLength={60} className="flex-1 px-3 py-2.5 bg-bone border border-line rounded-lg" />
               <input type="text" value={outcomeB} onChange={(e) => setOutcomeB(e.target.value)} placeholder="Option B" maxLength={60} className="flex-1 px-3 py-2.5 bg-bone border border-line rounded-lg" />
             </div>
+            <label className="text-[12px] text-ink-muted mb-1 block">Kickoff</label>
+            <input type="datetime-local" value={kickoffAt} onChange={(e) => setKickoffAt(e.target.value)} className="w-full px-3 py-2.5 bg-bone border border-line rounded-lg mb-3" />
           </>
         ) : (
           <>
-            <label className="text-[12px] text-ink-muted mb-1 block">Pick a match</label>
+            <label className="text-[12px] text-ink-muted mb-1 block">Pick a market</label>
             <div className="max-h-40 overflow-y-auto bg-bone border border-line rounded-lg mb-3">
-              {fixtures.length === 0
-                ? <div className="p-3 text-[12px] text-ink-muted">No upcoming fixtures available.</div>
-                : fixtures.map((f) => (
-                  <button key={f.id} onClick={() => setSelectedFixture(f)} className={`block w-full text-left p-3 text-[13px] border-b border-line last:border-b-0 ${selectedFixture?.id === f.id ? 'bg-accent-green-bg' : ''}`}>
-                    {f.home_team} vs {f.away_team} · {new Date(f.kickoff_at).toLocaleString()}
+              {markets.length === 0
+                ? <div className="p-3 text-[12px] text-ink-muted">No open markets right now.</div>
+                : markets.map((m) => (
+                  <button key={m.id} onClick={() => setSelectedMarket(m)} className={`block w-full text-left p-3 text-[13px] border-b border-line last:border-b-0 ${selectedMarket?.id === m.id ? 'bg-accent-green-bg' : ''}`}>
+                    {m.title}
                   </button>
                 ))}
             </div>
+            {selectedMarket && (
+              <div className="text-[12px] text-ink-muted mb-3">
+                {selectedMarket.closes_at
+                  ? <>Closes {new Date(selectedMarket.closes_at).toLocaleString()}</>
+                  : <>Closes in {DEFAULT_PUBLIC_CLOSE_HOURS} hours</>}
+              </div>
+            )}
           </>
         )}
-
-        <label className="text-[12px] text-ink-muted mb-1 block">Kickoff</label>
-        <input type="datetime-local" value={tab === 'public' ? (selectedFixture?.kickoff_at?.slice(0,16) || '') : kickoffAt} onChange={(e) => setKickoffAt(e.target.value)} disabled={tab === 'public'} className="w-full px-3 py-2.5 bg-bone border border-line rounded-lg mb-3" />
 
         <label className="text-[12px] text-ink-muted mb-1 block">Stake per member (points)</label>
         <input type="number" value={stakeAmount} onChange={(e) => setStakeAmount(e.target.value)} min={10} max={500} className="w-full px-3 py-2.5 bg-bone border border-line rounded-lg mb-3" />

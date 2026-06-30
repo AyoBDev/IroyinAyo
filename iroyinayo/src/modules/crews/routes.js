@@ -3,7 +3,6 @@ const router = express.Router();
 const crewsService = require('./service');
 const poolsService = require('./pools.service');
 const resolution = require('./resolution.service');
-const fixturesService = require('./fixtures.service');
 const { requireSupabaseUser: authenticateStudent } = require('../../middleware/requireSupabaseUser');
 const { authenticate } = require('../../middleware/auth');
 const { requireRole } = require('../../middleware/adminRole');
@@ -149,12 +148,19 @@ router.post('/realmoney-waitlist', authenticateStudent, async (req, res, next) =
   } catch (e) { handleErr(e, res, next); }
 });
 
+// Public-event picker for the Crews "Public match" tab. Reads the same
+// multi_markets feed that the Markets page renders, so users see one list of
+// real-world events to pool on. Endpoint name preserved as `/fixtures` for
+// frontend backwards-compat — the response shape changed (id + title +
+// closes_at) and CreatePoolModal now consumes it accordingly.
 router.get('/fixtures', authenticateStudent, async (req, res, next) => {
   try {
-    const from = new Date();
-    const to = new Date(Date.now() + 7 * 86400000);
-    const fixtures = await fixturesService.getFixturesForDateRange(from, to);
-    res.json(fixtures);
+    const markets = await db('multi_markets')
+      .where({ status: 'open' })
+      .orderBy('is_featured', 'desc')
+      .orderBy('created_at', 'desc')
+      .select('id', 'title', 'status', 'created_at', 'closes_at');
+    res.json(markets);
   } catch (e) { handleErr(e, res, next); }
 });
 

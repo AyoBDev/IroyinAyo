@@ -1,7 +1,13 @@
 const db = require('../../config/database');
-const resolution = require('./resolution.service');
 
 const FD_BASE = 'https://api.football-data.org/v4';
+
+// NOTE: crew_pools no longer reference fixtures (migration 042 re-pointed the
+// FK to multi_markets). The Football-Data fixture cache here is preserved for
+// future use (e.g. a dedicated football-events feed) but is no longer wired
+// into the crew pool auto-resolution path. resolvePoolsForFixture has been
+// removed; resolveMarket() in multiMarkets.service cascades to crew pools
+// directly.
 
 function err(code, message, userMessage, status = 400) {
   const e = new Error(message);
@@ -81,7 +87,6 @@ async function pollCompletedFixtures() {
   const dateFrom = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
   const dateTo = new Date().toISOString().slice(0, 10);
   let resolved = 0;
-  let poolsResolved = 0;
   for (const comp of competitions) {
     let data;
     try {
@@ -104,33 +109,11 @@ async function pollCompletedFixtures() {
         status: 'finished', updated_at: db.fn.now(),
       });
       resolved++;
-      poolsResolved += await resolvePoolsForFixture(fixture.id, winner);
     }
   }
-  return { resolved, poolsResolved };
-}
-
-/**
- * For a fixture that just finished, auto-resolve any public crew pool tied to
- * it. Accepts pools in 'open' or 'closed' state (kickoff has already passed by
- * the time the match finishes, so most should already be 'closed' via the
- * close-expired cron — but include 'open' defensively for the edge case where
- * pollCompletedFixtures ran before closeExpiredPools).
- */
-async function resolvePoolsForFixture(fixtureId, winner) {
-  const pools = await db('crew_pools')
-    .where({ parent_market_id: fixtureId, pool_type: 'public' })
-    .whereIn('status', ['open', 'closed']);
-  let count = 0;
-  for (const pool of pools) {
-    try {
-      await resolution.autoResolvePublicPool(pool.id, winner);
-      count++;
-    } catch (e) {
-      console.error(`[fixtures] auto-resolve pool ${pool.id} failed:`, e.message);
-    }
-  }
-  return count;
+  // poolsResolved removed: crew pools no longer attach to fixtures. They
+  // resolve via the multi_markets cascade in markets/multiMarkets.service.js.
+  return { resolved };
 }
 
 async function manualSubmitResult(fixtureId, { home_score, away_score }) {
@@ -141,8 +124,8 @@ async function manualSubmitResult(fixtureId, { home_score, away_score }) {
   await db('fixtures').where({ id: fixtureId }).update({
     home_score, away_score, winner, status: 'finished', updated_at: db.fn.now(),
   });
-  const poolsResolved = await resolvePoolsForFixture(fixtureId, winner);
-  return { winner, poolsResolved };
+  // No crew pool cascade here — pools wrap multi_markets, not fixtures.
+  return { winner };
 }
 
 async function getFixturesForDateRange(from, to) {
@@ -161,5 +144,4 @@ module.exports = {
   manualSubmitResult,
   getFixturesForDateRange,
   computeWinner,
-  resolvePoolsForFixture,
 };

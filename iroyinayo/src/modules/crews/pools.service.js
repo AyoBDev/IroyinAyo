@@ -25,12 +25,14 @@ async function createPool(crewId, creatorId, opts) {
   if (!member) throw err('NOT_CREW_MEMBER', 'Not a member', 'You\'re not a member of this crew.', 403);
 
   if (poolType === 'public') {
-    if (!parentMarketId) throw err('VALIDATION', 'Missing market', 'Select a match to predict on.');
-    // parent_market_id now references fixtures.id (see migration 041).
-    const fixture = await db('fixtures').where({ id: parentMarketId }).first();
-    if (!fixture) throw err('FIXTURE_NOT_FOUND', 'Fixture gone', 'We couldn\'t find this match. Try another.');
-    if (fixture.status && fixture.status !== 'scheduled') {
-      throw err('FIXTURE_NOT_AVAILABLE', 'Fixture not selectable', 'That match isn\'t available to pool on anymore.');
+    if (!parentMarketId) throw err('VALIDATION', 'Missing market', 'Select a market to predict on.');
+    // parent_market_id references multi_markets.id (see migration 042).
+    // Public pools wrap an open Markets-feed row; auto-resolution fires when
+    // the underlying multi_market resolves.
+    const market = await db('multi_markets').where({ id: parentMarketId }).first();
+    if (!market) throw err('MARKET_NOT_FOUND', 'Market gone', 'We couldn\'t find this market. Pick another.');
+    if (market.status !== 'open') {
+      throw err('MARKET_NOT_OPEN', 'Market closed', 'This market is no longer accepting predictions.');
     }
   } else {
     if (!title || !outcomeA || !outcomeB) throw err('VALIDATION', 'Missing fields', 'Add a question and two options.');
@@ -69,10 +71,16 @@ async function predictInPool(poolId, actor, outcome) {
         throw err('VALIDATION', 'Outcome mismatch', 'Pick one of the listed options.');
       }
     } else {
-      // Public pools use the same lowercase tokens computeWinner returns so
-      // auto-resolution can match exactly.
-      if (!['home', 'away', 'draw'].includes(outcome)) {
-        throw err('VALIDATION', 'Outcome mismatch', 'Pick home, draw, or away.');
+      // Public pools accept any label from the wrapped multi_market's
+      // outcomes. Auto-resolution looks up the winning outcome's label from
+      // multi_market_outcomes and passes it through, so we just need to
+      // validate the submitted value matches an outcome on this market.
+      const outcomes = await trx('multi_market_outcomes')
+        .where({ market_id: pool.parent_market_id })
+        .select('label');
+      const allowed = outcomes.map((o) => o.label);
+      if (!allowed.includes(outcome)) {
+        throw err('VALIDATION', 'Outcome mismatch', 'Pick one of the listed options.');
       }
     }
 
@@ -137,7 +145,21 @@ async function getPoolDetail(poolId, studentId) {
   const visiblePredictions = pool.status === 'open'
     ? predictions.map((p) => ({ id: p.id, student_id: p.student_id, name: p.name, hasPredicted: true, predicted_outcome: p.student_id === studentId ? p.predicted_outcome : null }))
     : predictions;
-  return { pool, predictions: visiblePredictions, currentUserPrediction };
+  const result = { pool, predictions: visiblePredictions, currentUserPrediction };
+  // For public pools, include the wrapped market's outcome labels so the UI can
+  // render outcome-specific predict buttons (Arsenal / Draw / Chelsea, etc.)
+  // instead of the hard-coded home/away/draw triplet.
+  if (pool.pool_type === 'public' && pool.parent_market_id) {
+    const outcomes = await db('multi_market_outcomes')
+      .where({ market_id: pool.parent_market_id })
+      .orderBy('created_at', 'asc')
+      .select('id', 'label');
+    result.marketOutcomes = outcomes;
+    // Surface the parent market's title so the page can show what the pool is on
+    const market = await db('multi_markets').where({ id: pool.parent_market_id }).first();
+    if (market) result.parentMarket = { id: market.id, title: market.title, status: market.status };
+  }
+  return result;
 }
 
 module.exports = { STAKE_MIN, STAKE_MAX, createPool, predictInPool, closeExpiredPools, listPoolsForCrew, getPoolDetail };
