@@ -38,6 +38,27 @@ router.get('/', authenticateStudent, async (req, res, next) => {
   } catch (e) { handleErr(e, res, next); }
 });
 
+// Static-prefix routes MUST come before `/:id` so Express doesn't match
+// them as a crew UUID (which fails the UUID cast and throws 500).
+router.get('/fixtures', authenticateStudent, async (req, res, next) => {
+  try {
+    const markets = await db('multi_markets')
+      .where({ status: 'open' })
+      .orderBy('is_featured', 'desc')
+      .orderBy('created_at', 'desc')
+      .select('id', 'title', 'status', 'created_at', 'closes_at');
+    res.json(markets);
+  } catch (e) { handleErr(e, res, next); }
+});
+
+router.post('/realmoney-waitlist', authenticateStudent, async (req, res, next) => {
+  try {
+    await db('realmoney_waitlist').insert({ student_id: req.student.id, source_context: req.body.source || 'unknown' })
+      .onConflict('student_id').ignore();
+    res.json({ ok: true });
+  } catch (e) { handleErr(e, res, next); }
+});
+
 router.get('/:id', authenticateStudent, async (req, res, next) => {
   try {
     const detail = await crewsService.getCrewWithMembers(req.params.id);
@@ -137,30 +158,6 @@ router.post('/admin/pools/:poolId/resolve', authenticate, requireRole('super_adm
   try {
     const result = await resolution.adminOverrideResolution(req.params.poolId, req.admin.id, req.body.outcome, req.body.note || null);
     res.json(result);
-  } catch (e) { handleErr(e, res, next); }
-});
-
-router.post('/realmoney-waitlist', authenticateStudent, async (req, res, next) => {
-  try {
-    await db('realmoney_waitlist').insert({ student_id: req.student.id, source_context: req.body.source || 'unknown' })
-      .onConflict('student_id').ignore();
-    res.json({ ok: true });
-  } catch (e) { handleErr(e, res, next); }
-});
-
-// Public-event picker for the Crews "Public match" tab. Reads the same
-// multi_markets feed that the Markets page renders, so users see one list of
-// real-world events to pool on. Endpoint name preserved as `/fixtures` for
-// frontend backwards-compat — the response shape changed (id + title +
-// closes_at) and CreatePoolModal now consumes it accordingly.
-router.get('/fixtures', authenticateStudent, async (req, res, next) => {
-  try {
-    const markets = await db('multi_markets')
-      .where({ status: 'open' })
-      .orderBy('is_featured', 'desc')
-      .orderBy('created_at', 'desc')
-      .select('id', 'title', 'status', 'created_at', 'closes_at');
-    res.json(markets);
   } catch (e) { handleErr(e, res, next); }
 });
 

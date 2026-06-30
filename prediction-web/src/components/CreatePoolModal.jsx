@@ -27,7 +27,10 @@ export default function CreatePoolModal({ crewId, onClose, onCreated }) {
     if (tab === 'public') {
       // Backend `/api/crews/fixtures` now serves open multi_markets (same list
       // the Markets feed shows). The endpoint name is preserved for compat.
-      apiFetch('/api/crews/fixtures').then(setMarkets).catch(() => setMarkets([]));
+      apiFetch('/api/crews/fixtures').then(setMarkets).catch((e) => {
+        console.error('[crews] failed to load public markets:', e);
+        setMarkets([]);
+      });
     }
   }, [tab]);
 

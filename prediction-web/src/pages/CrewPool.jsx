@@ -9,6 +9,7 @@ export default function CrewPool() {
   const { id: crewId, poolId } = useParams();
   const navigate = useNavigate();
   const user = useStore((s) => s.user);
+  const fetchUser = useStore((s) => s.fetchUser);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -45,6 +46,7 @@ export default function CrewPool() {
     try {
       await apiFetch(`/api/crews/pools/${poolId}/predict`, { method: 'POST', body: JSON.stringify({ outcome }) });
       reload();
+      fetchUser(); // refresh points balance after stake deduction
     } catch (e) { setError(e.userMessage || 'Could not predict.'); }
     finally { setSubmitting(false); }
   }
