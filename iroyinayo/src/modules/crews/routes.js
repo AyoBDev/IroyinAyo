@@ -11,7 +11,16 @@ const db = require('../../config/database');
 
 function handleErr(err, res, next) {
   if (err && err.code && err.userMessage) {
-    return res.status(err.status || 400).json({ error: { code: err.code, message: err.message, userMessage: err.userMessage, retryable: false } });
+    // Top-level fields match the existing apiFetch parser shape (err.error, err.code).
+    // The nested `error` object preserves the spec's documented response shape for
+    // future clients that read it.
+    return res.status(err.status || 400).json({
+      error: err.userMessage,
+      code: err.code,
+      userMessage: err.userMessage,
+      message: err.message,
+      retryable: false,
+    });
   }
   return next(err);
 }
