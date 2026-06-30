@@ -6,7 +6,6 @@ async function makeStudent(name = 'Tester') {
     name,
     phone_number: `${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
     is_onboarded: true,
-    is_verified: true,
     is_banned: false,
     is_system: false,
     points_balance: 1000,
