@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Users, Plus } from 'lucide-react';
 import { apiFetch } from '../api.js';
 import useStore from '../store.js';
-// import CreateCrewModal from '../components/CreateCrewModal.jsx'; // TODO: Task 13 will implement this
+import CreateCrewModal from '../components/CreateCrewModal.jsx';
 
 export default function Crews() {
   const [crews, setCrews] = useState([]);
@@ -32,7 +32,7 @@ export default function Crews() {
             Create your first crew
           </button>
         </div>
-        {/* {showCreate && <CreateCrewModal onClose={() => setShowCreate(false)} onCreated={(crew) => navigate(`/crews/${crew.id}`)} />} */}
+        {showCreate && <CreateCrewModal onClose={() => setShowCreate(false)} onCreated={(crew) => navigate(`/crews/${crew.id}`)} />}
       </div>
     );
   }
@@ -53,7 +53,7 @@ export default function Crews() {
           </button>
         ))}
       </div>
-      {/* {showCreate && <CreateCrewModal onClose={() => setShowCreate(false)} onCreated={(crew) => navigate(`/crews/${crew.id}`)} />} */}
+      {showCreate && <CreateCrewModal onClose={() => setShowCreate(false)} onCreated={(crew) => navigate(`/crews/${crew.id}`)} />}
     </div>
   );
 }
