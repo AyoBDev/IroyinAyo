@@ -71,18 +71,23 @@ async function rotateInviteToken(crewId, callerStudentId) {
 }
 
 async function leaveCrew(crewId, studentId) {
-  const member = await db('crew_members').where({ crew_id: crewId, student_id: studentId }).first();
-  if (!member) throw err('NOT_MEMBER', 'Not member', 'You\'re not in this crew.', 404);
-  if (member.role === 'creator') throw err('CREATOR_CANNOT_LEAVE', 'Creator can\'t leave', 'You can\'t leave your own crew. Delete it instead.', 409);
-  await db('crew_members').where({ crew_id: crewId, student_id: studentId }).del();
+  return db.transaction(async (trx) => {
+    const member = await trx('crew_members').where({ crew_id: crewId, student_id: studentId }).forUpdate().first();
+    if (!member) throw err('NOT_MEMBER', 'Not member', 'You\'re not in this crew.', 404);
+    if (member.role === 'creator') throw err('CREATOR_CANNOT_LEAVE', 'Creator can\'t leave', 'You can\'t leave your own crew. Delete it instead.', 409);
+    await trx('crew_members').where({ crew_id: crewId, student_id: studentId }).del();
+  });
 }
 
 async function bootMember(crewId, callerStudentId, targetStudentId) {
   if (callerStudentId === targetStudentId) throw err('CANNOT_BOOT_SELF', 'Cannot boot self', 'You can\'t boot yourself. Use leave instead.', 400);
-  const caller = await db('crew_members').where({ crew_id: crewId, student_id: callerStudentId, role: 'creator' }).first();
-  if (!caller) throw err('NOT_CREATOR', 'Not creator', 'Only the crew creator can do that.', 403);
-  const deleted = await db('crew_members').where({ crew_id: crewId, student_id: targetStudentId }).del();
-  if (deleted === 0) throw err('NOT_MEMBER', 'Target not in crew', 'That user is not in this crew.', 404);
+  return db.transaction(async (trx) => {
+    const caller = await trx('crew_members').where({ crew_id: crewId, student_id: callerStudentId, role: 'creator' }).forUpdate().first();
+    if (!caller) throw err('NOT_CREATOR', 'Not creator', 'Only the crew creator can do that.', 403);
+    const target = await trx('crew_members').where({ crew_id: crewId, student_id: targetStudentId }).forUpdate().first();
+    if (!target) throw err('NOT_MEMBER', 'Target not in crew', 'That user is not in this crew.', 404);
+    await trx('crew_members').where({ crew_id: crewId, student_id: targetStudentId }).del();
+  });
 }
 
 async function listCrewsForStudent(studentId) {
