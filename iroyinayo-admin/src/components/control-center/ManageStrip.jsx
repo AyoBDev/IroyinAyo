@@ -7,6 +7,7 @@ import { usePolling } from './usePolling';
 const TILES = [
   { label: 'Markets', href: '/markets', countKey: 'markets' },
   { label: 'Students', href: '/students', countKey: 'students' },
+  { label: 'Circles', href: '/circles', countKey: 'circles' },
   { label: 'Quizzes', href: '/quizzes', countKey: 'quizzes' },
   { label: 'Schedules', href: '/schedules', countKey: 'schedules' },
   { label: 'Ambassadors', href: '/ambassadors', countKey: 'ambassadors' },
