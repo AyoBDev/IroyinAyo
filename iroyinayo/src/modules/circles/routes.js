@@ -26,7 +26,7 @@ function handleErr(err, res, next) {
 
 router.post('/', authenticateStudent, async (req, res, next) => {
   try {
-    const result = await circlesService.createCrew(req.body.name, req.student.id);
+    const result = await circlesService.createCircle(req.body.name, req.student.id);
     res.json(result);
   } catch (e) { handleErr(e, res, next); }
 });
