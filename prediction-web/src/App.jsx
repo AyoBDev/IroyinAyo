@@ -19,10 +19,10 @@ import DailyRefillPopup from './components/DailyRefillPopup.jsx';
 import MarketDetail from './pages/MarketDetail.jsx';
 import ShareCard from './pages/ShareCard.jsx';
 import SharePrediction from './pages/SharePrediction.jsx';
-import Crews from './pages/Crews.jsx';
-import CrewDetail from './pages/CrewDetail.jsx';
-import CrewPool from './pages/CrewPool.jsx';
-import JoinCrewLanding from './pages/JoinCrewLanding.jsx';
+import Circles from './pages/Circles.jsx';
+import CircleDetail from './pages/CircleDetail.jsx';
+import CirclePool from './pages/CirclePool.jsx';
+import JoinCircleLanding from './pages/JoinCircleLanding.jsx';
 
 function MainApp() {
   const [showPositions, setShowPositions] = useState(false);
@@ -111,10 +111,10 @@ function MainApp() {
           <Routes>
             <Route path="/" element={<Markets />} />
             <Route path="/market/:marketId" element={<MarketDetail />} />
-            <Route path="/crews" element={<Crews />} />
-            <Route path="/crews/:id" element={<CrewDetail />} />
-            <Route path="/crews/:id/pools/:poolId" element={<CrewPool />} />
-            <Route path="/invite/:token" element={<JoinCrewLanding />} />
+            <Route path="/circles" element={<Circles />} />
+            <Route path="/circles/:id" element={<CircleDetail />} />
+            <Route path="/circles/:id/pools/:poolId" element={<CirclePool />} />
+            <Route path="/invite/:token" element={<JoinCircleLanding />} />
             <Route path="/portfolio" element={<Navigate to="/profile" replace />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
             <Route path="/profile" element={<Profile />} />

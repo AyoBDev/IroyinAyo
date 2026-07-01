@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const crewsService = require('./service');
+const circlesService = require('./service');
 const poolsService = require('./pools.service');
 const resolution = require('./resolution.service');
 const { requireSupabaseUser: authenticateStudent } = require('../../middleware/requireSupabaseUser');
@@ -26,20 +26,20 @@ function handleErr(err, res, next) {
 
 router.post('/', authenticateStudent, async (req, res, next) => {
   try {
-    const result = await crewsService.createCrew(req.body.name, req.student.id);
+    const result = await circlesService.createCrew(req.body.name, req.student.id);
     res.json(result);
   } catch (e) { handleErr(e, res, next); }
 });
 
 router.get('/', authenticateStudent, async (req, res, next) => {
   try {
-    const crews = await crewsService.listCrewsForStudent(req.student.id);
-    res.json(crews);
+    const circles = await circlesService.listCirclesForStudent(req.student.id);
+    res.json(circles);
   } catch (e) { handleErr(e, res, next); }
 });
 
 // Static-prefix routes MUST come before `/:id` so Express doesn't match
-// them as a crew UUID (which fails the UUID cast and throws 500).
+// them as a circle UUID (which fails the UUID cast and throws 500).
 router.get('/fixtures', authenticateStudent, async (req, res, next) => {
   try {
     const markets = await db('multi_markets')
@@ -61,47 +61,47 @@ router.post('/realmoney-waitlist', authenticateStudent, async (req, res, next) =
 
 router.get('/:id', authenticateStudent, async (req, res, next) => {
   try {
-    const detail = await crewsService.getCrewWithMembers(req.params.id);
-    const pools = await poolsService.listPoolsForCrew(req.params.id);
+    const detail = await circlesService.getCircleWithMembers(req.params.id);
+    const pools = await poolsService.listPoolsForCircle(req.params.id);
     res.json({ ...detail, pools });
   } catch (e) { handleErr(e, res, next); }
 });
 
 router.get('/:id/leaderboard', authenticateStudent, async (req, res, next) => {
   try {
-    // Verify caller is a crew member
-    const member = await db('crew_members').where({ crew_id: req.params.id, student_id: req.student.id }).first();
+    // Verify caller is a circle member
+    const member = await db('circle_members').where({ circle_id: req.params.id, student_id: req.student.id }).first();
     if (!member) {
       return res.status(403).json({
-        error: 'Not a crew member',
+        error: 'Not a circle member',
         code: 'NOT_MEMBER',
-        userMessage: 'You must be in this crew to view the leaderboard.',
-        message: 'Not a crew member',
+        userMessage: 'You must be in this circle to view the leaderboard.',
+        message: 'Not a circle member',
         retryable: false,
       });
     }
-    const leaderboard = await crewsService.getLeaderboardForCrew(req.params.id);
+    const leaderboard = await circlesService.getLeaderboardForCircle(req.params.id);
     res.json(leaderboard);
   } catch (e) { handleErr(e, res, next); }
 });
 
 router.post('/:id/leave', authenticateStudent, async (req, res, next) => {
   try {
-    await crewsService.leaveCrew(req.params.id, req.student.id);
+    await circlesService.leaveCircle(req.params.id, req.student.id);
     res.json({ ok: true });
   } catch (e) { handleErr(e, res, next); }
 });
 
 router.post('/:id/boot/:memberId', authenticateStudent, async (req, res, next) => {
   try {
-    await crewsService.bootMember(req.params.id, req.student.id, req.params.memberId);
+    await circlesService.bootMember(req.params.id, req.student.id, req.params.memberId);
     res.json({ ok: true });
   } catch (e) { handleErr(e, res, next); }
 });
 
 router.post('/:id/rotate-invite', authenticateStudent, async (req, res, next) => {
   try {
-    const result = await crewsService.rotateInviteToken(req.params.id, req.student.id);
+    const result = await circlesService.rotateInviteToken(req.params.id, req.student.id);
     res.json(result);
   } catch (e) { handleErr(e, res, next); }
 });
@@ -110,14 +110,14 @@ router.post('/:id/rotate-invite', authenticateStudent, async (req, res, next) =>
 // opening the invite sheet so we don't rotate the token every time.
 router.get('/:id/invite', authenticateStudent, async (req, res, next) => {
   try {
-    const result = await crewsService.getCurrentInviteToken(req.params.id, req.student.id);
+    const result = await circlesService.getCurrentInviteToken(req.params.id, req.student.id);
     res.json(result);
   } catch (e) { handleErr(e, res, next); }
 });
 
 router.post('/:id/delete', authenticateStudent, async (req, res, next) => {
   try {
-    await crewsService.deleteCrew(req.params.id, req.student.id);
+    await circlesService.deleteCircle(req.params.id, req.student.id);
     res.json({ ok: true });
   } catch (e) { handleErr(e, res, next); }
 });
@@ -125,21 +125,21 @@ router.post('/:id/delete', authenticateStudent, async (req, res, next) => {
 // Invite preview is unauthenticated
 router.get('/invites/:token/preview', async (req, res, next) => {
   try {
-    const preview = await crewsService.previewByToken(req.params.token);
+    const preview = await circlesService.previewByToken(req.params.token);
     res.json(preview);
   } catch (e) { handleErr(e, res, next); }
 });
 
 router.post('/invites/:token/join', authenticateStudent, async (req, res, next) => {
   try {
-    const result = await crewsService.joinCrewByToken(req.params.token, req.student.id);
+    const result = await circlesService.joinCircleByToken(req.params.token, req.student.id);
     res.json(result);
   } catch (e) { handleErr(e, res, next); }
 });
 
-router.post('/:crewId/pools', authenticateStudent, async (req, res, next) => {
+router.post('/:circleId/pools', authenticateStudent, async (req, res, next) => {
   try {
-    const pool = await poolsService.createPool(req.params.crewId, req.student.id, req.body);
+    const pool = await poolsService.createPool(req.params.circleId, req.student.id, req.body);
     res.json({ pool });
   } catch (e) { handleErr(e, res, next); }
 });

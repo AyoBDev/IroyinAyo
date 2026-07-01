@@ -9,7 +9,7 @@ import RealMoneyComingSoon from './RealMoneyComingSoon.jsx';
 // sensible "24 hours from now" cap for the predict window.
 const DEFAULT_PUBLIC_CLOSE_HOURS = 24;
 
-export default function CreatePoolModal({ crewId, onClose, onCreated }) {
+export default function CreatePoolModal({ circleId, onClose, onCreated }) {
   const [tab, setTab] = useState('private'); // 'private' | 'public'
   const [title, setTitle] = useState('');
   const [outcomeA, setOutcomeA] = useState('');
@@ -25,10 +25,10 @@ export default function CreatePoolModal({ crewId, onClose, onCreated }) {
 
   useEffect(() => {
     if (tab === 'public') {
-      // Backend `/api/crews/fixtures` now serves open multi_markets (same list
+      // Backend `/api/circles/fixtures` now serves open multi_markets (same list
       // the Markets feed shows). The endpoint name is preserved for compat.
-      apiFetch('/api/crews/fixtures').then(setMarkets).catch((e) => {
-        console.error('[crews] failed to load public markets:', e);
+      apiFetch('/api/circles/fixtures').then(setMarkets).catch((e) => {
+        console.error('[circles] failed to load public markets:', e);
         setMarkets([]);
       });
     }
@@ -55,7 +55,7 @@ export default function CreatePoolModal({ crewId, onClose, onCreated }) {
       const payload = tab === 'private'
         ? { poolType: 'private', title: title.trim(), outcomeA: outcomeA.trim(), outcomeB: outcomeB.trim(), kickoffAt, stakeAmount: Number(stakeAmount) }
         : { poolType: 'public', parentMarketId: selectedMarket?.id || null, kickoffAt: publicKickoffISO, stakeAmount: Number(stakeAmount) };
-      const { pool } = await apiFetch(`/api/crews/${crewId}/pools`, { method: 'POST', body: JSON.stringify(payload) });
+      const { pool } = await apiFetch(`/api/circles/${circleId}/pools`, { method: 'POST', body: JSON.stringify(payload) });
       onCreated(pool);
     } catch (e) {
       setError(e.userMessage || 'Could not create pool.');

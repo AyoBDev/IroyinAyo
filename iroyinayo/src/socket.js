@@ -53,18 +53,18 @@ function createSocketServer(httpServer) {
       if (marketId) socket.leave(`market:${marketId}`);
     });
 
-    // Crews room subscription: backend emits to `crew:${crewId}` for
-    // crew:pool:prediction and crew:pool:resolved. Frontend (CrewDetail,
-    // CrewPool) calls emit('crew:join', { crewId }) — without these handlers
+    // Circles room subscription: backend emits to `circle:${circleId}` for
+    // circle:pool:prediction and circle:pool:resolved. Frontend (CircleDetail,
+    // CirclePool) calls emit('circle:join', { circleId }) — without these handlers
     // the events would never reach the client.
-    socket.on('crew:join', ({ crewId } = {}) => {
-      if (typeof crewId === 'string' && crewId.length > 0) {
-        socket.join(`crew:${crewId}`);
+    socket.on('circle:join', ({ circleId } = {}) => {
+      if (typeof circleId === 'string' && circleId.length > 0) {
+        socket.join(`circle:${circleId}`);
       }
     });
-    socket.on('crew:leave', ({ crewId } = {}) => {
-      if (typeof crewId === 'string' && crewId.length > 0) {
-        socket.leave(`crew:${crewId}`);
+    socket.on('circle:leave', ({ circleId } = {}) => {
+      if (typeof circleId === 'string' && circleId.length > 0) {
+        socket.leave(`circle:${circleId}`);
       }
     });
 

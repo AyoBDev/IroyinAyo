@@ -1,6 +1,6 @@
 import useStore from '../store.js';
 
-export default function CrewLeaderboardRow({ member, rank }) {
+export default function CircleLeaderboardRow({ member, rank }) {
   const user = useStore((s) => s.user);
   const isCurrentUser = member.student_id === user?.id;
 

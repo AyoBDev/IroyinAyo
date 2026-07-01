@@ -14,7 +14,7 @@ function formatRelative(date) {
   return future ? `in ${days}d` : `${days}d ago`;
 }
 
-export default function CrewPoolCard({ pool, crewId }) {
+export default function CirclePoolCard({ pool, circleId }) {
   const navigate = useNavigate();
   const title = pool.title || (pool.pool_type === 'public' ? 'Match prediction' : 'Pool');
   const statusBadge = {
@@ -28,7 +28,7 @@ export default function CrewPoolCard({ pool, crewId }) {
 
   return (
     <button
-      onClick={() => navigate(`/crews/${crewId}/pools/${pool.id}`)}
+      onClick={() => navigate(`/circles/${circleId}/pools/${pool.id}`)}
       className="bg-paper border border-line rounded-2xl p-4 text-left w-full hover:bg-paper-hover transition-colors"
     >
       <div className="flex justify-between items-start mb-2">

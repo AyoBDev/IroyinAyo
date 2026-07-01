@@ -85,33 +85,33 @@ server.listen(PORT, async () => {
   }
 
   // Crews background jobs
-  const crewsPools = require('./modules/crews/pools.service');
-  const crewsResolution = require('./modules/crews/resolution.service');
-  const crewsFixtures = require('./modules/crews/fixtures.service');
+  const circlesPools = require('./modules/circles/pools.service');
+  const circlesResolution = require('./modules/circles/resolution.service');
+  const circlesFixtures = require('./modules/circles/fixtures.service');
 
   setInterval(async () => {
-    try { const r = await crewsPools.closeExpiredPools(); if (r.closed) console.log(`[crews] closed ${r.closed} pools`); }
-    catch (e) { console.error('[crews] closeExpiredPools error:', e.message); }
+    try { const r = await circlesPools.closeExpiredPools(); if (r.closed) console.log(`[circles] closed ${r.closed} pools`); }
+    catch (e) { console.error('[circles] closeExpiredPools error:', e.message); }
   }, 60 * 1000); // 1 min
 
   setInterval(async () => {
-    try { const r = await crewsResolution.processExpiredDisputeWindows(); if (r.resolved) console.log(`[crews] expired ${r.resolved} dispute windows`); }
-    catch (e) { console.error('[crews] processExpiredDisputeWindows error:', e.message); }
+    try { const r = await circlesResolution.processExpiredDisputeWindows(); if (r.resolved) console.log(`[circles] expired ${r.resolved} dispute windows`); }
+    catch (e) { console.error('[circles] processExpiredDisputeWindows error:', e.message); }
   }, 60 * 60 * 1000); // 1 hour
 
   setInterval(async () => {
-    try { const r = await crewsResolution.refundAbandonedPools(); if (r.refunded) console.log(`[crews] refunded ${r.refunded} abandoned pools`); }
-    catch (e) { console.error('[crews] refundAbandonedPools error:', e.message); }
+    try { const r = await circlesResolution.refundAbandonedPools(); if (r.refunded) console.log(`[circles] refunded ${r.refunded} abandoned pools`); }
+    catch (e) { console.error('[circles] refundAbandonedPools error:', e.message); }
   }, 12 * 60 * 60 * 1000); // 12 hours
 
   setInterval(async () => {
-    try { const r = await crewsFixtures.pollCompletedFixtures(); if (r.resolved) console.log(`[crews] resolved ${r.resolved} fixtures`); }
-    catch (e) { console.error('[crews] pollCompletedFixtures error:', e.message); }
+    try { const r = await circlesFixtures.pollCompletedFixtures(); if (r.resolved) console.log(`[circles] resolved ${r.resolved} fixtures`); }
+    catch (e) { console.error('[circles] pollCompletedFixtures error:', e.message); }
   }, 15 * 60 * 1000); // 15 min
 
   setInterval(async () => {
-    try { const r = await crewsFixtures.pollUpcomingFixtures(); if (r.ingested) console.log(`[crews] ingested ${r.ingested} fixtures`); }
-    catch (e) { console.error('[crews] pollUpcomingFixtures error:', e.message); }
+    try { const r = await circlesFixtures.pollUpcomingFixtures(); if (r.ingested) console.log(`[circles] ingested ${r.ingested} fixtures`); }
+    catch (e) { console.error('[circles] pollUpcomingFixtures error:', e.message); }
   }, 6 * 60 * 60 * 1000); // 6 hours
 
 

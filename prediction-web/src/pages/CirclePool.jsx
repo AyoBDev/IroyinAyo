@@ -5,8 +5,8 @@ import { apiFetch } from '../api.js';
 import useStore from '../store.js';
 import { getSocket } from '../socket.js';
 
-export default function CrewPool() {
-  const { id: crewId, poolId } = useParams();
+export default function CirclePool() {
+  const { id: circleId, poolId } = useParams();
   const navigate = useNavigate();
   const user = useStore((s) => s.user);
   const fetchUser = useStore((s) => s.fetchUser);
@@ -20,7 +20,7 @@ export default function CrewPool() {
 
   async function reload() {
     try {
-      const result = await apiFetch(`/api/crews/pools/${poolId}`);
+      const result = await apiFetch(`/api/circles/pools/${poolId}`);
       setData(result);
       setLoading(false);
     } catch (e) {
@@ -34,20 +34,20 @@ export default function CrewPool() {
     const socket = getSocket();
     if (!socket) return;
 
-    socket.emit('crew:join', { crewId });
-    socket.on('crew:pool:prediction', reload);
-    socket.on('crew:pool:resolved', reload);
+    socket.emit('circle:join', { circleId });
+    socket.on('circle:pool:prediction', reload);
+    socket.on('circle:pool:resolved', reload);
 
     return () => {
-      socket.off('crew:pool:prediction', reload);
-      socket.off('crew:pool:resolved', reload);
+      socket.off('circle:pool:prediction', reload);
+      socket.off('circle:pool:resolved', reload);
     };
-  }, [crewId]);
+  }, [circleId]);
 
   async function predict(outcome) {
     setSubmitting(true); setError(null);
     try {
-      await apiFetch(`/api/crews/pools/${poolId}/predict`, { method: 'POST', body: JSON.stringify({ outcome }) });
+      await apiFetch(`/api/circles/pools/${poolId}/predict`, { method: 'POST', body: JSON.stringify({ outcome }) });
       reload();
       fetchUser(); // refresh points balance after stake deduction
     } catch (e) { setError(e.userMessage || 'Could not predict.'); }
@@ -57,7 +57,7 @@ export default function CrewPool() {
   async function submitReport(outcome) {
     setSubmitting(true); setError(null);
     try {
-      await apiFetch(`/api/crews/pools/${poolId}/report-result`, { method: 'POST', body: JSON.stringify({ outcome }) });
+      await apiFetch(`/api/circles/pools/${poolId}/report-result`, { method: 'POST', body: JSON.stringify({ outcome }) });
       setPendingReport(null);
       reload();
     } catch (e) { setError(e.userMessage || 'Could not report.'); }
@@ -71,7 +71,7 @@ export default function CrewPool() {
     }
     setSubmitting(true); setError(null);
     try {
-      await apiFetch(`/api/crews/pools/${poolId}/dispute`, { method: 'POST', body: JSON.stringify({ reason: disputeReason.trim() }) });
+      await apiFetch(`/api/circles/pools/${poolId}/dispute`, { method: 'POST', body: JSON.stringify({ reason: disputeReason.trim() }) });
       setShowDispute(false);
       setDisputeReason('');
       reload();
@@ -82,7 +82,7 @@ export default function CrewPool() {
   async function confirmResult() {
     setSubmitting(true); setError(null);
     try {
-      await apiFetch(`/api/crews/pools/${poolId}/confirm`, { method: 'POST' });
+      await apiFetch(`/api/circles/pools/${poolId}/confirm`, { method: 'POST' });
       reload();
       fetchUser();
     } catch (e) { setError(e.userMessage || 'Could not confirm.'); }
@@ -116,8 +116,8 @@ export default function CrewPool() {
 
   return (
     <div className="p-4 max-w-[640px] mx-auto">
-      <button onClick={() => navigate(`/crews/${crewId}`)} className="flex items-center gap-1 text-ink-muted text-[13px] mb-3">
-        <ArrowLeft size={16} /> Back to crew
+      <button onClick={() => navigate(`/circles/${circleId}`)} className="flex items-center gap-1 text-ink-muted text-[13px] mb-3">
+        <ArrowLeft size={16} /> Back to circle
       </button>
 
       <h1 className="font-serif text-section mb-2">{pool.title || parentMarket?.title || 'Pool'}</h1>
@@ -219,7 +219,7 @@ export default function CrewPool() {
           <div className="mt-3 bg-bone border border-line rounded-lg p-3">
             <div className="text-[13px] font-semibold mb-2">Dispute the reported result</div>
             <div className="text-[12px] text-ink-muted mb-2">
-              Tell the crew why you disagree with the report. This freezes payouts until an admin reviews.
+              Tell the circle why you disagree with the report. This freezes payouts until an admin reviews.
             </div>
             <textarea
               value={disputeReason}

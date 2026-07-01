@@ -11,7 +11,7 @@ export default function RealMoneyComingSoon({ source, onClose }) {
   async function handleJoin() {
     setSubmitting(true);
     try {
-      await apiFetch('/api/crews/realmoney-waitlist', { method: 'POST', body: JSON.stringify({ source }) });
+      await apiFetch('/api/circles/realmoney-waitlist', { method: 'POST', body: JSON.stringify({ source }) });
       setJoined(true);
     } catch (e) {
       setError(e.userMessage || 'Could not save. Try again.');

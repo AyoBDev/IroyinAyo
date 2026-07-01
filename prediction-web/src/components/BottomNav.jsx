@@ -4,7 +4,7 @@ import useStore from '../store.js';
 
 const tabs = [
   { path: '/', label: 'Markets', icon: TrendingUp },
-  { path: '/crews', label: 'Crews', icon: Users, requiresAuth: true },
+  { path: '/circles', label: 'Circles', icon: Users, requiresAuth: true },
   { path: '/leaderboard', label: 'Leaderboard', icon: Crown },
   { path: '/profile', label: 'Profile', icon: User, requiresAuth: true },
 ];
