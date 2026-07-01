@@ -433,7 +433,7 @@ async function resolveMarket(marketId, winningOutcomeId) {
   // for isolated error handling.
   try {
     const resolutionService = require('../circles/resolution.service');
-    const wrappingPools = await db('crew_pools')
+    const wrappingPools = await db('circle_pools')
       .where({ parent_market_id: marketId, pool_type: 'public' })
       .whereIn('status', ['open', 'closed']);
     for (const pool of wrappingPools) {
