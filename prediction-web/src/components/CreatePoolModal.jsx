@@ -28,7 +28,7 @@ export default function CreatePoolModal({ circleId, onClose, onCreated }) {
       // Backend `/api/circles/fixtures` now serves open multi_markets (same list
       // the Markets feed shows). The endpoint name is preserved for compat.
       apiFetch('/api/circles/fixtures').then(setMarkets).catch((e) => {
-        console.error('[crews] failed to load public markets:', e);
+        console.error('[circles] failed to load public markets:', e);
         setMarkets([]);
       });
     }
