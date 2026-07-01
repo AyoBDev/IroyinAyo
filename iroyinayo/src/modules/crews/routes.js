@@ -172,6 +172,13 @@ router.post('/pools/:poolId/dispute', authenticateStudent, async (req, res, next
   } catch (e) { handleErr(e, res, next); }
 });
 
+router.post('/pools/:poolId/confirm', authenticateStudent, async (req, res, next) => {
+  try {
+    const result = await resolution.confirmResolution(req.params.poolId, req.student.id);
+    res.json(result);
+  } catch (e) { handleErr(e, res, next); }
+});
+
 router.post('/admin/pools/:poolId/resolve', authenticate, requireRole('super_admin'), async (req, res, next) => {
   try {
     const result = await resolution.adminOverrideResolution(req.params.poolId, req.admin.id, req.body.outcome, req.body.note || null);

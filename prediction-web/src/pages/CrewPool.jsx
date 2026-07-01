@@ -72,6 +72,17 @@ export default function CrewPool() {
     finally { setSubmitting(false); }
   }
 
+  async function confirm() {
+    if (!confirm(`Confirm that ${labelOf(pool.winner_outcome)} won?`)) return;
+    setSubmitting(true); setError(null);
+    try {
+      await apiFetch(`/api/crews/pools/${poolId}/confirm`, { method: 'POST' });
+      reload();
+      fetchUser();
+    } catch (e) { setError(e.userMessage || 'Could not confirm.'); }
+    finally { setSubmitting(false); }
+  }
+
   if (loading) return <div className="p-4 text-ink-muted">Loading…</div>;
   if (!data) return <div className="p-4 text-ink-muted">{error || 'Pool not found.'}</div>;
 
@@ -151,9 +162,27 @@ export default function CrewPool() {
         )}
 
         {pool.status === 'awaiting_dispute_window' && !isCreator && (
-          <button onClick={dispute} disabled={submitting} className="mt-3 w-full py-2.5 rounded-xl bg-paper border border-line text-accent-red text-[13px] font-semibold flex items-center justify-center gap-1">
-            <Flag size={13} /> Dispute result
-          </button>
+          <div className="mt-3">
+            <div className="text-[12px] text-ink-muted mb-2">
+              {isPrivate && `Creator reported ${labelOf(pool.winner_outcome)} won. Confirm or dispute within 2 hours.`}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={confirm}
+                disabled={submitting}
+                className="flex-1 py-2.5 rounded-xl bg-accent-green-bg border border-accent-green-border text-accent-green text-[13px] font-semibold flex items-center justify-center gap-1"
+              >
+                <CheckCircle2 size={13} /> Confirm result
+              </button>
+              <button
+                onClick={dispute}
+                disabled={submitting}
+                className="flex-1 py-2.5 rounded-xl bg-paper border border-line text-accent-red text-[13px] font-semibold flex items-center justify-center gap-1"
+              >
+                <Flag size={13} /> Dispute
+              </button>
+            </div>
+          </div>
         )}
 
         {pool.status === 'resolved' && pool.winner_outcome && (

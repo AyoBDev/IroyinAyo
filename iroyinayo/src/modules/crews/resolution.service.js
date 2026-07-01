@@ -1,7 +1,8 @@
 const db = require('../../config/database');
 const { getIO } = require('../../socket');
 
-const DISPUTE_WINDOW_HOURS = 24;
+const DISPUTE_WINDOW_HOURS = 2;
+const ABANDONED_POOL_DAYS = 7;
 
 function err(code, message, userMessage, status = 400) {
   const e = new Error(message);
@@ -160,6 +161,48 @@ async function adminOverrideResolution(poolId, adminId, winnerOutcome, note) {
 }
 
 /**
+ * Member confirmation fast-path: any non-creator crew member can confirm the
+ * creator's reported outcome, which immediately triggers payout. This bypasses
+ * waiting for the full dispute window.
+ */
+async function confirmResolution(poolId, studentId) {
+  return db.transaction(async (trx) => {
+    const pool = await trx('crew_pools').where({ id: poolId }).forUpdate().first();
+    if (!pool) throw err('POOL_NOT_FOUND', 'No pool', 'Pool not found.', 404);
+    if (pool.status !== 'awaiting_dispute_window') {
+      throw err('POOL_NOT_OPEN', 'Wrong state', 'This pool isn\'t awaiting confirmation.', 409);
+    }
+    if (pool.creator_id === studentId) {
+      throw err('CREATOR_CANNOT_CONFIRM', 'Creator cannot confirm own report', 'You reported this result — someone else needs to confirm.', 403);
+    }
+    const member = await trx('crew_members').where({ crew_id: pool.crew_id, student_id: studentId }).first();
+    if (!member) throw err('NOT_CREW_MEMBER', 'Not a member', 'You are not in this crew.', 403);
+
+    const res = await trx('crew_pool_resolutions').where({ pool_id: poolId }).first();
+    if (!res) throw err('POOL_NOT_FOUND', 'No resolution', 'No resolution to confirm.', 404);
+
+    const confirmations = Array.isArray(res.confirmations) ? res.confirmations : [];
+    if (confirmations.includes(studentId)) {
+      throw err('ALREADY_CONFIRMED', 'Already confirmed', 'You have already confirmed this result.', 409);
+    }
+    confirmations.push(studentId);
+
+    // Fast-path: any confirmation from a non-creator member triggers immediate payout.
+    await trx('crew_pool_resolutions').where({ pool_id: poolId }).update({
+      confirmations: JSON.stringify(confirmations),
+    });
+
+    // Apply payouts inside the same transaction. Delegate to calculateAndApplyPayouts with trx.
+    const winnerOutcome = res.winner_outcome;
+    return calculateAndApplyPayouts(poolId, winnerOutcome, 'creator', {
+      resolverId: pool.creator_id,
+      trx,
+      skipResolutionInsert: true,
+    });
+  });
+}
+
+/**
  * Cron entry point. Finds resolutions whose creator-reported dispute window
  * has lapsed without a dispute and applies payouts now. This is where pool
  * funds actually move for the creator-report path.
@@ -192,12 +235,62 @@ async function processExpiredDisputeWindows() {
   return { resolved };
 }
 
+/**
+ * Auto-refund abandoned pools: pools that remain 'closed' for 7 days without
+ * the creator reporting a result. Returns all stakes to predictors and marks
+ * the pool as resolved with winner_outcome='abandoned'.
+ */
+async function refundAbandonedPools() {
+  const cutoff = new Date(Date.now() - ABANDONED_POOL_DAYS * 24 * 3600 * 1000);
+  const abandoned = await db('crew_pools')
+    .where('status', 'closed')
+    .where('pool_type', 'private')
+    .where('created_at', '<=', cutoff);
+
+  let refunded = 0;
+  for (const pool of abandoned) {
+    try {
+      await db.transaction(async (trx) => {
+        const locked = await trx('crew_pools').where({ id: pool.id }).forUpdate().first();
+        if (!locked || locked.status !== 'closed') return; // race check
+
+        const predictions = await trx('crew_pool_predictions')
+          .where({ pool_id: pool.id })
+          .whereNotNull('student_id');
+        for (const p of predictions) {
+          if (p.points_locked > 0) {
+            await trx('students').where({ id: p.student_id }).increment('points_balance', p.points_locked);
+            await trx('crew_pool_predictions').where({ id: p.id }).update({ payout: p.points_locked });
+          }
+        }
+        await trx('crew_pool_resolutions').insert({
+          pool_id: pool.id,
+          source: 'admin',
+          resolver_id: null,
+          admin_id: null,
+          winner_outcome: 'abandoned',
+          dispute_status: 'resolved',
+          admin_note: 'Auto-refund: creator did not report within 7 days',
+          confirmations: JSON.stringify([]),
+        });
+        await trx('crew_pools').where({ id: pool.id }).update({ status: 'resolved', winner_outcome: 'abandoned' });
+        refunded++;
+      });
+    } catch (e) {
+      console.error(`[crews] refund of abandoned pool ${pool.id} failed:`, e.message);
+    }
+  }
+  return { refunded };
+}
+
 module.exports = {
   DISPUTE_WINDOW_HOURS,
   calculateAndApplyPayouts,
   creatorReportResult,
   autoResolvePublicPool,
   raiseDispute,
+  confirmResolution,
   adminOverrideResolution,
   processExpiredDisputeWindows,
+  refundAbandonedPools,
 };

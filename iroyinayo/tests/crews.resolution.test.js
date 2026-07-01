@@ -188,4 +188,51 @@ describe('Crew resolution service', () => {
     expect(finalPool.status).toBe('resolved');
     expect(finalPool.winner_outcome).toBe('B');
   });
+
+  test('any-member confirmation immediately resolves and pays out', async () => {
+    const { pool, members, creator } = await setupPool(3, 100);
+    // Members[1] predicts A, members[2] predicts A, creator predicts B (loses)
+    await poolsService.predictInPool(pool.id, { studentId: members[1].id }, 'A');
+    await poolsService.predictInPool(pool.id, { studentId: members[2].id }, 'A');
+    await poolsService.predictInPool(pool.id, { studentId: creator.id }, 'B');
+    await db('crew_pools').where({ id: pool.id }).update({ status: 'closed' });
+    await resolution.creatorReportResult(pool.id, creator.id, 'A');
+
+    const balBefore = await db('students').where({ id: members[1].id }).first().then(r => r.points_balance);
+
+    // members[1] confirms → immediate payout
+    await resolution.confirmResolution(pool.id, members[1].id);
+
+    const balAfter = await db('students').where({ id: members[1].id }).first().then(r => r.points_balance);
+    expect(balAfter).toBeGreaterThan(balBefore); // received payout
+    const p = await db('crew_pools').where({ id: pool.id }).first();
+    expect(p.status).toBe('resolved');
+  });
+
+  test('creator cannot confirm own report', async () => {
+    const { pool, members, creator } = await setupPool(3, 50);
+    await poolsService.predictInPool(pool.id, { studentId: members[1].id }, 'A');
+    await db('crew_pools').where({ id: pool.id }).update({ status: 'closed' });
+    await resolution.creatorReportResult(pool.id, creator.id, 'A');
+    await expect(resolution.confirmResolution(pool.id, creator.id))
+      .rejects.toMatchObject({ code: 'CREATOR_CANNOT_CONFIRM' });
+  });
+
+  test('refundAbandonedPools returns stakes to predictors after 7 days', async () => {
+    const { pool, members, creator } = await setupPool(3, 50);
+    await poolsService.predictInPool(pool.id, { studentId: members[1].id }, 'A');
+    await poolsService.predictInPool(pool.id, { studentId: members[2].id }, 'B');
+    await db('crew_pools').where({ id: pool.id }).update({
+      status: 'closed',
+      created_at: new Date(Date.now() - 8 * 24 * 3600 * 1000), // 8 days ago
+    });
+    const balBefore = await db('students').where({ id: members[1].id }).first().then(r => r.points_balance);
+    const result = await resolution.refundAbandonedPools();
+    expect(result.refunded).toBeGreaterThanOrEqual(1);
+    const balAfter = await db('students').where({ id: members[1].id }).first().then(r => r.points_balance);
+    expect(balAfter).toBe(balBefore + 50);
+    const p = await db('crew_pools').where({ id: pool.id }).first();
+    expect(p.status).toBe('resolved');
+    expect(p.winner_outcome).toBe('abandoned');
+  });
 });

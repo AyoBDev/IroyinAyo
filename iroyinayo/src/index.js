@@ -100,6 +100,11 @@ server.listen(PORT, async () => {
   }, 60 * 60 * 1000); // 1 hour
 
   setInterval(async () => {
+    try { const r = await crewsResolution.refundAbandonedPools(); if (r.refunded) console.log(`[crews] refunded ${r.refunded} abandoned pools`); }
+    catch (e) { console.error('[crews] refundAbandonedPools error:', e.message); }
+  }, 12 * 60 * 60 * 1000); // 12 hours
+
+  setInterval(async () => {
     try { const r = await crewsFixtures.pollCompletedFixtures(); if (r.resolved) console.log(`[crews] resolved ${r.resolved} fixtures`); }
     catch (e) { console.error('[crews] pollCompletedFixtures error:', e.message); }
   }, 15 * 60 * 1000); // 15 min
