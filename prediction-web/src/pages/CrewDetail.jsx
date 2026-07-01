@@ -7,6 +7,7 @@ import { getSocket } from '../socket.js';
 import CrewPoolCard from '../components/CrewPoolCard.jsx';
 import CreatePoolModal from '../components/CreatePoolModal.jsx';
 import CrewInviteSheet from '../components/CrewInviteSheet.jsx';
+import CrewLeaderboardRow from '../components/CrewLeaderboardRow.jsx';
 
 export default function CrewDetail() {
   const { id } = useParams();
@@ -17,6 +18,8 @@ export default function CrewDetail() {
   const [showCreatePool, setShowCreatePool] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [inviteToken, setInviteToken] = useState(null);
+  const [activeTab, setActiveTab] = useState('pools');
+  const [leaderboard, setLeaderboard] = useState([]);
 
   async function reload() {
     try {
@@ -59,6 +62,21 @@ export default function CrewDetail() {
     }
   }
 
+  async function loadLeaderboard() {
+    try {
+      const lb = await apiFetch(`/api/crews/${id}/leaderboard`);
+      setLeaderboard(lb);
+    } catch (e) {
+      console.error('Failed to load leaderboard:', e);
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === 'leaderboard' && leaderboard.length === 0) {
+      loadLeaderboard();
+    }
+  }, [activeTab]);
+
   if (loading) return <div className="p-4 text-ink-muted">Loading…</div>;
   if (!data) return <div className="p-4 text-ink-muted">Crew not found.</div>;
 
@@ -89,39 +107,73 @@ export default function CrewDetail() {
         </div>
       </div>
 
-      {open.length > 0 && (
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => setActiveTab('pools')}
+          className={`flex-1 py-2 rounded-lg text-[13px] font-medium ${activeTab === 'pools' ? 'bg-emerald text-white' : 'bg-paper border border-line text-ink'}`}
+        >
+          Pools
+        </button>
+        <button
+          onClick={() => setActiveTab('leaderboard')}
+          className={`flex-1 py-2 rounded-lg text-[13px] font-medium ${activeTab === 'leaderboard' ? 'bg-emerald text-white' : 'bg-paper border border-line text-ink'}`}
+        >
+          Leaderboard
+        </button>
+      </div>
+
+      {activeTab === 'pools' ? (
+        <>
+          {open.length > 0 && (
+            <section className="mb-5">
+              <h3 className="text-[13px] font-semibold text-ink-muted mb-2">Active</h3>
+              <div className="flex flex-col gap-2">
+                {open.map((p) => <CrewPoolCard key={p.id} pool={p} crewId={id} />)}
+              </div>
+            </section>
+          )}
+
+          {resolving.length > 0 && (
+            <section className="mb-5">
+              <h3 className="text-[13px] font-semibold text-ink-muted mb-2">Resolving</h3>
+              <div className="flex flex-col gap-2">
+                {resolving.map((p) => <CrewPoolCard key={p.id} pool={p} crewId={id} />)}
+              </div>
+            </section>
+          )}
+
+          {resolved.length > 0 && (
+            <section className="mb-5">
+              <h3 className="text-[13px] font-semibold text-ink-muted mb-2">Past pools</h3>
+              <div className="flex flex-col gap-2">
+                {resolved.slice(0, 10).map((p) => <CrewPoolCard key={p.id} pool={p} crewId={id} />)}
+              </div>
+            </section>
+          )}
+
+          <button
+            onClick={() => setShowCreatePool(true)}
+            className="fixed bottom-24 right-4 w-14 h-14 rounded-full bg-emerald text-white flex items-center justify-center shadow-float-lg"
+          >
+            <Plus size={24} />
+          </button>
+        </>
+      ) : (
         <section className="mb-5">
-          <h3 className="text-[13px] font-semibold text-ink-muted mb-2">Active</h3>
-          <div className="flex flex-col gap-2">
-            {open.map((p) => <CrewPoolCard key={p.id} pool={p} crewId={id} />)}
-          </div>
+          <h3 className="font-serif text-section mb-3">Standings</h3>
+          {leaderboard.length === 0 ? (
+            <div className="text-center py-8 text-ink-muted text-[14px]">
+              No predictions yet. Make one to climb the board.
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {leaderboard.map((member, idx) => (
+                <CrewLeaderboardRow key={member.student_id} member={member} rank={idx + 1} />
+              ))}
+            </div>
+          )}
         </section>
       )}
-
-      {resolving.length > 0 && (
-        <section className="mb-5">
-          <h3 className="text-[13px] font-semibold text-ink-muted mb-2">Resolving</h3>
-          <div className="flex flex-col gap-2">
-            {resolving.map((p) => <CrewPoolCard key={p.id} pool={p} crewId={id} />)}
-          </div>
-        </section>
-      )}
-
-      {resolved.length > 0 && (
-        <section className="mb-5">
-          <h3 className="text-[13px] font-semibold text-ink-muted mb-2">Past pools</h3>
-          <div className="flex flex-col gap-2">
-            {resolved.slice(0, 10).map((p) => <CrewPoolCard key={p.id} pool={p} crewId={id} />)}
-          </div>
-        </section>
-      )}
-
-      <button
-        onClick={() => setShowCreatePool(true)}
-        className="fixed bottom-24 right-4 w-14 h-14 rounded-full bg-emerald text-white flex items-center justify-center shadow-float-lg"
-      >
-        <Plus size={24} />
-      </button>
 
       {showCreatePool && <CreatePoolModal crewId={id} onClose={() => setShowCreatePool(false)} onCreated={(pool) => { setShowCreatePool(false); reload(); navigate(`/crews/${id}/pools/${pool.id}`); }} />}
       {showInvite && inviteToken && <CrewInviteSheet crewId={id} inviteToken={inviteToken} isCreator={isCreator} onClose={() => setShowInvite(false)} />}
