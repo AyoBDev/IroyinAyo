@@ -19,7 +19,10 @@ import DailyRefillPopup from './components/DailyRefillPopup.jsx';
 import MarketDetail from './pages/MarketDetail.jsx';
 import ShareCard from './pages/ShareCard.jsx';
 import SharePrediction from './pages/SharePrediction.jsx';
-import Portfolio from './pages/Portfolio.jsx';
+import Crews from './pages/Crews.jsx';
+import CrewDetail from './pages/CrewDetail.jsx';
+import CrewPool from './pages/CrewPool.jsx';
+import JoinCrewLanding from './pages/JoinCrewLanding.jsx';
 
 function MainApp() {
   const [showPositions, setShowPositions] = useState(false);
@@ -108,7 +111,11 @@ function MainApp() {
           <Routes>
             <Route path="/" element={<Markets />} />
             <Route path="/market/:marketId" element={<MarketDetail />} />
-            <Route path="/portfolio" element={<Portfolio />} />
+            <Route path="/crews" element={<Crews />} />
+            <Route path="/crews/:id" element={<CrewDetail />} />
+            <Route path="/crews/:id/pools/:poolId" element={<CrewPool />} />
+            <Route path="/invite/:token" element={<JoinCrewLanding />} />
+            <Route path="/portfolio" element={<Navigate to="/profile" replace />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<Navigate to="/" replace />} />

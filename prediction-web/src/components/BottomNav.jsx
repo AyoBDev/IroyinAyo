@@ -1,10 +1,10 @@
-import { TrendingUp, Crown, User, ChartLine } from 'lucide-react';
+import { TrendingUp, Crown, User, Users } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useStore from '../store.js';
 
 const tabs = [
   { path: '/', label: 'Markets', icon: TrendingUp },
-  { path: '/portfolio', label: 'Portfolio', icon: ChartLine, requiresAuth: true },
+  { path: '/crews', label: 'Crews', icon: Users, requiresAuth: true },
   { path: '/leaderboard', label: 'Leaderboard', icon: Crown },
   { path: '/profile', label: 'Profile', icon: User, requiresAuth: true },
 ];

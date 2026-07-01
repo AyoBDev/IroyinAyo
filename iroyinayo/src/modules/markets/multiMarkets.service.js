@@ -424,6 +424,30 @@ async function resolveMarket(marketId, winningOutcomeId) {
     },
   });
 
+  // Cascade resolution to any crew pools wrapping this market. Public crew
+  // pools FK their parent_market_id to multi_markets.id (migration 042) and
+  // their predicted_outcome stores the outcome's label, so passing the
+  // winning outcome's label is exactly what autoResolvePublicPool expects.
+  // Done after the market-resolve transaction commits so pool payouts don't
+  // roll back market state, and each pool resolution is its own transaction
+  // for isolated error handling.
+  try {
+    const resolutionService = require('../crews/resolution.service');
+    const wrappingPools = await db('crew_pools')
+      .where({ parent_market_id: marketId, pool_type: 'public' })
+      .whereIn('status', ['open', 'closed']);
+    for (const pool of wrappingPools) {
+      try {
+        await resolutionService.autoResolvePublicPool(pool.id, winningOutcome?.label);
+      } catch (e) {
+        console.error(`[multi_markets] auto-resolve crew pool ${pool.id} failed:`, e.message);
+      }
+    }
+  } catch (e) {
+    // Don't let a crew-side issue affect the market-resolved return value.
+    console.error('[multi_markets] crew pool cascade failed:', e.message);
+  }
+
   return resolvedMarket;
 }
 
