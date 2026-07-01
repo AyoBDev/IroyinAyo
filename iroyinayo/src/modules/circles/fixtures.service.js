@@ -2,11 +2,11 @@ const db = require('../../config/database');
 
 const FD_BASE = 'https://api.football-data.org/v4';
 
-// NOTE: crew_pools no longer reference fixtures (migration 042 re-pointed the
+// NOTE: circle_pools no longer reference fixtures (migration 042 re-pointed the
 // FK to multi_markets). The Football-Data fixture cache here is preserved for
 // future use (e.g. a dedicated football-events feed) but is no longer wired
-// into the crew pool auto-resolution path. resolvePoolsForFixture has been
-// removed; resolveMarket() in multiMarkets.service cascades to crew pools
+// into the circle pool auto-resolution path. resolvePoolsForFixture has been
+// removed; resolveMarket() in multiMarkets.service cascades to circle pools
 // directly.
 
 function err(code, message, userMessage, status = 400) {
@@ -111,7 +111,7 @@ async function pollCompletedFixtures() {
       resolved++;
     }
   }
-  // poolsResolved removed: crew pools no longer attach to fixtures. They
+  // poolsResolved removed: circle pools no longer attach to fixtures. They
   // resolve via the multi_markets cascade in markets/multiMarkets.service.js.
   return { resolved };
 }
@@ -124,7 +124,7 @@ async function manualSubmitResult(fixtureId, { home_score, away_score }) {
   await db('fixtures').where({ id: fixtureId }).update({
     home_score, away_score, winner, status: 'finished', updated_at: db.fn.now(),
   });
-  // No crew pool cascade here — pools wrap multi_markets, not fixtures.
+  // No circle pool cascade here — pools wrap multi_markets, not fixtures.
   return { winner };
 }
 

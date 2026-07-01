@@ -1,6 +1,6 @@
 const db = require('../src/config/database');
-const crewsService = require('../src/modules/crews/service');
-const poolsService = require('../src/modules/crews/pools.service');
+const circlesService = require('../src/modules/circles/service');
+const poolsService = require('../src/modules/circles/pools.service');
 
 async function makeStudent(name, balance = 1000) {
   const [s] = await db('students').insert({
@@ -14,16 +14,16 @@ async function makeStudent(name, balance = 1000) {
   return s;
 }
 
-describe('Crews Leaderboard', () => {
+describe('Circles Leaderboard', () => {
   beforeAll(async () => { await db.migrate.latest(); });
   afterAll(async () => { await db.destroy(); });
   beforeEach(async () => {
-    await db('crew_pool_predictions').del();
-    await db('crew_pool_resolutions').del();
-    await db('crew_pools').del();
-    await db('crew_invites').del();
-    await db('crew_members').del();
-    await db('crews').del();
+    await db('circle_pool_predictions').del();
+    await db('circle_pool_resolutions').del();
+    await db('circle_pools').del();
+    await db('circle_invites').del();
+    await db('circle_members').del();
+    await db('circles').del();
     await db('students').del();
   });
 
@@ -32,15 +32,15 @@ describe('Crews Leaderboard', () => {
     const bob = await makeStudent('Bob');
     const charlie = await makeStudent('Charlie');
 
-    // Alice creates crew
-    const { crew, inviteToken } = await crewsService.createCrew('Test Crew', alice.id);
+    // Alice creates circle
+    const { circle, inviteToken } = await circlesService.createCircle('Test Crew', alice.id);
 
     // Bob & Charlie join
-    await crewsService.joinCrewByToken(inviteToken, bob.id);
-    await crewsService.joinCrewByToken(inviteToken, charlie.id);
+    await circlesService.joinCircleByToken(inviteToken, bob.id);
+    await circlesService.joinCircleByToken(inviteToken, charlie.id);
 
     // Alice creates a private pool
-    const pool = await poolsService.createPool(crew.id, alice.id, {
+    const pool = await poolsService.createPool(circle.id, alice.id, {
       poolType: 'private',
       title: 'Test Pool',
       outcomeA: 'Yes',
@@ -54,8 +54,8 @@ describe('Crews Leaderboard', () => {
     await poolsService.predictInPool(pool.id, { studentId: bob.id }, 'No');
 
     // Resolve: Alice wins (outcome Yes)
-    await db('crew_pools').where({ id: pool.id }).update({ status: 'resolved', winner_outcome: 'Yes' });
-    await db('crew_pool_resolutions').insert({
+    await db('circle_pools').where({ id: pool.id }).update({ status: 'resolved', winner_outcome: 'Yes' });
+    await db('circle_pool_resolutions').insert({
       pool_id: pool.id,
       source: 'creator',
       resolver_id: alice.id,
@@ -67,10 +67,10 @@ describe('Crews Leaderboard', () => {
     // net = 150 - 50 = 100
     // Bob: lost 50 (payout 0, locked 50) = -50 net
     // Charlie: 0 predictions
-    await db('crew_pool_predictions').where({ pool_id: pool.id, student_id: alice.id }).update({ payout: 150 });
-    await db('crew_pool_predictions').where({ pool_id: pool.id, student_id: bob.id }).update({ payout: 0 });
+    await db('circle_pool_predictions').where({ pool_id: pool.id, student_id: alice.id }).update({ payout: 150 });
+    await db('circle_pool_predictions').where({ pool_id: pool.id, student_id: bob.id }).update({ payout: 0 });
 
-    const leaderboard = await crewsService.getLeaderboardForCrew(crew.id);
+    const leaderboard = await circlesService.getLeaderboardForCircle(circle.id);
     expect(leaderboard).toHaveLength(3);
 
     // Alice should be 1st: +100 net, 100% accuracy
@@ -102,11 +102,11 @@ describe('Crews Leaderboard', () => {
     const alice = await makeStudent('Alice');
     const bob = await makeStudent('Bob');
 
-    const { crew, inviteToken } = await crewsService.createCrew('Open Pool Crew', alice.id);
-    await crewsService.joinCrewByToken(inviteToken, bob.id);
+    const { circle, inviteToken } = await circlesService.createCircle('Open Pool Crew', alice.id);
+    await circlesService.joinCircleByToken(inviteToken, bob.id);
 
     // Alice creates open pool
-    const pool = await poolsService.createPool(crew.id, alice.id, {
+    const pool = await poolsService.createPool(circle.id, alice.id, {
       poolType: 'private',
       title: 'Open Pool',
       outcomeA: 'Yes',
@@ -118,7 +118,7 @@ describe('Crews Leaderboard', () => {
     // Bob predicts on the open pool
     await poolsService.predictInPool(pool.id, { studentId: bob.id }, 'Yes');
 
-    const leaderboard = await crewsService.getLeaderboardForCrew(crew.id);
+    const leaderboard = await circlesService.getLeaderboardForCircle(circle.id);
     const bobStats = leaderboard.find((m) => m.student_id === bob.id);
     expect(bobStats.pools_predicted).toBe(1);
     expect(bobStats.correct).toBe(0);
@@ -131,8 +131,8 @@ describe('Crews Leaderboard', () => {
     const alice = await makeStudent('Alice');
     const bob = await makeStudent('Bob');
 
-    const { crew, inviteToken } = await crewsService.createCrew('Public Pool Crew', alice.id);
-    await crewsService.joinCrewByToken(inviteToken, bob.id);
+    const { circle, inviteToken } = await circlesService.createCircle('Public Pool Crew', alice.id);
+    await circlesService.joinCircleByToken(inviteToken, bob.id);
 
     // Create a multi_market
     const [market] = await db('multi_markets').insert({
@@ -149,7 +149,7 @@ describe('Crews Leaderboard', () => {
     ]);
 
     // Create a public pool wrapping the market
-    const pool = await poolsService.createPool(crew.id, alice.id, {
+    const pool = await poolsService.createPool(circle.id, alice.id, {
       poolType: 'public',
       parentMarketId: market.id,
       kickoffAt: new Date(Date.now() + 3600000).toISOString(),
@@ -161,11 +161,11 @@ describe('Crews Leaderboard', () => {
     await poolsService.predictInPool(pool.id, { studentId: bob.id }, 'Option B');
 
     // Resolve: Alice wins
-    await db('crew_pools').where({ id: pool.id }).update({ status: 'resolved', winner_outcome: 'Option A' });
-    await db('crew_pool_predictions').where({ pool_id: pool.id, student_id: alice.id }).update({ payout: 100 });
-    await db('crew_pool_predictions').where({ pool_id: pool.id, student_id: bob.id }).update({ payout: 0 });
+    await db('circle_pools').where({ id: pool.id }).update({ status: 'resolved', winner_outcome: 'Option A' });
+    await db('circle_pool_predictions').where({ pool_id: pool.id, student_id: alice.id }).update({ payout: 100 });
+    await db('circle_pool_predictions').where({ pool_id: pool.id, student_id: bob.id }).update({ payout: 0 });
 
-    const leaderboard = await crewsService.getLeaderboardForCrew(crew.id);
+    const leaderboard = await circlesService.getLeaderboardForCircle(circle.id);
     const aliceStats = leaderboard.find((m) => m.student_id === alice.id);
     const bobStats = leaderboard.find((m) => m.student_id === bob.id);
 

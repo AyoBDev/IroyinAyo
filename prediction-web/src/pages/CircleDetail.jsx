@@ -4,12 +4,12 @@ import { ArrowLeft, Users, Plus, UserPlus } from 'lucide-react';
 import { apiFetch } from '../api.js';
 import useStore from '../store.js';
 import { getSocket } from '../socket.js';
-import CrewPoolCard from '../components/CrewPoolCard.jsx';
+import CirclePoolCard from '../components/CirclePoolCard.jsx';
 import CreatePoolModal from '../components/CreatePoolModal.jsx';
-import CrewInviteSheet from '../components/CrewInviteSheet.jsx';
-import CrewLeaderboardRow from '../components/CrewLeaderboardRow.jsx';
+import CircleInviteSheet from '../components/CircleInviteSheet.jsx';
+import CircleLeaderboardRow from '../components/CircleLeaderboardRow.jsx';
 
-export default function CrewDetail() {
+export default function CircleDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const user = useStore((s) => s.user);
@@ -23,7 +23,7 @@ export default function CrewDetail() {
 
   async function reload() {
     try {
-      const result = await apiFetch(`/api/crews/${id}`);
+      const result = await apiFetch(`/api/circles/${id}`);
       setData(result);
       setLoading(false);
     } catch {
@@ -37,13 +37,13 @@ export default function CrewDetail() {
     const socket = getSocket();
     if (!socket) return;
 
-    socket.emit('crew:join', { crewId: id });
-    socket.on('crew:pool:prediction', reload);
-    socket.on('crew:pool:resolved', reload);
+    socket.emit('circle:join', { circleId: id });
+    socket.on('circle:pool:prediction', reload);
+    socket.on('circle:pool:resolved', reload);
 
     return () => {
-      socket.off('crew:pool:prediction', reload);
-      socket.off('crew:pool:resolved', reload);
+      socket.off('circle:pool:prediction', reload);
+      socket.off('circle:pool:resolved', reload);
     };
   }, [id]);
 
@@ -55,7 +55,7 @@ export default function CrewDetail() {
     const isCreator = data.members.find((m) => m.id === user?.id)?.role === 'creator';
     if (isCreator) {
       try {
-        const { token } = await apiFetch(`/api/crews/${id}/invite`);
+        const { token } = await apiFetch(`/api/circles/${id}/invite`);
         setInviteToken(token);
         setShowInvite(true);
       } catch {}
@@ -64,7 +64,7 @@ export default function CrewDetail() {
 
   async function loadLeaderboard() {
     try {
-      const lb = await apiFetch(`/api/crews/${id}/leaderboard`);
+      const lb = await apiFetch(`/api/circles/${id}/leaderboard`);
       setLeaderboard(lb);
     } catch (e) {
       console.error('Failed to load leaderboard:', e);
@@ -78,9 +78,9 @@ export default function CrewDetail() {
   }, [activeTab]);
 
   if (loading) return <div className="p-4 text-ink-muted">Loading…</div>;
-  if (!data) return <div className="p-4 text-ink-muted">Crew not found.</div>;
+  if (!data) return <div className="p-4 text-ink-muted">Circle not found.</div>;
 
-  const { crew, members, pools } = data;
+  const { circle, members, pools } = data;
   const isCreator = members.find((m) => m.id === user?.id)?.role === 'creator';
   const open = pools.filter((p) => p.status === 'open');
   const resolving = pools.filter((p) => ['closed', 'awaiting_dispute_window', 'disputed'].includes(p.status));
@@ -88,12 +88,12 @@ export default function CrewDetail() {
 
   return (
     <div className="p-4 max-w-[640px] mx-auto">
-      <button onClick={() => navigate('/crews')} className="flex items-center gap-1 text-ink-muted text-[13px] mb-3">
+      <button onClick={() => navigate('/circles')} className="flex items-center gap-1 text-ink-muted text-[13px] mb-3">
         <ArrowLeft size={16} /> Back
       </button>
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h1 className="font-serif text-section">{crew.name}</h1>
+          <h1 className="font-serif text-section">{circle.name}</h1>
           <div className="text-[12px] text-ink-muted mt-1 flex items-center gap-1">
             <Users size={12} /> {members.length} member{members.length === 1 ? '' : 's'}
           </div>
@@ -128,7 +128,7 @@ export default function CrewDetail() {
             <section className="mb-5">
               <h3 className="text-[13px] font-semibold text-ink-muted mb-2">Active</h3>
               <div className="flex flex-col gap-2">
-                {open.map((p) => <CrewPoolCard key={p.id} pool={p} crewId={id} />)}
+                {open.map((p) => <CirclePoolCard key={p.id} pool={p} circleId={id} />)}
               </div>
             </section>
           )}
@@ -137,7 +137,7 @@ export default function CrewDetail() {
             <section className="mb-5">
               <h3 className="text-[13px] font-semibold text-ink-muted mb-2">Resolving</h3>
               <div className="flex flex-col gap-2">
-                {resolving.map((p) => <CrewPoolCard key={p.id} pool={p} crewId={id} />)}
+                {resolving.map((p) => <CirclePoolCard key={p.id} pool={p} circleId={id} />)}
               </div>
             </section>
           )}
@@ -146,7 +146,7 @@ export default function CrewDetail() {
             <section className="mb-5">
               <h3 className="text-[13px] font-semibold text-ink-muted mb-2">Past pools</h3>
               <div className="flex flex-col gap-2">
-                {resolved.slice(0, 10).map((p) => <CrewPoolCard key={p.id} pool={p} crewId={id} />)}
+                {resolved.slice(0, 10).map((p) => <CirclePoolCard key={p.id} pool={p} circleId={id} />)}
               </div>
             </section>
           )}
@@ -168,15 +168,15 @@ export default function CrewDetail() {
           ) : (
             <div className="flex flex-col gap-2">
               {leaderboard.map((member, idx) => (
-                <CrewLeaderboardRow key={member.student_id} member={member} rank={idx + 1} />
+                <CircleLeaderboardRow key={member.student_id} member={member} rank={idx + 1} />
               ))}
             </div>
           )}
         </section>
       )}
 
-      {showCreatePool && <CreatePoolModal crewId={id} onClose={() => setShowCreatePool(false)} onCreated={(pool) => { setShowCreatePool(false); reload(); navigate(`/crews/${id}/pools/${pool.id}`); }} />}
-      {showInvite && inviteToken && <CrewInviteSheet crewId={id} inviteToken={inviteToken} isCreator={isCreator} onClose={() => setShowInvite(false)} />}
+      {showCreatePool && <CreatePoolModal circleId={id} onClose={() => setShowCreatePool(false)} onCreated={(pool) => { setShowCreatePool(false); reload(); navigate(`/circles/${id}/pools/${pool.id}`); }} />}
+      {showInvite && inviteToken && <CircleInviteSheet circleId={id} inviteToken={inviteToken} isCreator={isCreator} onClose={() => setShowInvite(false)} />}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 const db = require('../src/config/database');
-const fixturesService = require('../src/modules/crews/fixtures.service');
+const fixturesService = require('../src/modules/circles/fixtures.service');
 
 describe('Fixtures service', () => {
   beforeAll(async () => { await db.migrate.latest(); });
@@ -56,8 +56,8 @@ describe('Fixtures service', () => {
     expect(result[0].external_id).toBe('sched');
   });
 
-  // resolvePoolsForFixture and the crew-pool cascade in manualSubmitResult
+  // resolvePoolsForFixture and the circle-pool cascade in manualSubmitResult
   // were removed in the multi_markets refactor (migration 042). Crew public
   // pools now wrap multi_markets rows and auto-resolve via the resolveMarket
-  // path in markets/multiMarkets.service.js — see tests/crews.public-resolution.test.js.
+  // path in markets/multiMarkets.service.js — see tests/circles.public-resolution.test.js.
 });

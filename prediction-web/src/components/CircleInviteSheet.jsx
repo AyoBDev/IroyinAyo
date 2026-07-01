@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, Copy, Check, RotateCcw, Share2 } from 'lucide-react';
 import { apiFetch } from '../api.js';
 
-export default function CrewInviteSheet({ crewId, inviteToken: initialToken, isCreator, onClose }) {
+export default function CircleInviteSheet({ circleId, inviteToken: initialToken, isCreator, onClose }) {
   const [token, setToken] = useState(initialToken);
   const [copied, setCopied] = useState(false);
   const [rotating, setRotating] = useState(false);
@@ -16,7 +16,7 @@ export default function CrewInviteSheet({ crewId, inviteToken: initialToken, isC
   }
 
   async function handleShare() {
-    const text = `Join my crew on IroyinMarket — we predict football together. ${inviteUrl}`;
+    const text = `Join my circle on IroyinMarket — we predict football together. ${inviteUrl}`;
     if (navigator.share) {
       try { await navigator.share({ text, url: inviteUrl }); } catch {}
     } else {
@@ -29,7 +29,7 @@ export default function CrewInviteSheet({ crewId, inviteToken: initialToken, isC
     if (!confirm('This invalidates the current invite link. Continue?')) return;
     setRotating(true);
     try {
-      const { newToken } = await apiFetch(`/api/crews/${crewId}/rotate-invite`, { method: 'POST' });
+      const { newToken } = await apiFetch(`/api/circles/${circleId}/rotate-invite`, { method: 'POST' });
       setToken(newToken);
     } finally {
       setRotating(false);
@@ -43,7 +43,7 @@ export default function CrewInviteSheet({ crewId, inviteToken: initialToken, isC
           <h2 className="font-serif text-section">Invite friends</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-bone flex items-center justify-center"><X size={16} /></button>
         </div>
-        <p className="text-[13px] text-ink-muted mb-4">Anyone with this link can join your crew (up to 15 members).</p>
+        <p className="text-[13px] text-ink-muted mb-4">Anyone with this link can join your circle (up to 15 members).</p>
         <div className="bg-bone border border-line rounded-lg px-3 py-2.5 mb-3 text-[12px] break-all">{inviteUrl}</div>
         <div className="flex gap-2">
           <button onClick={handleCopy} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-paper border border-line">

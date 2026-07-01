@@ -1,19 +1,19 @@
 /**
- * End-to-end test for the multi_markets → crew_pool auto-resolution path.
+ * End-to-end test for the multi_markets → circle_pool auto-resolution path.
  *
- * After the refactor (migration 042), public crew pools wrap a multi_markets
+ * After the refactor (migration 042), public circle pools wrap a multi_markets
  * row instead of a Football-Data fixture. When the parent market resolves
  * via multiMarkets.resolveMarket(), the resolveMarket function cascades to
- * any crew pools wrapping that market and applies payouts via
+ * any circle pools wrapping that market and applies payouts via
  * resolution.autoResolvePublicPool().
  *
- * This test stands up a market, a crew with members, a public crew pool
+ * This test stands up a market, a circle with members, a public circle pool
  * wrapping the market, predictions on different outcomes, then resolves the
- * market and asserts the crew pool payouts arrived correctly.
+ * market and asserts the circle pool payouts arrived correctly.
  */
 const db = require('../src/config/database');
-const crewsService = require('../src/modules/crews/service');
-const poolsService = require('../src/modules/crews/pools.service');
+const circlesService = require('../src/modules/circles/service');
+const poolsService = require('../src/modules/circles/pools.service');
 const multiMarketsService = require('../src/modules/markets/multiMarkets.service');
 
 async function makeStudent(name, balance = 1000) {
@@ -26,16 +26,16 @@ async function makeStudent(name, balance = 1000) {
   return s;
 }
 
-describe('Crew public pool auto-resolution via multi_markets', () => {
+describe('Circle public pool auto-resolution via multi_markets', () => {
   beforeAll(async () => { await db.migrate.latest(); });
   afterAll(async () => { await db.destroy(); });
   beforeEach(async () => {
-    await db('crew_pool_predictions').del();
-    await db('crew_pool_resolutions').del();
-    await db('crew_pools').del();
-    await db('crew_invites').del();
-    await db('crew_members').del();
-    await db('crews').del();
+    await db('circle_pool_predictions').del();
+    await db('circle_pool_resolutions').del();
+    await db('circle_pools').del();
+    await db('circle_invites').del();
+    await db('circle_members').del();
+    await db('circles').del();
     await db('multi_market_positions').del();
     await db('multi_market_outcomes').del();
     await db('multi_markets').del();
@@ -43,21 +43,21 @@ describe('Crew public pool auto-resolution via multi_markets', () => {
     await db('students').del();
   });
 
-  test('resolving the wrapped multi_market pays out winners in the crew pool', async () => {
+  test('resolving the wrapped multi_market pays out winners in the circle pool', async () => {
     // 1. Set up a multi_market with two outcomes
     const market = await multiMarketsService.createMarket('Arsenal vs Chelsea', 50);
     const arsenal = await multiMarketsService.addOutcome(market.id, 'Arsenal');
     const chelsea = await multiMarketsService.addOutcome(market.id, 'Chelsea');
 
-    // 2. Set up a crew with 3 members and a public pool wrapping the market
+    // 2. Set up a circle with 3 members and a public pool wrapping the market
     const creator = await makeStudent('Creator');
-    const { crew, inviteToken } = await crewsService.createCrew('FC', creator.id);
+    const { circle, inviteToken } = await circlesService.createCircle('FC', creator.id);
     const m1 = await makeStudent('M1');
     const m2 = await makeStudent('M2');
-    await crewsService.joinCrewByToken(inviteToken, m1.id);
-    await crewsService.joinCrewByToken(inviteToken, m2.id);
+    await circlesService.joinCircleByToken(inviteToken, m1.id);
+    await circlesService.joinCircleByToken(inviteToken, m2.id);
 
-    const pool = await poolsService.createPool(crew.id, creator.id, {
+    const pool = await poolsService.createPool(circle.id, creator.id, {
       poolType: 'public',
       parentMarketId: market.id,
       kickoffAt: new Date(Date.now() + 3600 * 1000),
@@ -71,9 +71,9 @@ describe('Crew public pool auto-resolution via multi_markets', () => {
     await poolsService.predictInPool(pool.id, { studentId: m2.id }, 'Chelsea');
 
     // 4. Force-close the pool (kickoff cron normally does this; simulate it)
-    await db('crew_pools').where({ id: pool.id }).update({ status: 'closed' });
+    await db('circle_pools').where({ id: pool.id }).update({ status: 'closed' });
 
-    // 5. Resolve the multi_market → cascade should resolve the crew pool
+    // 5. Resolve the multi_market → cascade should resolve the circle pool
     await multiMarketsService.resolveMarket(market.id, arsenal.id);
 
     // 6. Pot = 300, 2 winners, each gets floor(300/2) = 150
@@ -86,7 +86,7 @@ describe('Crew public pool auto-resolution via multi_markets', () => {
     expect(after.m1).toBe(1000 - 100 + 150);
     expect(after.m2).toBe(1000 - 100);
 
-    const finalPool = await db('crew_pools').where({ id: pool.id }).first();
+    const finalPool = await db('circle_pools').where({ id: pool.id }).first();
     expect(finalPool.status).toBe('resolved');
     expect(finalPool.winner_outcome).toBe('Arsenal');
   });
@@ -99,8 +99,8 @@ describe('Crew public pool auto-resolution via multi_markets', () => {
     await db('multi_markets').where({ id: market.id }).update({ status: 'resolved', winning_outcome_id: o1.id });
 
     const creator = await makeStudent('Creator');
-    const { crew } = await crewsService.createCrew('FC', creator.id);
-    await expect(poolsService.createPool(crew.id, creator.id, {
+    const { circle } = await circlesService.createCircle('FC', creator.id);
+    await expect(poolsService.createPool(circle.id, creator.id, {
       poolType: 'public', parentMarketId: market.id,
       kickoffAt: new Date(Date.now() + 3600 * 1000), stakeAmount: 50,
     })).rejects.toMatchObject({ code: 'MARKET_NOT_OPEN' });
@@ -108,9 +108,9 @@ describe('Crew public pool auto-resolution via multi_markets', () => {
 
   test('createPool rejects unknown market id', async () => {
     const creator = await makeStudent('Creator');
-    const { crew } = await crewsService.createCrew('FC', creator.id);
+    const { circle } = await circlesService.createCircle('FC', creator.id);
     // Random UUID that isn't in multi_markets
-    await expect(poolsService.createPool(crew.id, creator.id, {
+    await expect(poolsService.createPool(circle.id, creator.id, {
       poolType: 'public', parentMarketId: '00000000-0000-0000-0000-000000000000',
       kickoffAt: new Date(Date.now() + 3600 * 1000), stakeAmount: 50,
     })).rejects.toMatchObject({ code: 'MARKET_NOT_FOUND' });
@@ -123,10 +123,10 @@ describe('Crew public pool auto-resolution via multi_markets', () => {
     await multiMarketsService.addOutcome(market.id, 'C');
 
     const creator = await makeStudent('Creator');
-    const { crew, inviteToken } = await crewsService.createCrew('FC', creator.id);
+    const { circle, inviteToken } = await circlesService.createCircle('FC', creator.id);
     const m1 = await makeStudent('M1');
-    await crewsService.joinCrewByToken(inviteToken, m1.id);
-    const pool = await poolsService.createPool(crew.id, creator.id, {
+    await circlesService.joinCircleByToken(inviteToken, m1.id);
+    const pool = await poolsService.createPool(circle.id, creator.id, {
       poolType: 'public', parentMarketId: market.id,
       kickoffAt: new Date(Date.now() + 3600 * 1000), stakeAmount: 50,
     });
@@ -140,8 +140,8 @@ describe('Crew public pool auto-resolution via multi_markets', () => {
     await multiMarketsService.addOutcome(market.id, 'Beta');
 
     const creator = await makeStudent('Creator');
-    const { crew } = await crewsService.createCrew('FC', creator.id);
-    const pool = await poolsService.createPool(crew.id, creator.id, {
+    const { circle } = await circlesService.createCircle('FC', creator.id);
+    const pool = await poolsService.createPool(circle.id, creator.id, {
       poolType: 'public', parentMarketId: market.id,
       kickoffAt: new Date(Date.now() + 3600 * 1000), stakeAmount: 50,
     });

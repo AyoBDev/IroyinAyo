@@ -1,7 +1,7 @@
 const db = require('../src/config/database');
-const crewsService = require('../src/modules/crews/service');
-const poolsService = require('../src/modules/crews/pools.service');
-const resolution = require('../src/modules/crews/resolution.service');
+const circlesService = require('../src/modules/circles/service');
+const poolsService = require('../src/modules/circles/pools.service');
+const resolution = require('../src/modules/circles/resolution.service');
 
 async function makeStudent(name, balance = 1000) {
   const [s] = await db('students').insert({
@@ -14,30 +14,30 @@ async function makeStudent(name, balance = 1000) {
 
 async function setupPool(memberCount, stake = 50) {
   const creator = await makeStudent('Creator');
-  const { crew, inviteToken } = await crewsService.createCrew('C', creator.id);
+  const { circle, inviteToken } = await circlesService.createCircle('C', creator.id);
   const members = [creator];
   for (let i = 0; i < memberCount - 1; i++) {
     const s = await makeStudent(`M${i}`);
-    await crewsService.joinCrewByToken(inviteToken, s.id);
+    await circlesService.joinCircleByToken(inviteToken, s.id);
     members.push(s);
   }
-  const pool = await poolsService.createPool(crew.id, creator.id, {
+  const pool = await poolsService.createPool(circle.id, creator.id, {
     poolType: 'private', title: 'Q', outcomeA: 'A', outcomeB: 'B',
     kickoffAt: new Date(Date.now() + 1000), stakeAmount: stake,
   });
-  return { crew, creator, members, pool };
+  return { circle, creator, members, pool };
 }
 
-describe('Crew resolution service', () => {
+describe('Circle resolution service', () => {
   beforeAll(async () => { await db.migrate.latest(); });
   afterAll(async () => { await db.destroy(); });
   beforeEach(async () => {
-    await db('crew_pool_predictions').del();
-    await db('crew_pool_resolutions').del();
-    await db('crew_pools').del();
-    await db('crew_invites').del();
-    await db('crew_members').del();
-    await db('crews').del();
+    await db('circle_pool_predictions').del();
+    await db('circle_pool_resolutions').del();
+    await db('circle_pools').del();
+    await db('circle_invites').del();
+    await db('circle_members').del();
+    await db('circles').del();
     await db('students').del();
   });
 
@@ -49,7 +49,7 @@ describe('Crew resolution service', () => {
     await poolsService.predictInPool(pool.id, { studentId: members[3].id }, 'B');
     await poolsService.predictInPool(pool.id, { studentId: members[4].id }, 'B');
     // Pot = 500, 3 correct → each gets floor(500/3) = 166. Platform absorbs 2.
-    await db('crew_pools').where({ id: pool.id }).update({ status: 'closed' });
+    await db('circle_pools').where({ id: pool.id }).update({ status: 'closed' });
     const result = await resolution.calculateAndApplyPayouts(pool.id, 'A', 'creator', { resolverId: members[0].id });
     expect(result.perWinner).toBe(166);
     expect(result.platformAbsorbed).toBe(2);
@@ -66,7 +66,7 @@ describe('Crew resolution service', () => {
     for (let i = 0; i < 5; i++) {
       await poolsService.predictInPool(pool.id, { studentId: members[i].id }, 'A');
     }
-    await db('crew_pools').where({ id: pool.id }).update({ status: 'closed' });
+    await db('circle_pools').where({ id: pool.id }).update({ status: 'closed' });
     const result = await resolution.calculateAndApplyPayouts(pool.id, 'B', 'creator', { resolverId: members[0].id });
     expect(result.perWinner).toBe(0);
     expect(result.platformAbsorbed).toBe(0);
@@ -79,7 +79,7 @@ describe('Crew resolution service', () => {
     await poolsService.predictInPool(pool.id, { studentId: members[0].id }, 'A');
     await poolsService.predictInPool(pool.id, { studentId: members[1].id }, 'A');
     await poolsService.predictInPool(pool.id, { studentId: members[2].id }, 'B');
-    await db('crew_pools').where({ id: pool.id }).update({ status: 'closed' });
+    await db('circle_pools').where({ id: pool.id }).update({ status: 'closed' });
     await resolution.calculateAndApplyPayouts(pool.id, 'A', 'creator', { resolverId: members[0].id });
     const balancesAfter1 = await Promise.all(members.map(m => db('students').where({ id: m.id }).first().then(r => r.points_balance)));
     await resolution.calculateAndApplyPayouts(pool.id, 'A', 'creator', { resolverId: members[0].id });
@@ -90,9 +90,9 @@ describe('Crew resolution service', () => {
   test('creatorReportResult sets dispute window', async () => {
     const { pool, members, creator } = await setupPool(3, 50);
     await poolsService.predictInPool(pool.id, { studentId: members[1].id }, 'A');
-    await db('crew_pools').where({ id: pool.id }).update({ status: 'closed' });
+    await db('circle_pools').where({ id: pool.id }).update({ status: 'closed' });
     await resolution.creatorReportResult(pool.id, creator.id, 'A');
-    const res = await db('crew_pool_resolutions').where({ pool_id: pool.id }).first();
+    const res = await db('circle_pool_resolutions').where({ pool_id: pool.id }).first();
     expect(res.source).toBe('creator');
     expect(res.dispute_status).toBe('open_window');
     expect(res.dispute_window_ends_at).toBeTruthy();
@@ -101,10 +101,10 @@ describe('Crew resolution service', () => {
   test('raiseDispute freezes pool', async () => {
     const { pool, members, creator } = await setupPool(3, 50);
     await poolsService.predictInPool(pool.id, { studentId: members[1].id }, 'A');
-    await db('crew_pools').where({ id: pool.id }).update({ status: 'closed' });
+    await db('circle_pools').where({ id: pool.id }).update({ status: 'closed' });
     await resolution.creatorReportResult(pool.id, creator.id, 'A');
     await resolution.raiseDispute(pool.id, members[1].id, 'I think Wale won');
-    const p = await db('crew_pools').where({ id: pool.id }).first();
+    const p = await db('circle_pools').where({ id: pool.id }).first();
     expect(p.status).toBe('disputed');
   });
 
@@ -113,13 +113,13 @@ describe('Crew resolution service', () => {
     await poolsService.predictInPool(pool.id, { studentId: members[0].id }, 'A');
     await poolsService.predictInPool(pool.id, { studentId: members[1].id }, 'A');
     await poolsService.predictInPool(pool.id, { studentId: members[2].id }, 'B');
-    await db('crew_pools').where({ id: pool.id }).update({ status: 'closed' });
+    await db('circle_pools').where({ id: pool.id }).update({ status: 'closed' });
     await resolution.creatorReportResult(pool.id, creator.id, 'A');
     // Force expiry
-    await db('crew_pool_resolutions').where({ pool_id: pool.id }).update({ dispute_window_ends_at: new Date(Date.now() - 1000) });
+    await db('circle_pool_resolutions').where({ pool_id: pool.id }).update({ dispute_window_ends_at: new Date(Date.now() - 1000) });
     const result = await resolution.processExpiredDisputeWindows();
     expect(result.resolved).toBeGreaterThanOrEqual(1);
-    const p = await db('crew_pools').where({ id: pool.id }).first();
+    const p = await db('circle_pools').where({ id: pool.id }).first();
     expect(p.status).toBe('resolved');
   });
 
@@ -128,7 +128,7 @@ describe('Crew resolution service', () => {
     await poolsService.predictInPool(pool.id, { studentId: members[0].id }, 'A');
     await poolsService.predictInPool(pool.id, { studentId: members[1].id }, 'A');
     await poolsService.predictInPool(pool.id, { studentId: members[2].id }, 'B');
-    await db('crew_pools').where({ id: pool.id }).update({ status: 'closed' });
+    await db('circle_pools').where({ id: pool.id }).update({ status: 'closed' });
 
     const balancesBefore = await Promise.all(members.map(m =>
       db('students').where({ id: m.id }).first().then(r => r.points_balance)));
@@ -138,9 +138,9 @@ describe('Crew resolution service', () => {
     // Balances unchanged — payouts deferred to window close / admin
     expect(balancesAfter).toEqual(balancesBefore);
 
-    const p = await db('crew_pools').where({ id: pool.id }).first();
+    const p = await db('circle_pools').where({ id: pool.id }).first();
     expect(p.status).toBe('awaiting_dispute_window');
-    const res = await db('crew_pool_resolutions').where({ pool_id: pool.id }).first();
+    const res = await db('circle_pool_resolutions').where({ pool_id: pool.id }).first();
     expect(res.dispute_status).toBe('open_window');
   });
 
@@ -157,11 +157,11 @@ describe('Crew resolution service', () => {
     // Everyone is down 100
     for (const b of balancesAfterStakes) expect(b).toBe(900);
 
-    await db('crew_pools').where({ id: pool.id }).update({ status: 'closed' });
+    await db('circle_pools').where({ id: pool.id }).update({ status: 'closed' });
     await resolution.creatorReportResult(pool.id, creator.id, 'A');
     // Dispute window opens — a member disputes
     await resolution.raiseDispute(pool.id, members[3].id, 'I think B actually won');
-    const disputed = await db('crew_pools').where({ id: pool.id }).first();
+    const disputed = await db('circle_pools').where({ id: pool.id }).first();
     expect(disputed.status).toBe('disputed');
 
     // Admin override: B is the true winner
@@ -184,7 +184,7 @@ describe('Crew resolution service', () => {
     const totalDelta = finalBalances.reduce((s, b) => s + (b - 1000), 0);
     expect(totalDelta).toBe(0);
 
-    const finalPool = await db('crew_pools').where({ id: pool.id }).first();
+    const finalPool = await db('circle_pools').where({ id: pool.id }).first();
     expect(finalPool.status).toBe('resolved');
     expect(finalPool.winner_outcome).toBe('B');
   });
@@ -195,7 +195,7 @@ describe('Crew resolution service', () => {
     await poolsService.predictInPool(pool.id, { studentId: members[1].id }, 'A');
     await poolsService.predictInPool(pool.id, { studentId: members[2].id }, 'A');
     await poolsService.predictInPool(pool.id, { studentId: creator.id }, 'B');
-    await db('crew_pools').where({ id: pool.id }).update({ status: 'closed' });
+    await db('circle_pools').where({ id: pool.id }).update({ status: 'closed' });
     await resolution.creatorReportResult(pool.id, creator.id, 'A');
 
     const balBefore = await db('students').where({ id: members[1].id }).first().then(r => r.points_balance);
@@ -205,14 +205,14 @@ describe('Crew resolution service', () => {
 
     const balAfter = await db('students').where({ id: members[1].id }).first().then(r => r.points_balance);
     expect(balAfter).toBeGreaterThan(balBefore); // received payout
-    const p = await db('crew_pools').where({ id: pool.id }).first();
+    const p = await db('circle_pools').where({ id: pool.id }).first();
     expect(p.status).toBe('resolved');
   });
 
   test('creator cannot confirm own report', async () => {
     const { pool, members, creator } = await setupPool(3, 50);
     await poolsService.predictInPool(pool.id, { studentId: members[1].id }, 'A');
-    await db('crew_pools').where({ id: pool.id }).update({ status: 'closed' });
+    await db('circle_pools').where({ id: pool.id }).update({ status: 'closed' });
     await resolution.creatorReportResult(pool.id, creator.id, 'A');
     await expect(resolution.confirmResolution(pool.id, creator.id))
       .rejects.toMatchObject({ code: 'CREATOR_CANNOT_CONFIRM' });
@@ -222,7 +222,7 @@ describe('Crew resolution service', () => {
     const { pool, members, creator } = await setupPool(3, 50);
     await poolsService.predictInPool(pool.id, { studentId: members[1].id }, 'A');
     await poolsService.predictInPool(pool.id, { studentId: members[2].id }, 'B');
-    await db('crew_pools').where({ id: pool.id }).update({
+    await db('circle_pools').where({ id: pool.id }).update({
       status: 'closed',
       created_at: new Date(Date.now() - 8 * 24 * 3600 * 1000), // 8 days ago
     });
@@ -231,7 +231,7 @@ describe('Crew resolution service', () => {
     expect(result.refunded).toBeGreaterThanOrEqual(1);
     const balAfter = await db('students').where({ id: members[1].id }).first().then(r => r.points_balance);
     expect(balAfter).toBe(balBefore + 50);
-    const p = await db('crew_pools').where({ id: pool.id }).first();
+    const p = await db('circle_pools').where({ id: pool.id }).first();
     expect(p.status).toBe('resolved');
     expect(p.winner_outcome).toBe('abandoned');
   });
