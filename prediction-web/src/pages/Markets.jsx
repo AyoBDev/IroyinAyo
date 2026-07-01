@@ -8,7 +8,6 @@ import PublicChat from '../components/PublicChat.jsx';
 import ActivityFeed from '../components/ActivityFeed.jsx';
 import Leaderboard from '../components/Leaderboard.jsx';
 import SharpMoney from '../components/SharpMoney.jsx';
-import CreateMarketFAB from '../components/CreateMarketFAB.jsx';
 import CreateMarketForm from '../components/CreateMarketForm.jsx';
 import Tutorial from '../components/Tutorial.jsx';
 import { useDeepLinkRef } from '../hooks/useDeepLinkRef.js';
@@ -130,7 +129,6 @@ export default function Markets() {
         <div className="mt-3"><Leaderboard /></div>
       </div>
 
-      <CreateMarketFAB onClick={() => setShowCreateForm(true)} />
       {showCreateForm && <CreateMarketForm onClose={() => setShowCreateForm(false)} />}
     </>
   );
