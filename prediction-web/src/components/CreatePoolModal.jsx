@@ -81,9 +81,16 @@ export default function CreatePoolModal({ circleId, onClose, onCreated }) {
           <>
             <label className="text-[12px] text-ink-muted mb-1 block">Question</label>
             <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Tunde vs Wale FIFA tonight" maxLength={200} className="w-full px-3 py-2.5 bg-bone border border-line rounded-lg mb-3" />
-            <div className="flex gap-2 mb-3">
-              <input type="text" value={outcomeA} onChange={(e) => setOutcomeA(e.target.value)} placeholder="Option A" maxLength={60} className="flex-1 px-3 py-2.5 bg-bone border border-line rounded-lg" />
-              <input type="text" value={outcomeB} onChange={(e) => setOutcomeB(e.target.value)} placeholder="Option B" maxLength={60} className="flex-1 px-3 py-2.5 bg-bone border border-line rounded-lg" />
+            <label className="text-[12px] text-ink-muted mb-1 block">Options</label>
+            <div className="space-y-2 mb-3">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-accent-green-bg border border-accent-green-border text-accent-green text-[10px] font-bold flex items-center justify-center">A</span>
+                <input type="text" value={outcomeA} onChange={(e) => setOutcomeA(e.target.value)} placeholder="e.g. Tunde" maxLength={60} className="w-full pl-10 pr-3 py-2.5 bg-bone border border-line rounded-lg" />
+              </div>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-accent-red-bg border border-accent-red-border text-accent-red text-[10px] font-bold flex items-center justify-center">B</span>
+                <input type="text" value={outcomeB} onChange={(e) => setOutcomeB(e.target.value)} placeholder="e.g. Wale" maxLength={60} className="w-full pl-10 pr-3 py-2.5 bg-bone border border-line rounded-lg" />
+              </div>
             </div>
             <label className="text-[12px] text-ink-muted mb-1 block">Kickoff</label>
             <input type="datetime-local" value={kickoffAt} onChange={(e) => setKickoffAt(e.target.value)} className="w-full px-3 py-2.5 bg-bone border border-line rounded-lg mb-3" />
