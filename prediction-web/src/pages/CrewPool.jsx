@@ -14,6 +14,9 @@ export default function CrewPool() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [pendingReport, setPendingReport] = useState(null); // outcome label creator is about to report
+  const [showDispute, setShowDispute] = useState(false);
+  const [disputeReason, setDisputeReason] = useState('');
 
   async function reload() {
     try {
@@ -51,29 +54,32 @@ export default function CrewPool() {
     finally { setSubmitting(false); }
   }
 
-  async function reportResult(outcome) {
-    if (!confirm(`Report ${outcome} as the winner?`)) return;
+  async function submitReport(outcome) {
     setSubmitting(true); setError(null);
     try {
       await apiFetch(`/api/crews/pools/${poolId}/report-result`, { method: 'POST', body: JSON.stringify({ outcome }) });
+      setPendingReport(null);
       reload();
     } catch (e) { setError(e.userMessage || 'Could not report.'); }
     finally { setSubmitting(false); }
   }
 
-  async function dispute() {
-    const reason = prompt('Why are you disputing this result?');
-    if (!reason || reason.trim().length < 5) return;
+  async function submitDispute() {
+    if (disputeReason.trim().length < 5) {
+      setError('Please provide a reason (at least 5 characters).');
+      return;
+    }
     setSubmitting(true); setError(null);
     try {
-      await apiFetch(`/api/crews/pools/${poolId}/dispute`, { method: 'POST', body: JSON.stringify({ reason: reason.trim() }) });
+      await apiFetch(`/api/crews/pools/${poolId}/dispute`, { method: 'POST', body: JSON.stringify({ reason: disputeReason.trim() }) });
+      setShowDispute(false);
+      setDisputeReason('');
       reload();
     } catch (e) { setError(e.userMessage || 'Could not dispute.'); }
     finally { setSubmitting(false); }
   }
 
-  async function confirm() {
-    if (!confirm(`Confirm that ${labelOf(pool.winner_outcome)} won?`)) return;
+  async function confirmResult() {
     setSubmitting(true); setError(null);
     try {
       await apiFetch(`/api/crews/pools/${poolId}/confirm`, { method: 'POST' });
@@ -143,14 +149,14 @@ export default function CrewPool() {
           </div>
         )}
 
-        {pool.status === 'closed' && isCreator && isPrivate && (
+        {pool.status === 'closed' && isCreator && isPrivate && !pendingReport && (
           <div className="mt-3">
             <div className="text-[12px] text-ink-muted mb-2">Report the winner:</div>
             <div className="flex gap-2">
               {publicOptionsForButtons.map((label) => (
                 <button
                   key={label}
-                  onClick={() => reportResult(label)}
+                  onClick={() => setPendingReport(label)}
                   disabled={submitting}
                   className="flex-1 py-2.5 rounded-xl bg-paper border border-line text-[13px] font-semibold"
                 >
@@ -161,25 +167,83 @@ export default function CrewPool() {
           </div>
         )}
 
-        {pool.status === 'awaiting_dispute_window' && !isCreator && (
+        {pool.status === 'closed' && isCreator && isPrivate && pendingReport && (
+          <div className="mt-3 bg-bone border border-line rounded-lg p-3">
+            <div className="text-[13px] mb-3">
+              Report <span className="font-bold">{labelOf(pendingReport)}</span> as the winner? This starts a 2-hour dispute window.
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPendingReport(null)}
+                disabled={submitting}
+                className="flex-1 py-2.5 rounded-xl bg-paper border border-line text-ink-muted text-[13px] font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => submitReport(pendingReport)}
+                disabled={submitting}
+                className="flex-1 py-2.5 rounded-xl bg-emerald text-white text-[13px] font-semibold"
+              >
+                {submitting ? 'Reporting…' : 'Confirm report'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {pool.status === 'awaiting_dispute_window' && !isCreator && !showDispute && (
           <div className="mt-3">
             <div className="text-[12px] text-ink-muted mb-2">
               {isPrivate && `Creator reported ${labelOf(pool.winner_outcome)} won. Confirm or dispute within 2 hours.`}
             </div>
             <div className="flex gap-2">
               <button
-                onClick={confirm}
+                onClick={confirmResult}
                 disabled={submitting}
                 className="flex-1 py-2.5 rounded-xl bg-accent-green-bg border border-accent-green-border text-accent-green text-[13px] font-semibold flex items-center justify-center gap-1"
               >
-                <CheckCircle2 size={13} /> Confirm result
+                <CheckCircle2 size={13} /> {submitting ? 'Confirming…' : 'Confirm result'}
               </button>
               <button
-                onClick={dispute}
+                onClick={() => setShowDispute(true)}
                 disabled={submitting}
                 className="flex-1 py-2.5 rounded-xl bg-paper border border-line text-accent-red text-[13px] font-semibold flex items-center justify-center gap-1"
               >
                 <Flag size={13} /> Dispute
+              </button>
+            </div>
+          </div>
+        )}
+
+        {pool.status === 'awaiting_dispute_window' && !isCreator && showDispute && (
+          <div className="mt-3 bg-bone border border-line rounded-lg p-3">
+            <div className="text-[13px] font-semibold mb-2">Dispute the reported result</div>
+            <div className="text-[12px] text-ink-muted mb-2">
+              Tell the crew why you disagree with the report. This freezes payouts until an admin reviews.
+            </div>
+            <textarea
+              value={disputeReason}
+              onChange={(e) => setDisputeReason(e.target.value)}
+              placeholder="What actually happened?"
+              rows={3}
+              maxLength={500}
+              className="w-full px-3 py-2 bg-paper border border-line rounded-md text-ink text-[13px] resize-none mb-2"
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowDispute(false); setDisputeReason(''); setError(null); }}
+                disabled={submitting}
+                className="flex-1 py-2.5 rounded-xl bg-paper border border-line text-ink-muted text-[13px] font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitDispute}
+                disabled={submitting || disputeReason.trim().length < 5}
+                className="flex-1 py-2.5 rounded-xl bg-accent-red text-white text-[13px] font-semibold disabled:opacity-60"
+              >
+                {submitting ? 'Submitting…' : 'Submit dispute'}
               </button>
             </div>
           </div>
