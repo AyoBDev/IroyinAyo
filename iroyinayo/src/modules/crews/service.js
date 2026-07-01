@@ -154,6 +154,70 @@ async function deleteCrew(crewId, callerStudentId) {
   });
 }
 
+/**
+ * Returns leaderboard stats for all members of a crew, ranked by net points
+ * (sum payout - sum points_locked), then accuracy as tie-breaker.
+ *
+ * Stats computed from crew_pool_predictions joined with crew_pools:
+ * - pools_predicted: count of predictions placed (any pool status)
+ * - correct: count where winner_outcome === predicted_outcome AND status='resolved'
+ * - accuracy: correct / count_of_resolved_predictions (null if never predicted on resolved pool)
+ * - net_points: sum(payout) - sum(points_locked)
+ */
+async function getLeaderboardForCrew(crewId) {
+  const crew = await db('crews').where({ id: crewId }).whereNull('deleted_at').first();
+  if (!crew) throw err('NOT_FOUND', 'No crew', 'Crew not found.', 404);
+
+  const members = await db('crew_members')
+    .join('students', 'students.id', 'crew_members.student_id')
+    .where('crew_members.crew_id', crewId)
+    .select('students.id', 'students.name');
+
+  // Fetch all predictions for this crew's pools (only from registered students)
+  const predictions = await db('crew_pool_predictions')
+    .join('crew_pools', 'crew_pools.id', 'crew_pool_predictions.pool_id')
+    .where('crew_pools.crew_id', crewId)
+    .whereNotNull('crew_pool_predictions.student_id')
+    .select(
+      'crew_pool_predictions.student_id',
+      'crew_pool_predictions.predicted_outcome',
+      'crew_pool_predictions.points_locked',
+      'crew_pool_predictions.payout',
+      'crew_pools.status',
+      'crew_pools.winner_outcome'
+    );
+
+  const stats = members.map((member) => {
+    const memberPreds = predictions.filter((p) => p.student_id === member.id);
+    const pools_predicted = memberPreds.length;
+    const resolvedPreds = memberPreds.filter((p) => p.status === 'resolved');
+    const correct = resolvedPreds.filter((p) => p.winner_outcome === p.predicted_outcome).length;
+    const resolved_count = resolvedPreds.length;
+    const accuracy = resolved_count > 0 ? Math.round((correct / resolved_count) * 100) : null;
+    const net_points = memberPreds.reduce((sum, p) => sum + p.payout - p.points_locked, 0);
+
+    return {
+      student_id: member.id,
+      name: member.name,
+      pools_predicted,
+      correct,
+      resolved_count,
+      accuracy,
+      net_points,
+    };
+  });
+
+  // Rank by net_points desc, then accuracy desc (nulls last)
+  stats.sort((a, b) => {
+    if (b.net_points !== a.net_points) return b.net_points - a.net_points;
+    if (a.accuracy === null) return 1;
+    if (b.accuracy === null) return -1;
+    return b.accuracy - a.accuracy;
+  });
+
+  return stats;
+}
+
 module.exports = {
   MAX_MEMBERS,
   createCrew,
@@ -166,4 +230,5 @@ module.exports = {
   listCrewsForStudent,
   getCrewWithMembers,
   deleteCrew,
+  getLeaderboardForCrew,
 };

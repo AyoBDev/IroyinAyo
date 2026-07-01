@@ -67,6 +67,24 @@ router.get('/:id', authenticateStudent, async (req, res, next) => {
   } catch (e) { handleErr(e, res, next); }
 });
 
+router.get('/:id/leaderboard', authenticateStudent, async (req, res, next) => {
+  try {
+    // Verify caller is a crew member
+    const member = await db('crew_members').where({ crew_id: req.params.id, student_id: req.student.id }).first();
+    if (!member) {
+      return res.status(403).json({
+        error: 'Not a crew member',
+        code: 'NOT_MEMBER',
+        userMessage: 'You must be in this crew to view the leaderboard.',
+        message: 'Not a crew member',
+        retryable: false,
+      });
+    }
+    const leaderboard = await crewsService.getLeaderboardForCrew(req.params.id);
+    res.json(leaderboard);
+  } catch (e) { handleErr(e, res, next); }
+});
+
 router.post('/:id/leave', authenticateStudent, async (req, res, next) => {
   try {
     await crewsService.leaveCrew(req.params.id, req.student.id);
