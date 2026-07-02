@@ -33,6 +33,7 @@ async function getSummary() {
     totalSchedulesExists, totalSchedules,
     totalLiquidityExists, totalLiquidity,
     totalContentExists, totalContent,
+    totalCirclesExists, totalCircles,
   ] = await Promise.all([
     safeCount('multi_markets', { status: 'closed' }),
     safeCount('multi_markets', { status: 'pending' }),
@@ -48,6 +49,7 @@ async function getSummary() {
     tableExists('scheduled_markets'), safeCount('scheduled_markets'),
     tableExists('market_liquidity_config'), safeCount('market_liquidity_config'),
     tableExists('content'), safeCount('content'),
+    tableExists('circles'), db('circles').whereNull('deleted_at').count('* as c').first().then((r) => Number(r.c) || 0).catch(() => 0),
   ]);
 
   const pendingContent = pendingContentExists ? pendingContentVal : 0;
@@ -56,6 +58,7 @@ async function getSummary() {
   const totalsManageStrip = {
     markets: totalMarkets,
     students: totalStudents,
+    circles: totalCirclesExists ? totalCircles : 0,
     quizzes: totalQuizzesExists ? totalQuizzes : 0,
     schedules: totalSchedulesExists ? totalSchedules : 0,
     ambassadors: 0,
